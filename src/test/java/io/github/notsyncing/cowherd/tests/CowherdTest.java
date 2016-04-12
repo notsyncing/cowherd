@@ -318,4 +318,37 @@ public class CowherdTest
 
         req.end();
     }
+
+    @Test
+    public void testTemplateEngine(TestContext context)
+    {
+        String expected = "<!DOCTYPE html>\n" +
+                "\n" +
+                "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" +
+                "\n" +
+                "<head>\n" +
+                "    <title>Test page</title>\n" +
+                "</head>\n" +
+                "\n" +
+                "<body>\n" +
+                "    <p>Hello, world!</p>\n" +
+                "</body>\n" +
+                "\n" +
+                "</html>\n";
+
+        Async async = context.async();
+        HttpClientRequest req = get("/te.html");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals(expected, b.toString());
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
 }

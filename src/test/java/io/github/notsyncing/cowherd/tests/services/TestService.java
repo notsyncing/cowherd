@@ -6,6 +6,7 @@ import io.github.notsyncing.cowherd.annotations.Filter;
 import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.responses.FileResponse;
+import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 
 import java.io.FileOutputStream;
@@ -14,6 +15,21 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+
+class TestModel
+{
+    private String text;
+
+    public String getText()
+    {
+        return text;
+    }
+
+    public void setText(String text)
+    {
+        this.text = text;
+    }
+}
 
 @Route("/TestService")
 public class TestService extends CowherdService
@@ -68,5 +84,16 @@ public class TestService extends CowherdService
     public CompletableFuture<String> typedRequest()
     {
         return CompletableFuture.completedFuture("{\"a\":1}");
+    }
+
+    @Exported
+    @HttpGet
+    @Route("/te.html")
+    public ViewResponse testTemplateEngine()
+    {
+        TestModel m = new TestModel();
+        m.setText("Hello, world!");
+
+        return new ViewResponse(m);
     }
 }

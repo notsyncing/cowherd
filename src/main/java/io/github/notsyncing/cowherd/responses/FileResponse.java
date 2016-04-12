@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.responses;
 
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerResponse;
@@ -13,9 +14,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class FileResponse implements ActionResponse
 {
-    Path file;
-    InputStream stream;
-    String contentType;
+    private Path file;
+    private InputStream stream;
+    private String contentType;
 
     public FileResponse()
     {
@@ -45,8 +46,9 @@ public class FileResponse implements ActionResponse
 
     @SuppressWarnings("unchecked")
     @Override
-    public CompletableFuture writeToResponse(HttpServerResponse resp) throws IOException
+    public CompletableFuture writeToResponse(ActionContext context) throws IOException
     {
+        HttpServerResponse resp = context.getRequest().response();
         CompletableFuture future = new CompletableFuture();
 
         if (file != null) {
@@ -61,6 +63,7 @@ public class FileResponse implements ActionResponse
             resp.putHeader("Content-Type", contentType);
             resp.putHeader("Content-Length", String.valueOf(stream.available()));
             FileUtils.pumpInputStreamToWriteStream(stream, resp);
+            future.complete(null);
         } else {
             future.completeExceptionally(new IOException("Invalid file response!"));
         }

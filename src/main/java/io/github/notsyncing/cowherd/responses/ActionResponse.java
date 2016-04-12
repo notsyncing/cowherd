@@ -1,11 +1,11 @@
 package io.github.notsyncing.cowherd.responses;
 
-import io.vertx.core.http.HttpServerResponse;
+import io.github.notsyncing.cowherd.models.ActionContext;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public interface ActionResponse
 {
-    CompletableFuture writeToResponse(HttpServerResponse resp) throws IOException;
+    CompletableFuture writeToResponse(ActionContext context) throws IOException;
 }

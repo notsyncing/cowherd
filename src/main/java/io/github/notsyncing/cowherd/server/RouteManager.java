@@ -5,9 +5,7 @@ import io.github.notsyncing.cowherd.annotations.Filter;
 import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
-import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
-import io.github.notsyncing.cowherd.models.FilterInfo;
-import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
@@ -121,7 +119,7 @@ public class RouteManager
         return filters;
     }
 
-    public static CompletableFuture handleRequest(HttpServerRequest request)
+    public static CompletableFuture<ActionResult> handleRequest(HttpServerRequest request)
     {
         String contentType = request.getHeader("Content-Type");
 
@@ -130,7 +128,6 @@ public class RouteManager
         }
 
         URI uri = RouteUtils.resolveUriFromRequest(request);
-
         Map.Entry<RouteInfo, Method> p = findMatchedAction(uri);
 
         if (p == null) {
@@ -142,7 +139,7 @@ public class RouteManager
                 } catch (Exception e) {
                     e.printStackTrace();
 
-                    CompletableFuture f = new CompletableFuture();
+                    CompletableFuture<ActionResult> f = new CompletableFuture<>();
                     f.completeExceptionally(e);
                     return f;
                 }
@@ -172,6 +169,11 @@ public class RouteManager
 
         Path file = GlobalStorage.getContextRoot().resolve(reqPath);
 
+        if (!file.toAbsolutePath().toString().startsWith(GlobalStorage.getContextRoot().toString())) {
+            request.response().setStatusCode(404).end();
+            return false;
+        }
+
         if (Files.isRegularFile(file)) {
             String ifModifiedSince = request.getHeader("If-Modified-Since");
 
@@ -188,7 +190,7 @@ public class RouteManager
 
             if (needSend) {
                 FileResponse fileResp = new FileResponse(file);
-                fileResp.writeToResponse(request.response());
+                fileResp.writeToResponse(new ActionContext(request));
                 return true;
             }
         }

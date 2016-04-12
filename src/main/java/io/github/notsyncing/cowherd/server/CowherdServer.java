@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -9,6 +10,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.FileTemplateResolver;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -16,17 +20,23 @@ import java.util.concurrent.CompletableFuture;
 
 public class CowherdServer
 {
-    Vertx vertx;
-    HttpServer server;
+    private Vertx vertx;
+    private HttpServer server;
+    private TemplateEngine templateEngine;
 
-    void writeResponse(HttpServerResponse resp, byte[] data)
+    public TemplateEngine getTemplateEngine()
+    {
+        return templateEngine;
+    }
+
+    private void writeResponse(HttpServerResponse resp, byte[] data)
     {
         resp.putHeader("Content-Length", String.valueOf(data.length));
         resp.write(Buffer.buffer(data));
         resp.end();
     }
 
-    void writeResponse(HttpServerResponse resp, String data)
+    private void writeResponse(HttpServerResponse resp, String data)
     {
         try {
             writeResponse(resp, data.getBytes("utf-8"));
@@ -36,11 +46,10 @@ public class CowherdServer
         }
     }
 
-    @SuppressWarnings("unchecked")
-    void processRequest(HttpServerRequest req)
+    private void processRequest(HttpServerRequest req)
     {
         RouteManager.handleRequest(req).thenAccept(o -> {
-            if (o == null) {
+            if (o.getResult() == null) {
                 if (!req.response().ended()) {
                     req.response().end();
                 }
@@ -50,9 +59,14 @@ public class CowherdServer
 
             String ret;
 
-            if (o instanceof ActionResponse) {
+            if (o.getResult() instanceof ActionResponse) {
+                ActionContext context = new ActionContext();
+                context.setActionMethod(o.getActionMethod());
+                context.setServer(this);
+                context.setRequest(req);
+
                 try {
-                    ((ActionResponse)o).writeToResponse(req.response());
+                    ((ActionResponse)o.getResult()).writeToResponse(context);
                 } catch (IOException e) {
                     e.printStackTrace();
                     req.response().setStatusCode(500);
@@ -62,11 +76,11 @@ public class CowherdServer
                 if (!req.response().ended()) {
                     req.response().end();
                 }
-            } else if (o instanceof String) {
-                ret = (String)o;
+            } else if (o.getResult() instanceof String) {
+                ret = (String)o.getResult();
                 writeResponse(req.response(), ret);
             } else {
-                ret = JSON.toJSONString(o);
+                ret = JSON.toJSONString(o.getResult());
 
                 if (!req.response().headers().contains("Content-Type")) {
                     req.response().putHeader("Content-Type", "application/json");
@@ -90,12 +104,34 @@ public class CowherdServer
 
     public void start()
     {
+        initServer();
+
+        initTemplateEngine();
+    }
+
+    private void initServer()
+    {
         vertx = Vertx.vertx();
         server = vertx.createHttpServer();
         server.requestHandler(this::processRequest);
         server.listen(GlobalStorage.getListenPort());
 
         System.out.println("CowherdServer: listening at port " + GlobalStorage.getListenPort());
+    }
+
+    private void initTemplateEngine()
+    {
+        templateEngine = new TemplateEngine();
+
+        ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
+        clr.setPrefix("APP_ROOT");
+        clr.setSuffix(".html");
+        templateEngine.addTemplateResolver(clr);
+
+        FileTemplateResolver fr = new FileTemplateResolver();
+        fr.setPrefix(GlobalStorage.getContextRoot().toAbsolutePath().toString());
+        fr.setSuffix(".html");
+        templateEngine.addTemplateResolver(fr);
     }
 
     @SuppressWarnings("unchecked")

@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
+import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.service.CowherdService;
@@ -18,9 +19,9 @@ import java.util.concurrent.CompletableFuture;
 public class RequestExecutor
 {
     @SuppressWarnings("unchecked")
-    public static CompletableFuture executeRequestedAction(Method requestedMethod, HttpServerRequest request,
-                                                           Map<String, List<String>> parameters,
-                                                           List<UploadFileInfo> uploads)
+    public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
+                                                                         Map<String, List<String>> parameters,
+                                                                         List<UploadFileInfo> uploads)
     {
         try {
             if (requestedMethod.isAnnotationPresent(ContentType.class)){
@@ -37,9 +38,11 @@ public class RequestExecutor
             Object result = requestedMethod.invoke(service, targetParams);
 
             if (result instanceof CompletableFuture) {
-                return (CompletableFuture)result;
+                CompletableFuture f = (CompletableFuture)result;
+                return f.thenApply(r -> new ActionResult(requestedMethod, r));
             } else {
-                return CompletableFuture.completedFuture(result);
+                ActionResult r = new ActionResult(requestedMethod, result);
+                return CompletableFuture.completedFuture(r);
             }
         } catch (Exception e) {
             CompletableFuture f = new CompletableFuture();
@@ -90,10 +93,10 @@ public class RequestExecutor
     }
 
     @SuppressWarnings("unchecked")
-    public static CompletableFuture handleRequestedAction(Method requestedAction,
-                                                          List<FilterInfo> matchedFilters,
-                                                          Map<String, List<String>> additionalParams,
-                                                          HttpServerRequest req)
+    public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
+                                                                        List<FilterInfo> matchedFilters,
+                                                                        Map<String, List<String>> additionalParams,
+                                                                        HttpServerRequest req)
     {
         if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.method())) {
             req.response()
