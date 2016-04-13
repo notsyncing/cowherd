@@ -149,7 +149,7 @@ public class RouteManager
                 request.response().setStatusCode(404).end();
             }
 
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(new ActionResult());
         }
 
         Method m = p.getValue();

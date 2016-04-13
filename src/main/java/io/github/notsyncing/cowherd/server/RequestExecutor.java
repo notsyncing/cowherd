@@ -104,7 +104,7 @@ public class RequestExecutor
                     .setStatusMessage("Method " + req.method() + " is not allowed on " + requestedAction.getName())
                     .end();
 
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(new ActionResult());
         }
 
         CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters);
