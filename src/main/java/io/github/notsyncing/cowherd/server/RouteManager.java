@@ -164,7 +164,9 @@ public class RouteManager
 
         String reqPath = request.path();
 
-        if (reqPath.startsWith("/")) {
+        if ("/".equals(reqPath)) {
+            reqPath = "index.html";
+        } else if (reqPath.startsWith("/")) {
             reqPath = reqPath.substring(1);
         }
 
