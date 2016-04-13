@@ -11,4 +11,5 @@ public @interface Route
 {
     String value();
     String domain() default "";
+    boolean entry() default false;
 }

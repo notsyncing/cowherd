@@ -88,7 +88,7 @@ public class TestService extends CowherdService
 
     @Exported
     @HttpGet
-    @Route("/te.html")
+    @Route(value = "/te.html", entry = true)
     public ViewResponse testTemplateEngine()
     {
         TestModel m = new TestModel();

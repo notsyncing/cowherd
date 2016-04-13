@@ -67,6 +67,7 @@ public class RouteManager
                 Route route = m.getAnnotation(Route.class);
                 info.setPath(route.value());
                 info.setDomain(route.domain());
+                info.setEntry(route.entry());
             }
 
             addRoute(info, m);

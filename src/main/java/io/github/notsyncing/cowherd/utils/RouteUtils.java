@@ -15,6 +15,10 @@ public class RouteUtils
 {
     public static boolean matchRoute(URI uri, RouteInfo info)
     {
+        if (("/".equals(uri.getPath())) && (info.isEntry())) {
+            return true;
+        }
+
         if ((info.getDomainPattern() != null) && (!info.getDomainPattern().matcher(uri.getHost()).find())) {
             return false;
         }

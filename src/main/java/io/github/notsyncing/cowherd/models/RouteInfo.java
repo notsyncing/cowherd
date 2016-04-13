@@ -10,6 +10,7 @@ public class RouteInfo
     private String path;
     private Pattern domainPattern;
     private Pattern pathPattern;
+    private boolean entry;
 
     public String getDomain()
     {
@@ -55,6 +56,16 @@ public class RouteInfo
         }
 
         return pathPattern;
+    }
+
+    public boolean isEntry()
+    {
+        return entry;
+    }
+
+    public void setEntry(boolean entry)
+    {
+        this.entry = entry;
     }
 
     @Override
