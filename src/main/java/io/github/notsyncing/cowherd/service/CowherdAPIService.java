@@ -18,10 +18,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CowherdAPIService extends CowherdService
 {
-    private static Date injectServiceScriptGenerationTime = null;
+    private static Map<String, Date> injectServiceScriptGenerationTimes = new ConcurrentHashMap<>();
 
     @HttpAnyMethod
     @Exported
@@ -36,15 +37,19 @@ public class CowherdAPIService extends CowherdService
     @ContentType("text/javascript")
     public String injectServices(String base, String service, HttpServerRequest request) throws IOException
     {
-        if ((!StringUtils.isEmpty(request.getHeader("If-Modified-Since"))) && (injectServiceScriptGenerationTime != null)) {
+        if (StringUtils.isEmpty(service)) {
+            service = "ALL";
+        }
+
+        if ((!StringUtils.isEmpty(request.getHeader("If-Modified-Since"))) && (injectServiceScriptGenerationTimes.containsKey(service))) {
             request.response().putHeader("Last-Modified",
-                    StringUtils.dateToHttpDateString(injectServiceScriptGenerationTime));
+                    StringUtils.dateToHttpDateString(injectServiceScriptGenerationTimes.get(service)));
             request.response().setStatusCode(304).end();
             return null;
         }
 
-        injectServiceScriptGenerationTime = new Date();
-        request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(injectServiceScriptGenerationTime));
+        injectServiceScriptGenerationTimes.put(service, new Date());
+        request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(injectServiceScriptGenerationTimes.get(service)));
 
         if (StringUtils.isEmpty(base)) {
             base = "~/";
@@ -56,7 +61,7 @@ public class CowherdAPIService extends CowherdService
         js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/reqwest/2.0.5/reqwest.min.js") + "\n\n";
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
-            if ((!StringUtils.isEmpty(service)) && (!info.getFullName().equals(service))) {
+            if ((!"ALL".equals(service)) && (!info.getFullName().equals(service))) {
                 continue;
             }
 
