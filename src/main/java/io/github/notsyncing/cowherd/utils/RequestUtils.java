@@ -7,6 +7,7 @@ import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -165,6 +166,8 @@ public class RequestUtils
                 targetParams.add(uploads.toArray(new UploadFileInfo[uploads.size()]));
             } else if (p.getType() == HttpServerRequest.class) {
                 targetParams.add(req);
+            } else if (p.getType() == HttpServerResponse.class) {
+                targetParams.add(req.response());
             } else {
                 if (!params.containsKey(p.getName())) {
                     targetParams.add(null);
