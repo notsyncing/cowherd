@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.notsyncing.cowherd.annotations.Component;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.server.CowherdServer;
@@ -10,6 +11,7 @@ import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 
@@ -65,6 +67,10 @@ public class Cowherd
 
     private void scanClasses()
     {
+        new FastClasspathScanner()
+                .matchClassesWithAnnotation(Component.class, DependencyInjector::registerComponent)
+                .scan();
+
         new FastClasspathScanner()
                 .matchSubclassesOf(CowherdService.class, ServiceManager::addServiceClass)
                 .matchClassesImplementing(ServiceActionFilter.class, c -> FilterManager.addFilterClass(c))
