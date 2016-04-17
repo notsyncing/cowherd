@@ -34,7 +34,7 @@ public class CowherdAPIService extends CowherdService
     @HttpGet
     @Exported
     @ContentType("text/javascript")
-    public String injectServices(String base, HttpServerRequest request) throws IOException
+    public String injectServices(String base, String service, HttpServerRequest request) throws IOException
     {
         if ((!StringUtils.isEmpty(request.getHeader("If-Modified-Since"))) && (injectServiceScriptGenerationTime != null)) {
             request.response().putHeader("Last-Modified",
@@ -56,6 +56,10 @@ public class CowherdAPIService extends CowherdService
         js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/reqwest/2.0.5/reqwest.min.js") + "\n\n";
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
+            if ((!StringUtils.isEmpty(service)) && (!info.getFullName().equals(service))) {
+                continue;
+            }
+
             if (!StringUtils.isEmpty(info.getNamespace())) {
                 js += "if (!window." + info.getNamespace() + ") {\n";
                 js += "window." + info.getNamespace() + " = {};\n";
