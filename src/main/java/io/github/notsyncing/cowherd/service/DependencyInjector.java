@@ -64,7 +64,8 @@ public class DependencyInjector
         return object;
     }
 
-    public static void registerComponent(Class interfaceType, Class objectType, ComponentInstantiateType createType)
+    public static void registerComponent(Class interfaceType, Class objectType, ComponentInstantiateType createType,
+                                         boolean createNow)
     {
         if (components.containsKey(interfaceType)) {
             return;
@@ -78,22 +79,31 @@ public class DependencyInjector
         components.put(interfaceType, info);
 
         System.out.println("DependencyInjector: Registered component " + objectType);
+
+        if ((createNow) && (createType == ComponentInstantiateType.Singleton)) {
+            try {
+                makeObject(interfaceType);
+            } catch (Exception e) {
+                System.out.println("DependencyInjector: Failed to make object " + interfaceType + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
-    public static void registerComponent(Class type, ComponentInstantiateType createType)
+    public static void registerComponent(Class type, ComponentInstantiateType createType, boolean createNow)
     {
-        registerComponent(type, type, createType);
+        registerComponent(type, type, createType, createNow);
     }
 
-    public static void registerComponent(Class type, Object o)
+    public static void registerComponent(Class type, Object o, boolean createNow)
     {
-        registerComponent(type, ComponentInstantiateType.Singleton);
+        registerComponent(type, ComponentInstantiateType.Singleton, createNow);
         singletons.put(type, o);
     }
 
-    public static void registerComponent(Object o)
+    public static void registerComponent(Object o, boolean createNow)
     {
-        registerComponent(o.getClass(), ComponentInstantiateType.Singleton);
+        registerComponent(o.getClass(), ComponentInstantiateType.Singleton, createNow);
         singletons.put(o.getClass(), o);
     }
 
@@ -104,7 +114,7 @@ public class DependencyInjector
         }
 
         Component componentInfo = (Component)c.getAnnotation(Component.class);
-        registerComponent(c, componentInfo.value());
+        registerComponent(c, componentInfo.value(), componentInfo.createAtRegister());
     }
 
     public static <T> T getComponent(Class<T> type) throws InstantiationException, InvocationTargetException, IllegalAccessException
@@ -126,7 +136,7 @@ public class DependencyInjector
     public static <T> T makeObject(Class<T> type) throws IllegalAccessException, InvocationTargetException, InstantiationException
     {
         if (!hasComponent(type)) {
-            registerComponent(type, ComponentInstantiateType.AlwaysNew);
+            registerComponent(type, ComponentInstantiateType.AlwaysNew, false);
         }
 
         return createInstance(type);

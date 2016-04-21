@@ -28,7 +28,7 @@ public class ServiceManager
 
     private static void addServiceInfo(String name, CowherdServiceInfo info, RouteInfo customRoute) throws InvalidServiceActionException
     {
-        DependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType());
+        DependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType(), false);
 
         processServiceAnnotations(info);
 
