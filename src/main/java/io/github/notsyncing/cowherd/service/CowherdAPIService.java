@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CowherdAPIService extends CowherdService
 {
@@ -35,7 +37,7 @@ public class CowherdAPIService extends CowherdService
     @HttpGet
     @Exported
     @ContentType("text/javascript")
-    public String injectServices(String base, String service, HttpServerRequest request) throws IOException
+    public String injectServices(String base, String service, HttpServerRequest request) throws IOException, ClassNotFoundException
     {
         if (StringUtils.isEmpty(service)) {
             service = "ALL";
@@ -79,52 +81,94 @@ public class CowherdAPIService extends CowherdService
                     continue;
                 }
 
-                if (!StringUtils.isEmpty(info.getNamespace())) {
-                    js += "window." + info.getNamespace() + "." + info.getName();
-                } else {
-                    js += "window." + info.getName();
-                }
+                js += generateMethodReturnEnum(info, m);
 
-                js += "." + m.getName() + " = function (";
-
-                if (m.getParameterCount() > 0) {
-                    for (Parameter p : m.getParameters()) {
-                        js += p.getName() + ", ";
-                    }
-
-                    js = js.substring(0, js.length() - 2);
-                }
-
-                js += ") {\n";
-                js += "return new Promise(function (resolve, reject) {\n";
-                js += "reqwest({\n";
-                js += "url: '" + base + "api/gateway',\n";
-                js += "method: '" + RouteUtils.getActionHttpMethodString(m) + "',\n";
-                js += "data: {\n";
-                js += "__service__: '" + info.getFullName() + "',\n";
-                js += "__action__: '" + m.getName() + "'";
-
-                if (m.getParameterCount() > 0) {
-                    js += ",\n";
-
-                    for (Parameter p : m.getParameters()) {
-                        js += p.getName() + ": " + p.getName() + ",\n";
-                    }
-
-                    js = js.substring(0, js.length() - 2);
-                }
-
-                js += "\n";
-                js += "},\n";
-                js += "error: function (err) {\nreject(err);\n},\n";
-                js += "success: function (resp) {\nresolve(resp.responseText ? resp.responseText : resp);\n}\n";
-                js += "});\n";
-                js += "});\n";
-                js += "};\n";
+                js += generateMethodCall(base, info, m);
             }
         }
 
         js += "})();\n";
+        return js;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String generateMethodReturnEnum(CowherdServiceInfo info, Method m) throws ClassNotFoundException
+    {
+        String js = "";
+        Class<? extends Enum> e = null;
+
+        if (Enum.class.isAssignableFrom(m.getReturnType())) {
+            e = (Class<? extends Enum>)m.getReturnType();
+        } else if (Enum.class.isAssignableFrom(Class.forName(m.getGenericReturnType().getTypeName()))) {
+            e = (Class<? extends Enum>)Class.forName(m.getGenericReturnType().getTypeName());
+        }
+
+        if (e != null) {
+            if (!StringUtils.isEmpty(info.getNamespace())) {
+                js += "window." + info.getNamespace() + "." + e.getSimpleName();
+            } else {
+                js += "window." + e.getSimpleName();
+            }
+
+            js += " = {\n";
+
+            Stream.of(e.getEnumConstants())
+                    .map(n -> n.name() + " = " + n.ordinal())
+                    .collect(Collectors.joining(",\n"));
+
+            js += "\n};\n";
+        }
+
+        return js;
+    }
+
+    private String generateMethodCall(String base, CowherdServiceInfo info, Method m)
+    {
+        String js = "";
+
+        if (!StringUtils.isEmpty(info.getNamespace())) {
+            js += "window." + info.getNamespace() + "." + info.getName();
+        } else {
+            js += "window." + info.getName();
+        }
+
+        js += "." + m.getName() + " = function (";
+
+        if (m.getParameterCount() > 0) {
+            for (Parameter p : m.getParameters()) {
+                js += p.getName() + ", ";
+            }
+
+            js = js.substring(0, js.length() - 2);
+        }
+
+        js += ") {\n";
+        js += "return new Promise(function (resolve, reject) {\n";
+        js += "reqwest({\n";
+        js += "url: '" + base + "api/gateway',\n";
+        js += "method: '" + RouteUtils.getActionHttpMethodString(m) + "',\n";
+        js += "data: {\n";
+        js += "__service__: '" + info.getFullName() + "',\n";
+        js += "__action__: '" + m.getName() + "'";
+
+        if (m.getParameterCount() > 0) {
+            js += ",\n";
+
+            for (Parameter p : m.getParameters()) {
+                js += p.getName() + ": " + p.getName() + ",\n";
+            }
+
+            js = js.substring(0, js.length() - 2);
+        }
+
+        js += "\n";
+        js += "},\n";
+        js += "error: function (err) {\nreject(err);\n},\n";
+        js += "success: function (resp) {\nresolve(resp.responseText ? resp.responseText : resp);\n}\n";
+        js += "});\n";
+        js += "});\n";
+        js += "};\n";
+
         return js;
     }
 }

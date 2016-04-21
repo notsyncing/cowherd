@@ -5,7 +5,7 @@ import io.github.notsyncing.cowherd.annotations.InstantiateType;
 import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
-import io.github.notsyncing.cowherd.service.ServiceInstantiateType;
+import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,9 +39,9 @@ public class FilterManager
         FilterInfo info = new FilterInfo();
         info.setFilterClass(filterClass);
         info.setInstantiateType(filterClass.isAnnotationPresent(InstantiateType.class) ?
-                filterClass.getAnnotation(InstantiateType.class).value() : ServiceInstantiateType.SingleInstance);
+                filterClass.getAnnotation(InstantiateType.class).value() : ComponentInstantiateType.Singleton);
 
-        if (info.getInstantiateType() == ServiceInstantiateType.SingleInstance) {
+        if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
             try {
                 info.setFilterInstance(filterClass.newInstance());
             } catch (Exception e) {

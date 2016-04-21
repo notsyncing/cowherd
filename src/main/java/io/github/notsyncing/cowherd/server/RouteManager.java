@@ -36,6 +36,8 @@ public class RouteManager
     public static void addRoute(RouteInfo route, Method target)
     {
         routes.put(route, target);
+
+        System.out.println("RouteManager: Add route " + route.getPath() + " to action " + target);
     }
 
     public static void addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) throws InvalidServiceActionException
@@ -43,10 +45,15 @@ public class RouteManager
         Route serviceRoute = service.getAnnotation(Route.class);
         RouteInfo serviceRouteInfo = serviceInfo.getCustomRoute();
 
-        if ((serviceRouteInfo == null) && (serviceRoute != null)) {
+        if (serviceRouteInfo == null) {
             serviceRouteInfo = new RouteInfo();
-            serviceRouteInfo.setDomain(serviceRoute.domain());
-            serviceRouteInfo.setPath(serviceRoute.value());
+
+            if (serviceRoute != null) {
+                serviceRouteInfo.setDomain(serviceRoute.domain());
+                serviceRouteInfo.setPath(serviceRoute.value());
+            } else {
+                serviceRouteInfo.setPath(service.getSimpleName() + "/");
+            }
         }
 
         for (Method m : service.getMethods()) {
@@ -57,10 +64,6 @@ public class RouteManager
             RouteInfo info = new RouteInfo();
 
             if (!m.isAnnotationPresent(Route.class)) {
-                if (serviceRouteInfo == null) {
-                    continue;
-                }
-
                 info.setPath(StringUtils.appendUrl(serviceRouteInfo.getPath(), m.getName()));
                 info.setDomain(serviceRouteInfo.getDomain());
             } else {
@@ -122,6 +125,8 @@ public class RouteManager
 
     public static CompletableFuture<ActionResult> handleRequest(HttpServerRequest request)
     {
+        System.out.print("RouteManager: Request: " + request.path());
+
         String contentType = request.getHeader("Content-Type");
 
         if ((contentType != null) && (contentType.toLowerCase().contains("multipart/form-data"))) {
@@ -147,6 +152,7 @@ public class RouteManager
             }
 
             if (!processed) {
+                System.out.println(" ... no route");
                 request.response().setStatusCode(404).end();
             }
 
@@ -154,6 +160,8 @@ public class RouteManager
         }
 
         Method m = p.getValue();
+        System.out.println(" ... action " + m);
+
         return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
                 RouteUtils.extractRouteParameters(uri, p.getKey()), request);
     }
@@ -181,17 +189,19 @@ public class RouteManager
             String ifModifiedSince = request.getHeader("If-Modified-Since");
 
             if (!StringUtils.isEmpty(ifModifiedSince)) {
-                long fileModifyTime = Files.getLastModifiedTime(file).toMillis();
-                long reqQueryTime = StringUtils.parseHttpDateString(ifModifiedSince).getTime();
+                long fileModifyTime = Files.getLastModifiedTime(file).toMillis() / 1000;
+                long reqQueryTime = StringUtils.parseHttpDateString(ifModifiedSince).getTime() / 1000;
 
                 if (fileModifyTime <= reqQueryTime) {
                     request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
                     request.response().setStatusCode(304).end();
+                    System.out.println(" ... local file not modified");
                     needSend = false;
                 }
             }
 
             if (needSend) {
+                System.out.println(" ... local file: " + file);
                 FileResponse fileResp = new FileResponse(file);
                 fileResp.writeToResponse(new ActionContext(request));
                 return true;

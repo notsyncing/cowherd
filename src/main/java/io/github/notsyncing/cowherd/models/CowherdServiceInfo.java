@@ -2,13 +2,13 @@ package io.github.notsyncing.cowherd.models;
 
 import io.github.notsyncing.cowherd.annotations.Namespace;
 import io.github.notsyncing.cowherd.service.CowherdService;
-import io.github.notsyncing.cowherd.service.ServiceInstantiateType;
+import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 
 public class CowherdServiceInfo
 {
     private Class<? extends CowherdService> serviceClass;
     private CowherdService serviceInstance;
-    private ServiceInstantiateType instantiateType = ServiceInstantiateType.SingleInstance;
+    private ComponentInstantiateType instantiateType = ComponentInstantiateType.Singleton;
     private RouteInfo customRoute;
     private String namespace;
     private String name;
@@ -43,12 +43,12 @@ public class CowherdServiceInfo
         setServiceClass(serviceInstance.getClass());
     }
 
-    public ServiceInstantiateType getInstantiateType()
+    public ComponentInstantiateType getInstantiateType()
     {
         return instantiateType;
     }
 
-    public void setInstantiateType(ServiceInstantiateType instantiateType)
+    public void setInstantiateType(ComponentInstantiateType instantiateType)
     {
         this.instantiateType = instantiateType;
     }

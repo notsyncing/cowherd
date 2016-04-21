@@ -60,17 +60,24 @@ public class DependencyInjector
             singletons.put(type, object);
         }
 
+        System.out.println("Created object " + object);
         return object;
     }
 
     public static void registerComponent(Class interfaceType, Class objectType, ComponentInstantiateType createType)
     {
+        if (components.containsKey(interfaceType)) {
+            return;
+        }
+
         ComponentInfo info = new ComponentInfo();
         info.setCreateType(createType);
         info.setType(objectType);
         info.setInterfaceType(interfaceType);
 
         components.put(interfaceType, info);
+
+        System.out.println("DependencyInjector: Registered component " + objectType);
     }
 
     public static void registerComponent(Class type, ComponentInstantiateType createType)

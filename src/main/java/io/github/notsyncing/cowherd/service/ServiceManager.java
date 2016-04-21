@@ -28,6 +28,8 @@ public class ServiceManager
 
     private static void addServiceInfo(String name, CowherdServiceInfo info, RouteInfo customRoute) throws InvalidServiceActionException
     {
+        DependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType());
+
         processServiceAnnotations(info);
 
         info.setCustomRoute(customRoute);
@@ -84,9 +86,9 @@ public class ServiceManager
             return null;
         }
 
-        if (info.getInstantiateType() == ServiceInstantiateType.InstancePerRequest) {
+        if (info.getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
             return DependencyInjector.makeObject(serviceClass);
-        } else if (info.getInstantiateType() == ServiceInstantiateType.SingleInstance) {
+        } else if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
             if (!serviceInstances.containsKey(serviceClass.getName())) {
                 CowherdService s = DependencyInjector.makeObject(serviceClass);
                 serviceInstances.put(serviceClass.getName(), s);

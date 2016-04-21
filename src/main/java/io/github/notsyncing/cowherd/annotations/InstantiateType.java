@@ -1,6 +1,6 @@
 package io.github.notsyncing.cowherd.annotations;
 
-import io.github.notsyncing.cowherd.service.ServiceInstantiateType;
+import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface InstantiateType
 {
-    ServiceInstantiateType value();
+    ComponentInstantiateType value();
 }

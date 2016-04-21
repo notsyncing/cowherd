@@ -1,13 +1,13 @@
 package io.github.notsyncing.cowherd.models;
 
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
-import io.github.notsyncing.cowherd.service.ServiceInstantiateType;
+import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 
 public class FilterInfo
 {
     private Class<? extends ServiceActionFilter> filterClass;
     private ServiceActionFilter filterInstance;
-    private ServiceInstantiateType instantiateType = ServiceInstantiateType.SingleInstance;
+    private ComponentInstantiateType instantiateType = ComponentInstantiateType.Singleton;
     private RouteInfo customRoute;
 
     public Class<? extends ServiceActionFilter> getFilterClass()
@@ -30,12 +30,12 @@ public class FilterInfo
         this.filterInstance = filterInstance;
     }
 
-    public ServiceInstantiateType getInstantiateType()
+    public ComponentInstantiateType getInstantiateType()
     {
         return instantiateType;
     }
 
-    public void setInstantiateType(ServiceInstantiateType instantiateType)
+    public void setInstantiateType(ComponentInstantiateType instantiateType)
     {
         this.instantiateType = instantiateType;
     }

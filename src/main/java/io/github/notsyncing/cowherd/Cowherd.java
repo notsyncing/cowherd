@@ -69,9 +69,7 @@ public class Cowherd
     {
         new FastClasspathScanner()
                 .matchClassesWithAnnotation(Component.class, DependencyInjector::registerComponent)
-                .scan();
-
-        new FastClasspathScanner()
+                .scan()
                 .matchSubclassesOf(CowherdService.class, ServiceManager::addServiceClass)
                 .matchClassesImplementing(ServiceActionFilter.class, c -> FilterManager.addFilterClass(c))
                 .scan();

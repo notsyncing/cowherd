@@ -4,8 +4,10 @@ import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 
 import java.lang.reflect.Method;
+import java.net.HttpCookie;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -27,5 +29,21 @@ public abstract class CowherdService
         }
 
         return RequestExecutor.executeRequestedAction(m, request, parameters, uploads).thenApply(ActionResult::getResult);
+    }
+
+    protected void putCookie(HttpServerResponse response, HttpCookie cookie)
+    {
+        response.putHeader("Set-Cookie", cookie.toString());
+    }
+
+    protected void putCookies(HttpServerResponse response, HttpCookie... cookies)
+    {
+        if (cookies == null) {
+            return;
+        }
+
+        for (HttpCookie c : cookies) {
+            putCookie(response, c);
+        }
     }
 }

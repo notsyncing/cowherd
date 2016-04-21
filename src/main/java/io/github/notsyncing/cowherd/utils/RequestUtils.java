@@ -12,6 +12,7 @@ import io.vertx.core.http.HttpServerResponse;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -139,6 +140,7 @@ public class RequestUtils
 
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
                                                                   Map<String, List<String>> params,
+                                                                  List<HttpCookie> cookies,
                                                                   List<UploadFileInfo> uploads)
     {
         List<Object> targetParams = new ArrayList<>();
@@ -168,6 +170,14 @@ public class RequestUtils
                 targetParams.add(req);
             } else if (p.getType() == HttpServerResponse.class) {
                 targetParams.add(req.response());
+            } else if (p.getType() == HttpCookie.class) {
+                String name = p.getName();
+                HttpCookie cookie = cookies.stream()
+                        .filter(c -> c.getName().equals(name))
+                        .findFirst()
+                        .orElse(null);
+
+                targetParams.add(cookie);
             } else {
                 if (!params.containsKey(p.getName())) {
                     targetParams.add(null);

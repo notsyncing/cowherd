@@ -6,13 +6,14 @@ import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.service.CowherdService;
-import io.github.notsyncing.cowherd.service.ServiceInstantiateType;
+import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
+import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,7 +25,7 @@ public class RequestExecutor
                                                                          List<UploadFileInfo> uploads)
     {
         try {
-            if (requestedMethod.isAnnotationPresent(ContentType.class)){
+            if (requestedMethod.isAnnotationPresent(ContentType.class)) {
                 String contentType = requestedMethod.getAnnotation(ContentType.class).value();
 
                 if (!StringUtils.isEmpty(contentType)) {
@@ -32,8 +33,10 @@ public class RequestExecutor
                 }
             }
 
+            List<HttpCookie> cookies = HttpCookie.parse(request.getHeader("Cookie"));
+
             Object[] targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                    parameters, uploads);
+                    parameters, cookies, uploads);
             CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
             Object result = requestedMethod.invoke(service, targetParams);
 
@@ -59,7 +62,7 @@ public class RequestExecutor
             for (FilterInfo filterInfo : matchedFilters) {
                 ServiceActionFilter filter = filterInfo.getFilterInstance();
 
-                if (filterInfo.getInstantiateType() == ServiceInstantiateType.InstancePerRequest) {
+                if (filterInfo.getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
                     try {
                         filter = filterInfo.getFilterClass().newInstance();
                     } catch (Exception e) {
