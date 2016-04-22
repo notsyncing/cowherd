@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 public @interface Component
 {
     ComponentInstantiateType value() default ComponentInstantiateType.Singleton;
-    boolean createAtRegister() default false;
+    boolean createEarly() default false;
 }

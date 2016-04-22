@@ -63,7 +63,7 @@ public class CowherdAPIService extends CowherdService
         js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/reqwest/2.0.5/reqwest.min.js") + "\n\n";
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
-            if ((!"ALL".equals(service)) && (!info.getFullName().equals(service))) {
+            if ((!"ALL".equals(service)) && (!info.getName().equals(service))) {
                 continue;
             }
 
