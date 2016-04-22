@@ -91,6 +91,17 @@ public class CowherdAPIService extends CowherdService
         return js;
     }
 
+    private String getGenericReturnTypeName(Method m)
+    {
+        String fullName = m.getGenericReturnType().getTypeName();
+
+        if (!fullName.contains("<")) {
+            return fullName;
+        }
+
+        return fullName.substring(fullName.indexOf("<") + 1, fullName.length() - 1);
+    }
+
     @SuppressWarnings("unchecked")
     private String generateMethodReturnEnum(CowherdServiceInfo info, Method m) throws ClassNotFoundException
     {
@@ -99,8 +110,12 @@ public class CowherdAPIService extends CowherdService
 
         if (Enum.class.isAssignableFrom(m.getReturnType())) {
             e = (Class<? extends Enum>)m.getReturnType();
-        } else if (Enum.class.isAssignableFrom(Class.forName(m.getGenericReturnType().getTypeName()))) {
-            e = (Class<? extends Enum>)Class.forName(m.getGenericReturnType().getTypeName());
+        } else {
+            String n = getGenericReturnTypeName(m);
+
+            if ((!n.equals(m.getReturnType().getName())) && (Enum.class.isAssignableFrom(Class.forName(n)))) {
+                e = (Class<? extends Enum>) Class.forName(getGenericReturnTypeName(m));
+            }
         }
 
         if (e != null) {
@@ -112,8 +127,8 @@ public class CowherdAPIService extends CowherdService
 
             js += " = {\n";
 
-            Stream.of(e.getEnumConstants())
-                    .map(n -> n.name() + " = " + n.ordinal())
+            js += Stream.of(e.getEnumConstants())
+                    .map(n -> n.name() + ": " + n.ordinal())
                     .collect(Collectors.joining(",\n"));
 
             js += "\n};\n";
