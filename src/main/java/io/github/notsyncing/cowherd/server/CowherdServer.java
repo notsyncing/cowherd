@@ -77,7 +77,14 @@ public class CowherdServer
                     req.response().end();
                 }
             } else if (o.getResult() instanceof String) {
-                ret = (String)o.getResult();
+                ret = (String) o.getResult();
+                writeResponse(req.response(), ret);
+            } else if (o.getResult() instanceof Enum) {
+                if (!req.response().headers().contains("Content-Type")) {
+                    req.response().putHeader("Content-Type", "text/plain");
+                }
+
+                ret = String.valueOf(((Enum)o.getResult()).ordinal());
                 writeResponse(req.response(), ret);
             } else {
                 ret = JSON.toJSONString(o.getResult());
