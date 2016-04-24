@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.server;
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.models.ActionContext;
+import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -57,44 +58,7 @@ public class CowherdServer
                 return;
             }
 
-            String ret;
-
-            if (o.getResult() instanceof ActionResponse) {
-                ActionContext context = new ActionContext();
-                context.setActionMethod(o.getActionMethod());
-                context.setServer(this);
-                context.setRequest(req);
-
-                try {
-                    ((ActionResponse)o.getResult()).writeToResponse(context);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    req.response().setStatusCode(500);
-                    req.response().setStatusMessage(e.getMessage());
-                }
-
-                if (!req.response().ended()) {
-                    req.response().end();
-                }
-            } else if (o.getResult() instanceof String) {
-                ret = (String) o.getResult();
-                writeResponse(req.response(), ret);
-            } else if (o.getResult() instanceof Enum) {
-                if (!req.response().headers().contains("Content-Type")) {
-                    req.response().putHeader("Content-Type", "text/plain");
-                }
-
-                ret = String.valueOf(((Enum)o.getResult()).ordinal());
-                writeResponse(req.response(), ret);
-            } else {
-                ret = JSON.toJSONString(o.getResult());
-
-                if (!req.response().headers().contains("Content-Type")) {
-                    req.response().putHeader("Content-Type", "application/json");
-                }
-
-                writeResponse(req.response(), ret);
-            }
+            writeObjectToResponse(req, o);
         }).exceptionally(ex -> {
             Throwable e = (Throwable)ex;
             e.printStackTrace();
@@ -107,6 +71,48 @@ public class CowherdServer
             writeResponse(req.response(), data);
             return null;
         });
+    }
+
+    private void writeObjectToResponse(HttpServerRequest req, ActionResult o)
+    {
+        String ret;
+
+        if (o.getResult() instanceof ActionResponse) {
+            ActionContext context = new ActionContext();
+            context.setActionMethod(o.getActionMethod());
+            context.setServer(this);
+            context.setRequest(req);
+
+            try {
+                ((ActionResponse)o.getResult()).writeToResponse(context);
+            } catch (IOException e) {
+                e.printStackTrace();
+                req.response().setStatusCode(500);
+                req.response().setStatusMessage(e.getMessage());
+            }
+
+            if (!req.response().ended()) {
+                req.response().end();
+            }
+        } else if (o.getResult() instanceof String) {
+            ret = (String) o.getResult();
+            writeResponse(req.response(), ret);
+        } else if (o.getResult() instanceof Enum) {
+            if (!req.response().headers().contains("Content-Type")) {
+                req.response().putHeader("Content-Type", "text/plain");
+            }
+
+            ret = String.valueOf(((Enum)o.getResult()).ordinal());
+            writeResponse(req.response(), ret);
+        } else {
+            ret = JSON.toJSONString(o.getResult());
+
+            if (!req.response().headers().contains("Content-Type")) {
+                req.response().putHeader("Content-Type", "application/json");
+            }
+
+            writeResponse(req.response(), ret);
+        }
     }
 
     public void start()
