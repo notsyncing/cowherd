@@ -36,15 +36,20 @@ public class Cowherd
         app.start();
     }
 
-    public void start()
+    public void start(FastClasspathScanner classpathScanner)
     {
         configure();
 
         addInternalServices();
 
-        scanClasses();
+        scanClasses(classpathScanner);
 
         startServer();
+    }
+
+    public void start()
+    {
+        start(null);
     }
 
     private void configure()
@@ -65,10 +70,13 @@ public class Cowherd
         ServiceManager.addServiceClass(CowherdAPIService.class, apiRoute);
     }
 
-    private void scanClasses()
+    private void scanClasses(FastClasspathScanner s)
     {
-        FastClasspathScanner s = new FastClasspathScanner()
-                .matchClassesWithAnnotation(Component.class, DependencyInjector::registerComponent)
+        if (s == null) {
+            s = new FastClasspathScanner();
+        }
+
+        s.matchClassesWithAnnotation(Component.class, DependencyInjector::registerComponent)
                 .scan();
 
         DependencyInjector.classScanCompleted();
