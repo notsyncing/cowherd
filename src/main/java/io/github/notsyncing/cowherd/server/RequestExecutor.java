@@ -33,7 +33,12 @@ public class RequestExecutor
                 }
             }
 
-            List<HttpCookie> cookies = HttpCookie.parse(request.getHeader("Cookie"));
+            String cookieHeader = request.getHeader("Cookie");
+            List<HttpCookie> cookies = null;
+
+            if (cookieHeader != null) {
+                cookies = HttpCookie.parse(cookieHeader);
+            }
 
             Object[] targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
                     parameters, cookies, uploads);

@@ -171,13 +171,17 @@ public class RequestUtils
             } else if (p.getType() == HttpServerResponse.class) {
                 targetParams.add(req.response());
             } else if (p.getType() == HttpCookie.class) {
-                String name = p.getName();
-                HttpCookie cookie = cookies.stream()
-                        .filter(c -> c.getName().equals(name))
-                        .findFirst()
-                        .orElse(null);
+                if (cookies != null) {
+                    String name = p.getName();
+                    HttpCookie cookie = cookies.stream()
+                            .filter(c -> c.getName().equals(name))
+                            .findFirst()
+                            .orElse(null);
 
-                targetParams.add(cookie);
+                    targetParams.add(cookie);
+                } else {
+                    targetParams.add(null);
+                }
             } else {
                 if (!params.containsKey(p.getName())) {
                     targetParams.add(null);

@@ -81,15 +81,17 @@ public class DependencyInjectorTest
         counterA = 0;
         counterD = 0;
         counterE = 0;
+
+        DependencyInjector.clear();
     }
 
     @Test
     public void testGet()
     {
-        DependencyInjector.registerComponent(IC.class, C.class, ComponentInstantiateType.AlwaysNew);
-        DependencyInjector.registerComponent(A.class, ComponentInstantiateType.AlwaysNew);
-        DependencyInjector.registerComponent(B.class, ComponentInstantiateType.AlwaysNew);
-        DependencyInjector.registerComponent(D.class, ComponentInstantiateType.Singleton);
+        DependencyInjector.registerComponent(IC.class, C.class, ComponentInstantiateType.AlwaysNew, false);
+        DependencyInjector.registerComponent(A.class, ComponentInstantiateType.AlwaysNew, false);
+        DependencyInjector.registerComponent(B.class, ComponentInstantiateType.AlwaysNew, false);
+        DependencyInjector.registerComponent(D.class, ComponentInstantiateType.Singleton, false);
         DependencyInjector.registerComponent(new E());
 
         try {
@@ -104,15 +106,21 @@ public class DependencyInjectorTest
             assertNotNull(b2.getC());
             assertNotNull(b2.getD());
             assertEquals(C.class, b2.getC().getClass());
+            assertNotEquals(b1, b2);
 
             B b3 = (B)DependencyInjector.getComponent(getClass().getName() + "$B");
             assertNotNull(b3);
             assertNotNull(b3.getC());
             assertNotNull(b3.getD());
             assertEquals(C.class, b3.getC().getClass());
+            assertNotEquals(b2, b3);
+            assertNotEquals(b1, b3);
 
             assertEquals(3, counterA);
             assertEquals(1, counterD);
+
+            assertEquals(b1.getD(), b2.getD());
+            assertEquals(b2.getD(), b3.getD());
 
             E e1 = (E)DependencyInjector.getComponent(getClass().getName() + "$E");
             assertNotNull(e1);

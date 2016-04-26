@@ -15,6 +15,12 @@ public class DependencyInjector
     private static Map<Class, ComponentInfo> components = new ConcurrentHashMap<>();
     private static Map<Class, Object> singletons = new ConcurrentHashMap<>();
 
+    public static void clear()
+    {
+        components.clear();
+        singletons.clear();
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T createInstance(Class<T> type) throws InstantiationException, InvocationTargetException, IllegalAccessException
     {
