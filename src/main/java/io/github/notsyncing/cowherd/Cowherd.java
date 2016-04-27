@@ -70,10 +70,17 @@ public class Cowherd
         ServiceManager.addServiceClass(CowherdAPIService.class, apiRoute);
     }
 
+    public FastClasspathScanner createClasspathScanner()
+    {
+        return new FastClasspathScanner("-io.vertx", "-org.junit", "-io.netty", "-javax", "-javassist",
+                "-jar:gragent.jar", "-jar:jfxrt.jar", "-jar:jfxswt.jar", "-jar:idea_rt.jar", "-jar:junit-rt.jar",
+                "-APP_ROOT");
+    }
+
     private void scanClasses(FastClasspathScanner s)
     {
         if (s == null) {
-            s = new FastClasspathScanner();
+            s = createClasspathScanner();
         }
 
         s.matchClassesWithAnnotation(Component.class, DependencyInjector::registerComponent)
