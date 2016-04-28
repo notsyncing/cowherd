@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 服务方法返回的文件响应，用于向客户端发送一个文件
+ */
 public class FileResponse implements ActionResponse
 {
     private Path file;
@@ -23,11 +26,20 @@ public class FileResponse implements ActionResponse
 
     }
 
+    /**
+     * 实例化文件响应对象
+     * @param file 要发送的文件
+     */
     public FileResponse(Path file)
     {
         this.file = file;
     }
 
+    /**
+     * 实例化文件响应对象
+     * @param stream 要发送的输入流
+     * @param contentType 响应内容类型
+     */
     public FileResponse(InputStream stream, String contentType)
     {
         this.stream = stream;

@@ -2,6 +2,9 @@ package io.github.notsyncing.cowherd.exceptions;
 
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 
+/**
+ * 上传文件长度超过限额时发生的异常
+ */
 public class UploadOversizeException extends Exception
 {
     String filename;

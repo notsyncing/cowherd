@@ -115,6 +115,9 @@ public class CowherdServer
         }
     }
 
+    /**
+     * 启动服务器
+     */
     public void start()
     {
         initServer();
@@ -147,6 +150,10 @@ public class CowherdServer
         templateEngine.addTemplateResolver(fr);
     }
 
+    /**
+     * 异步停止服务器
+     * @return 指示是否停止的 CompletableFuture 对象
+     */
     @SuppressWarnings("unchecked")
     public CompletableFuture stop()
     {

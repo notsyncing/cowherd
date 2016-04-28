@@ -10,11 +10,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 依赖注入器
+ * 用于自动构建对象并填充其所依赖的对象
+ */
 public class DependencyInjector
 {
     private static Map<Class, ComponentInfo> components = new ConcurrentHashMap<>();
     private static Map<Class, Object> singletons = new ConcurrentHashMap<>();
 
+    /**
+     * 清除依赖注入器的对象缓存和已注册类列表
+     */
     public static void clear()
     {
         components.clear();
@@ -70,6 +77,13 @@ public class DependencyInjector
         return object;
     }
 
+    /**
+     * 向依赖注入器注册一个类
+     * @param interfaceType 该类的接口类型
+     * @param objectType 该类的类型
+     * @param createType 实例化方式
+     * @param createEarly 是否在依赖注入器扫描完 Classpath 之后立即实例化，仅对实例化方式为 {@link ComponentInstantiateType#Singleton} 的类有效
+     */
     public static void registerComponent(Class interfaceType, Class objectType, ComponentInstantiateType createType,
                                          boolean createEarly)
     {
@@ -88,23 +102,42 @@ public class DependencyInjector
         System.out.println("DependencyInjector: Registered component " + objectType);
     }
 
+    /**
+     * 向依赖注入器注册一个类
+     * @param type 该类的类型
+     * @param createType 实例化方式
+     * @param createEarly 是否在依赖注入器扫描完 Classpath 之后立即实例化，仅对实例化方式为 {@link ComponentInstantiateType#Singleton} 的类有效
+     */
     public static void registerComponent(Class type, ComponentInstantiateType createType, boolean createEarly)
     {
         registerComponent(type, type, createType, createEarly);
     }
 
+    /**
+     * 以单实例方式，向依赖注入器注册一个对象
+     * @param type 要注册的类型
+     * @param o 要注册的对象
+     */
     public static void registerComponent(Class type, Object o)
     {
         registerComponent(type, ComponentInstantiateType.Singleton, false);
         singletons.put(type, o);
     }
 
+    /**
+     * 以单实例方式，向依赖注入器注册一个对象
+     * @param o 要注册的对象
+     */
     public static void registerComponent(Object o)
     {
         registerComponent(o.getClass(), ComponentInstantiateType.Singleton, false);
         singletons.put(o.getClass(), o);
     }
 
+    /**
+     * 向依赖注入器注册一个具有依赖注入注解的类
+     * @param c 要注册的类
+     */
     public static void registerComponent(Class c)
     {
         if (!c.isAnnotationPresent(Component.class)) {
@@ -129,22 +162,54 @@ public class DependencyInjector
         }
     }
 
+    /**
+     * 获取一个类的实例
+     * @param type 要获取的类的类型
+     * @param <T> 要获取的类
+     * @return 该类的实例
+     * @throws InstantiationException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
     public static <T> T getComponent(Class<T> type) throws InstantiationException, InvocationTargetException, IllegalAccessException
     {
         return createInstance(type);
     }
 
+    /**
+     * 根据名字获取一个类的实例
+     * @param className 要获取的类的完整名称
+     * @return 该类的实例
+     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws InstantiationException
+     */
     public static Object getComponent(String className) throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException
     {
         Class c = DependencyInjector.class.getClassLoader().loadClass(className);
         return getComponent(c);
     }
 
+    /**
+     * 检查是否向依赖注入器注册了一个类
+     * @param type 要检查的类型
+     * @return 该类型是否已注册
+     */
     public static boolean hasComponent(Class<?> type)
     {
         return components.containsKey(type);
     }
 
+    /**
+     * 构造一个对象，若该类型未在依赖注入器中注册，则以 {@link ComponentInstantiateType#AlwaysNew} 实例化方式注册之
+     * @param type 要构造的对象类型
+     * @param <T> 要构造的对象类型
+     * @return 构造出的对象
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws InstantiationException
+     */
     public static <T> T makeObject(Class<T> type) throws IllegalAccessException, InvocationTargetException, InstantiationException
     {
         if (!hasComponent(type)) {

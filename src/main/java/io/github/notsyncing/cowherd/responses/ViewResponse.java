@@ -11,10 +11,17 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 服务方法返回的视图响应，用于向客户端呈现一个视图
+ */
 public class ViewResponse implements ActionResponse
 {
     private Object model;
 
+    /**
+     * 实例化视图响应对象
+     * @param model 向视图传递的模型对象
+     */
     public ViewResponse(Object model)
     {
         this.model = model;
