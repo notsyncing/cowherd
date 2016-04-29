@@ -1,5 +1,7 @@
 package io.github.notsyncing.cowherd.utils;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
@@ -145,6 +147,12 @@ public class RequestUtils
     {
         List<Object> targetParams = new ArrayList<>();
         Parameter[] pl = method.getParameters();
+        JSONObject jsonParams = null;
+
+        if (params.containsKey("__json__")) {
+            String json = params.get("__json__").get(0);
+            jsonParams = JSON.parseObject(json);
+        }
 
         for (int i = 0; i < pl.length; i++) {
             Parameter p = pl[i];
@@ -159,11 +167,15 @@ public class RequestUtils
             } else if (p.getName().equals("__uploads__")) {
                 targetParams.add(uploads);
             } else if (p.getType() == UploadFileInfo.class) {
-                Optional<UploadFileInfo> ufi = uploads.stream()
-                        .filter(u -> u.getParameterName().equals(p.getName()))
-                        .findFirst();
+                if (uploads != null) {
+                    Optional<UploadFileInfo> ufi = uploads.stream()
+                            .filter(u -> u.getParameterName().equals(p.getName()))
+                            .findFirst();
 
-                targetParams.add(ufi.isPresent() ? ufi.get() : null);
+                    targetParams.add(ufi.isPresent() ? ufi.get() : null);
+                } else {
+                    targetParams.add(null);
+                }
             } else if (p.getType() == UploadFileInfo[].class) {
                 targetParams.add(uploads.toArray(new UploadFileInfo[uploads.size()]));
             } else if (p.getType() == HttpServerRequest.class) {
@@ -183,20 +195,24 @@ public class RequestUtils
                     targetParams.add(null);
                 }
             } else {
-                if (!params.containsKey(p.getName())) {
-                    targetParams.add(null);
+                if ((jsonParams != null) && (jsonParams.containsKey(p.getName()))) {
+                    targetParams.add(jsonParams.getObject(p.getName(), pl[i].getType()));
                 } else {
-                    List<String> values = params.get(p.getName());
-
-                    if (values.size() <= 0) {
+                    if (!params.containsKey(p.getName())) {
                         targetParams.add(null);
-                        continue;
-                    }
-
-                    if (p.getType().isArray()) {
-                        targetParams.add(TypeUtils.stringListToArrayType(p.getType().getComponentType(), values));
                     } else {
-                        targetParams.add(TypeUtils.stringToType(p.getType(), values.get(0)));
+                        List<String> values = params.get(p.getName());
+
+                        if (values.size() <= 0) {
+                            targetParams.add(null);
+                            continue;
+                        }
+
+                        if (p.getType().isArray()) {
+                            targetParams.add(TypeUtils.stringListToArrayType(p.getType().getComponentType(), values));
+                        } else {
+                            targetParams.add(TypeUtils.stringToType(p.getType(), values.get(0)));
+                        }
                     }
                 }
             }
