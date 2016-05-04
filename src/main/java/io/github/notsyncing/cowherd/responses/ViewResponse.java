@@ -50,6 +50,7 @@ public class ViewResponse implements ActionResponse
 
         Context c = new Context();
         c.setVariable("model", model);
+        c.setVariable("request", context.getRequest());
 
         String s = eng.process(templateName, c);
         resp.putHeader("Content-Type", "text/html;charset=UTF-8");
