@@ -98,16 +98,13 @@ public class RouteManager
             Filter[] list = m.getAnnotationsByType(Filter.class);
 
             for (Filter f : list) {
-                Optional<FilterInfo> filter = FilterManager.getNormalFilters().entrySet().stream()
-                        .filter(e -> e.getKey().equals(f.value()))
-                        .map(Map.Entry::getValue)
-                        .findFirst();
+                FilterInfo filter = FilterManager.getNormalFilters().get(f.value());
 
-                if (!filter.isPresent()) {
+                if (filter == null) {
                     continue;
                 }
 
-                filters.add(filter.get());
+                filters.add(filter);
             }
         }
 
