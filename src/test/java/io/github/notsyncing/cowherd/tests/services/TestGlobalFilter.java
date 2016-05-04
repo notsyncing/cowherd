@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 public class TestGlobalFilter implements ServiceActionFilter
 {
     @Override
-    public CompletableFuture<Boolean> filter(FilterContext context)
+    public CompletableFuture<Boolean> early(FilterContext context)
     {
         CowherdTest.testGlobalFilterTriggered = true;
         return CompletableFuture.completedFuture(true);

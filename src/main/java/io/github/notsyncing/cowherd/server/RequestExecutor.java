@@ -6,20 +6,25 @@ import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.ServiceManager;
+import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
+import java.security.Provider;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class RequestExecutor
 {
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
                                                                          Map<String, List<String>> parameters,
+                                                                         List<HttpCookie> cookies,
                                                                          List<UploadFileInfo> uploads)
     {
         try {
@@ -29,13 +34,6 @@ public class RequestExecutor
                 if (!StringUtils.isEmpty(contentType)) {
                     request.response().putHeader("Content-Type", contentType);
                 }
-            }
-
-            String cookieHeader = request.getHeader("Cookie");
-            List<HttpCookie> cookies = null;
-
-            if (cookieHeader != null) {
-                cookies = HttpCookie.parse(cookieHeader);
             }
 
             Object[] targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
@@ -57,22 +55,78 @@ public class RequestExecutor
         }
     }
 
-    private static CompletableFuture<Boolean> executeFilters(List<FilterExecutionInfo> matchedFilters)
+    private static void prepareFilters(List<FilterExecutionInfo> matchedFilters)
     {
-        CompletableFuture<Boolean> filterChain = null;
-
         if (matchedFilters != null) {
             for (FilterExecutionInfo filterInfo : matchedFilters) {
-                ServiceActionFilter filter = filterInfo.getFilter().getFilterInstance();
-
                 if (filterInfo.getFilter().getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
                     try {
-                        filter = filterInfo.getFilter().getFilterClass().newInstance();
+                        filterInfo.getFilter().setFilterInstance(filterInfo.getFilter().getFilterClass().newInstance());
                     } catch (Exception e) {
                         e.printStackTrace();
                         continue;
                     }
                 }
+
+                FilterContext context = new FilterContext();
+                context.setFilterParameters(filterInfo.getParameters());
+
+                filterInfo.setContext(context);
+            }
+        }
+    }
+
+    private static <T> CompletableFuture<T> executeFilters(List<FilterExecutionInfo> matchedFilters,
+                                                             BiFunction<ServiceActionFilter, FilterContext, CompletableFuture<T>> filterFunc)
+    {
+        CompletableFuture<T> filterChain = null;
+
+        if (matchedFilters != null) {
+            for (FilterExecutionInfo filterInfo : matchedFilters) {
+                ServiceActionFilter filter = filterInfo.getFilter().getFilterInstance();
+
+                if (filterChain == null) {
+                    filterChain = filterFunc.apply(filter, filterInfo.getContext());
+                } else {
+                    final ServiceActionFilter finalFilter = filter;
+                    filterChain = filterChain.thenCompose(b -> {
+                        if (b instanceof Boolean) {
+                            if (!((Boolean)b)) {
+                                return FutureUtils.failed(new FilterBreakException());
+                            } else {
+                                return filterFunc.apply(finalFilter, filterInfo.getContext());
+                            }
+                        } else {
+                            return filterFunc.apply(finalFilter, filterInfo.getContext());
+                        }
+                    });
+                }
+            }
+        }
+
+        if (filterChain == null) {
+            filterChain = CompletableFuture.completedFuture(null);
+        }
+
+        return filterChain;
+    }
+
+    /*private static CompletableFuture<Boolean> executeFilters(List<FilterExecutionInfo> matchedFilters)
+    {
+        CompletableFuture<Boolean> filterChain = null;
+
+        if (matchedFilters != null) {
+            for (FilterExecutionInfo filterInfo : matchedFilters) {
+                if (filterInfo.getFilter().getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
+                    try {
+                        filterInfo.getFilter().setFilterInstance(filterInfo.getFilter().getFilterClass().newInstance());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        continue;
+                    }
+                }
+
+                ServiceActionFilter filter = filterInfo.getFilter().getFilterInstance();
 
                 FilterContext context = new FilterContext();
                 context.setFilterParameters(filterInfo.getParameters());
@@ -99,7 +153,7 @@ public class RequestExecutor
         }
 
         return filterChain;
-    }
+    }*/
 
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
@@ -116,7 +170,9 @@ public class RequestExecutor
             return CompletableFuture.completedFuture(new ActionResult());
         }
 
-        CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters);
+        prepareFilters(matchedFilters);
+
+        CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
 
         return filterChain.thenCompose(b -> {
             CompletableFuture<List<UploadFileInfo>> uploadFuture = RequestUtils.extractUploads(req);
@@ -125,14 +181,25 @@ public class RequestExecutor
 
             final List<UploadFileInfo>[] uploadsRef = new List[1];
             final Map<String, List<String>>[] paramsRef = new Map[1];
+            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
 
             return paramFuture.thenCompose(p -> {
                 paramsRef[0] = p;
                 return uploadFuture;
             }).thenCompose(u -> {
                 uploadsRef[0] = u;
-                return executeRequestedAction(requestedAction, req, paramsRef[0], uploadsRef[0]);
-            });
+                return executeFilters(matchedFilters, (f, c) -> {
+                    c.setRequest(req);
+                    c.setRequestParameters(paramsRef[0]);
+                    c.setRequestUploads(uploadsRef[0]);
+                    c.setRequestCookies(cookies);
+                    return f.before(c);
+                });
+            }).thenCompose(c -> executeRequestedAction(requestedAction, req, paramsRef[0], cookies, uploadsRef[0])
+            ).thenCompose(r -> executeFilters(matchedFilters, (f, c) -> {
+                c.setResult(r);
+                return f.after(c);
+            }));
         });
     }
 }

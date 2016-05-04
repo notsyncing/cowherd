@@ -166,6 +166,8 @@ public class RequestUtils
                 targetParams.add(params);
             } else if (p.getName().equals("__uploads__")) {
                 targetParams.add(uploads);
+            } else if (p.getName().equals("__cookies__")) {
+                targetParams.add(cookies);
             } else if (p.getType() == UploadFileInfo.class) {
                 if (uploads != null) {
                     Optional<UploadFileInfo> ufi = uploads.stream()
@@ -219,5 +221,16 @@ public class RequestUtils
         }
 
         return targetParams.toArray(new Object[targetParams.size()]);
+    }
+
+    public static List<HttpCookie> parseHttpCookies(HttpServerRequest request)
+    {
+        String cookieHeader = request.getHeader("Cookie");
+        List<HttpCookie> cookies = null;
+
+        if (cookieHeader != null) {
+            cookies = HttpCookie.parse(cookieHeader);
+        }
+        return cookies;
     }
 }

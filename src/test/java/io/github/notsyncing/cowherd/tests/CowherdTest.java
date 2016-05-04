@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.tests;
 
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
@@ -17,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -34,6 +36,9 @@ public class CowherdTest
     public static boolean testRoutedFilterTriggered = false;
 
     public static Map<String, String> testFilterParameters;
+
+    public static Map<String, List<String>> testFilterRequestParameters;
+    public static ActionResult testFilterRequestResult;
 
     HttpClientRequest get(String uri)
     {
@@ -53,6 +58,8 @@ public class CowherdTest
         testFilterTriggered = false;
         testGlobalFilterTriggered = false;
         testRoutedFilterTriggered = false;
+        testFilterRequestParameters = null;
+        testFilterRequestResult = null;
     }
 
     @Before
@@ -224,7 +231,7 @@ public class CowherdTest
     public void testFilteredSimpleRequest(TestContext context)
     {
         Async async = context.async();
-        HttpClientRequest req = get("/TestService/filteredSimpleRequest");
+        HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2");
         req.exceptionHandler(context::fail);
 
         req.handler(resp -> {
@@ -235,6 +242,16 @@ public class CowherdTest
                 context.assertTrue(testGlobalFilterTriggered);
                 context.assertTrue(testRoutedFilterTriggered);
                 context.assertTrue(testFilterTriggered);
+
+                context.assertNotNull(testFilterRequestParameters);
+                context.assertEquals(2, testFilterRequestParameters.size());
+                context.assertEquals(1, testFilterRequestParameters.get("a").size());
+                context.assertEquals("1", testFilterRequestParameters.get("a").get(0));
+                context.assertEquals(1, testFilterRequestParameters.get("b").size());
+                context.assertEquals("2", testFilterRequestParameters.get("b").get(0));
+
+                context.assertNotNull(testFilterRequestResult);
+                context.assertEquals("Hello, world!", testFilterRequestResult.getResult());
 
                 async.complete();
             });

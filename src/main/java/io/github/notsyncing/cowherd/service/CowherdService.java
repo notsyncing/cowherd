@@ -28,7 +28,8 @@ public abstract class CowherdService
      * @return 指示是否处理完毕的 CompletableFuture 对象
      */
     protected CompletableFuture delegateTo(String serviceName, String actionName, HttpServerRequest request,
-                                                         Map<String, List<String>> parameters, List<UploadFileInfo> uploads)
+                                           Map<String, List<String>> parameters, List<HttpCookie> cookies,
+                                           List<UploadFileInfo> uploads)
     {
         Method m = ServiceManager.getServiceAction(serviceName, actionName);
 
@@ -41,7 +42,8 @@ public abstract class CowherdService
             return CompletableFuture.completedFuture(null);
         }
 
-        return RequestExecutor.executeRequestedAction(m, request, parameters, uploads).thenApply(ActionResult::getResult);
+        return RequestExecutor.executeRequestedAction(m, request, parameters, cookies, uploads)
+                .thenApply(ActionResult::getResult);
     }
 
     /**

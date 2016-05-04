@@ -14,6 +14,7 @@ import io.vertx.core.http.HttpServerRequest;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.HttpCookie;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +30,10 @@ public class CowherdAPIService extends CowherdService
     @HttpAnyMethod
     @Exported
     public CompletableFuture gateway(String __service__, String __action__, HttpServerRequest request,
-                                     Map<String, List<String>> __parameters__, List<UploadFileInfo> __uploads__)
+                                     Map<String, List<String>> __parameters__, List<HttpCookie> __cookies__,
+                                     List<UploadFileInfo> __uploads__)
     {
-        return delegateTo(__service__, __action__, request, __parameters__, __uploads__);
+        return delegateTo(__service__, __action__, request, __parameters__, __cookies__,  __uploads__);
     }
 
     @HttpGet

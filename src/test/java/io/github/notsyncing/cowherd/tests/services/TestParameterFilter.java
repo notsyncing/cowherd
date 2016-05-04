@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 public class TestParameterFilter implements ServiceActionFilter
 {
     @Override
-    public CompletableFuture<Boolean> filter(FilterContext context)
+    public CompletableFuture<Boolean> early(FilterContext context)
     {
         CowherdTest.testFilterParameters = context.getFilterParameters();
         return CompletableFuture.completedFuture(true);

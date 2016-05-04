@@ -7,6 +7,7 @@ public class FilterExecutionInfo
 {
     private FilterInfo filter;
     private Map<String, String> parameters = new HashMap<>();
+    private FilterContext context;
 
     public FilterExecutionInfo()
     {
@@ -40,5 +41,15 @@ public class FilterExecutionInfo
     public void addParameter(String name, String value)
     {
         parameters.put(name, value);
+    }
+
+    public FilterContext getContext()
+    {
+        return context;
+    }
+
+    public void setContext(FilterContext context)
+    {
+        this.context = context;
     }
 }
