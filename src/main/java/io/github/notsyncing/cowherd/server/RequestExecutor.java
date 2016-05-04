@@ -2,9 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
-import io.github.notsyncing.cowherd.models.ActionResult;
-import io.github.notsyncing.cowherd.models.FilterInfo;
-import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.ServiceManager;
@@ -59,25 +57,28 @@ public class RequestExecutor
         }
     }
 
-    private static CompletableFuture<Boolean> executeFilters(List<FilterInfo> matchedFilters)
+    private static CompletableFuture<Boolean> executeFilters(List<FilterExecutionInfo> matchedFilters)
     {
         CompletableFuture<Boolean> filterChain = null;
 
         if (matchedFilters != null) {
-            for (FilterInfo filterInfo : matchedFilters) {
-                ServiceActionFilter filter = filterInfo.getFilterInstance();
+            for (FilterExecutionInfo filterInfo : matchedFilters) {
+                ServiceActionFilter filter = filterInfo.getFilter().getFilterInstance();
 
-                if (filterInfo.getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
+                if (filterInfo.getFilter().getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
                     try {
-                        filter = filterInfo.getFilterClass().newInstance();
+                        filter = filterInfo.getFilter().getFilterClass().newInstance();
                     } catch (Exception e) {
                         e.printStackTrace();
                         continue;
                     }
                 }
 
+                FilterContext context = new FilterContext();
+                context.setFilterParameters(filterInfo.getParameters());
+
                 if (filterChain == null) {
-                    filterChain = filter.filter();
+                    filterChain = filter.filter(context);
                 } else {
                     final ServiceActionFilter finalFilter = filter;
                     filterChain = filterChain.thenCompose(b -> {
@@ -86,7 +87,7 @@ public class RequestExecutor
                             cf.completeExceptionally(new FilterBreakException());
                             return cf;
                         } else {
-                            return finalFilter.filter();
+                            return finalFilter.filter(context);
                         }
                     });
                 }
@@ -102,7 +103,7 @@ public class RequestExecutor
 
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
-                                                                        List<FilterInfo> matchedFilters,
+                                                                        List<FilterExecutionInfo> matchedFilters,
                                                                         Map<String, List<String>> additionalParams,
                                                                         HttpServerRequest req)
     {

@@ -1,19 +1,17 @@
 package io.github.notsyncing.cowherd.tests.services;
 
-import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.models.FilterContext;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
 import io.github.notsyncing.cowherd.tests.CowherdTest;
 
 import java.util.concurrent.CompletableFuture;
 
-@Route("/TestService/")
-public class TestRoutedFilter implements ServiceActionFilter
+public class TestParameterFilter implements ServiceActionFilter
 {
     @Override
     public CompletableFuture<Boolean> filter(FilterContext context)
     {
-        CowherdTest.testRoutedFilterTriggered = true;
+        CowherdTest.testFilterParameters = context.getFilterParameters();
         return CompletableFuture.completedFuture(true);
     }
 }

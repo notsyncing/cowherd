@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.annotations.Filter;
+import io.github.notsyncing.cowherd.annotations.FilterParameter;
 import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
@@ -90,9 +91,9 @@ public class RouteManager
         return entry.get();
     }
 
-    private static List<FilterInfo> findMatchedFilters(URI uri, Method m)
+    private static List<FilterExecutionInfo> findMatchedFilters(URI uri, Method m)
     {
-        List<FilterInfo> filters = new ArrayList<>();
+        List<FilterExecutionInfo> filters = new ArrayList<>();
 
         if (m.isAnnotationPresent(Filter.class)) {
             Filter[] list = m.getAnnotationsByType(Filter.class);
@@ -104,15 +105,26 @@ public class RouteManager
                     continue;
                 }
 
-                filters.add(filter);
+                FilterExecutionInfo info = new FilterExecutionInfo(filter);
+
+                if (f.parameters().length > 0) {
+                    for (FilterParameter p : f.parameters()) {
+                        info.addParameter(p.name(), p.value());
+                    }
+                }
+
+                filters.add(info);
             }
         }
 
-        filters.addAll(FilterManager.getGlobalFilters());
+        filters.addAll(FilterManager.getGlobalFilters().stream()
+                .map(FilterExecutionInfo::new)
+                .collect(Collectors.toList()));
 
-        List<FilterInfo> routedFilters = FilterManager.getRoutedFilters().entrySet().stream()
+        List<FilterExecutionInfo> routedFilters = FilterManager.getRoutedFilters().entrySet().stream()
                 .filter(e -> RouteUtils.matchRoute(uri, e.getKey()))
                 .map(Map.Entry::getValue)
+                .map(FilterExecutionInfo::new)
                 .collect(Collectors.toList());
 
         filters.addAll(routedFilters);

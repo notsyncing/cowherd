@@ -1,9 +1,6 @@
 package io.github.notsyncing.cowherd.tests.services;
 
-import io.github.notsyncing.cowherd.annotations.ContentType;
-import io.github.notsyncing.cowherd.annotations.Exported;
-import io.github.notsyncing.cowherd.annotations.Filter;
-import io.github.notsyncing.cowherd.annotations.Route;
+import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
@@ -67,6 +64,17 @@ public class TestService extends CowherdService
     @HttpGet
     @Filter(TestFilter.class)
     public CompletableFuture<String> filteredSimpleRequest()
+    {
+        return CompletableFuture.completedFuture("Hello, world!");
+    }
+
+    @Exported
+    @HttpGet
+    @Filter(value = TestParameterFilter.class, parameters = {
+            @FilterParameter(name = "a", value = "1"),
+            @FilterParameter(name = "b", value = "2")
+    })
+    public CompletableFuture<String> parameterFilteredSimpleRequest()
     {
         return CompletableFuture.completedFuture("Hello, world!");
     }

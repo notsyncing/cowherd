@@ -5,10 +5,7 @@ import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
-import io.github.notsyncing.cowherd.tests.services.TestFilter;
-import io.github.notsyncing.cowherd.tests.services.TestGlobalFilter;
-import io.github.notsyncing.cowherd.tests.services.TestRoutedFilter;
-import io.github.notsyncing.cowherd.tests.services.TestService;
+import io.github.notsyncing.cowherd.tests.services.*;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
@@ -20,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertFalse;
@@ -30,9 +28,12 @@ public class CowherdTest
 {
     Cowherd cowherd;
     Vertx vertx = Vertx.vertx();
+
     public static boolean testFilterTriggered = false;
     public static boolean testGlobalFilterTriggered = false;
     public static boolean testRoutedFilterTriggered = false;
+
+    public static Map<String, String> testFilterParameters;
 
     HttpClientRequest get(String uri)
     {
@@ -48,6 +49,7 @@ public class CowherdTest
 
     void resetValues()
     {
+        testFilterParameters = null;
         testFilterTriggered = false;
         testGlobalFilterTriggered = false;
         testRoutedFilterTriggered = false;
@@ -91,6 +93,10 @@ public class CowherdTest
         assertTrue(FilterManager.isRoutedFilter(TestRoutedFilter.class));
         assertFalse(FilterManager.isNormalFilter(TestRoutedFilter.class));
         assertFalse(FilterManager.isGlobalFilter(TestRoutedFilter.class));
+
+        assertFalse(FilterManager.isRoutedFilter(TestParameterFilter.class));
+        assertTrue(FilterManager.isNormalFilter(TestParameterFilter.class));
+        assertFalse(FilterManager.isGlobalFilter(TestParameterFilter.class));
     }
 
     @Test
@@ -229,6 +235,31 @@ public class CowherdTest
                 context.assertTrue(testGlobalFilterTriggered);
                 context.assertTrue(testRoutedFilterTriggered);
                 context.assertTrue(testFilterTriggered);
+
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testParameterFilteredSimpleRequest(TestContext context)
+    {
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/parameterFilteredSimpleRequest");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("Hello, world!", b.toString());
+
+                context.assertNotNull(testFilterParameters);
+                context.assertEquals(2, testFilterParameters.size());
+                context.assertEquals("1", testFilterParameters.get("a"));
+                context.assertEquals("2", testFilterParameters.get("b"));
 
                 async.complete();
             });

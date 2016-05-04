@@ -1,5 +1,9 @@
 package io.github.notsyncing.cowherd.server;
 
+import io.github.notsyncing.cowherd.models.FilterContext;
+import io.github.notsyncing.cowherd.models.FilterExecutionInfo;
+
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -12,5 +16,5 @@ public interface ServiceActionFilter
      * 异步过滤方法
      * @return 包含指示请求是否应当继续被处理的 CompletableFuture 对象
      */
-    CompletableFuture<Boolean> filter();
+    CompletableFuture<Boolean> filter(FilterContext context);
 }
