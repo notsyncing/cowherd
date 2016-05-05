@@ -179,7 +179,11 @@ public class RequestUtils
                     targetParams.add(null);
                 }
             } else if (p.getType() == UploadFileInfo[].class) {
-                targetParams.add(uploads.toArray(new UploadFileInfo[uploads.size()]));
+                if (uploads != null) {
+                    targetParams.add(uploads.toArray(new UploadFileInfo[uploads.size()]));
+                } else {
+                    targetParams.add(null);
+                }
             } else if (p.getType() == HttpServerRequest.class) {
                 targetParams.add(req);
             } else if (p.getType() == HttpServerResponse.class) {
