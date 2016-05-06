@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.utils;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
@@ -224,7 +225,100 @@ public class RequestUtils
             }
         }
 
+        JSONObject complexParams = new JSONObject();
+
+        params.forEach((k, v) -> {
+            if ((k.contains(".")) || (k.contains("["))) {
+                complexKeyToJsonObject(complexParams, k, v);
+            }
+        });
+
+        for (int i = 0; i < targetParams.size(); i++) {
+            if (targetParams.get(i) != null) {
+                continue;
+            }
+
+            Parameter p = pl[i];
+
+            if (!complexParams.containsKey(p.getName())) {
+                continue;
+            }
+
+            Object o = complexParams.get(p.getName());
+
+            if (o instanceof JSONArray) {
+                targetParams.set(i, ((JSONArray)o).toJavaObject(p.getType()));
+            } else if (o instanceof JSONObject) {
+                targetParams.set(i, ((JSONObject)o).toJavaObject(p.getType()));
+            } else {
+                targetParams.set(i, o);
+            }
+        }
+
         return targetParams.toArray(new Object[targetParams.size()]);
+    }
+
+    public static void complexKeyToJsonObject(JSONObject hubObject, String key, List<String> values)
+    {
+        String[] keySections = key.split("\\.");
+
+        for (int i = 0; i < values.size(); i++) {
+            Object currObj;
+            Object prevObj = hubObject;
+
+            for (int j = 0; j < keySections.length; j++) {
+                String keyPart = keySections[j];
+                String name = keyPart.replaceAll("\\[\\]", "");
+                boolean currentKeyIsArray = keyPart.endsWith("[]");
+
+                if (currentKeyIsArray) {
+                    currObj = new JSONArray();
+                } else {
+                    currObj = new JSONObject();
+                }
+
+                if (prevObj instanceof JSONArray) {
+                    JSONArray prevArray = (JSONArray) prevObj;
+
+                    if (currentKeyIsArray) {
+                        if (j >= keySections.length - 1) {
+                            prevArray.add(values.get(i));
+                        }
+                    } else {
+                        if (i < prevArray.size()) {
+                            currObj = prevArray.get(i);
+                        } else {
+                            prevArray.add(currObj);
+                        }
+
+                        ((JSONObject)currObj).put(name, values.get(i));
+                    }
+                } else {
+                    JSONObject prevObject = (JSONObject) prevObj;
+
+                    if (j >= keySections.length - 1) {
+                        if (!currentKeyIsArray) {
+                            prevObject.put(name, values.get(i));
+                        } else {
+                            if (!prevObject.containsKey(name)) {
+                                prevObject.put(name, currObj);
+                            }
+
+                            JSONArray a = prevObject.getJSONArray(name);
+                            a.add(values.get(i));
+                        }
+                    } else {
+                        if (!prevObject.containsKey(name)) {
+                            prevObject.put(name, currObj);
+                        } else {
+                            currObj = prevObject.get(name);
+                        }
+                    }
+                }
+
+                prevObj = currObj;
+            }
+        }
     }
 
     public static List<HttpCookie> parseHttpCookies(HttpServerRequest request)

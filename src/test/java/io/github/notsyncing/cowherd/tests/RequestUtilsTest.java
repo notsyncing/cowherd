@@ -1,17 +1,13 @@
 package io.github.notsyncing.cowherd.tests;
 
+import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 class TestParamClass
 {
@@ -65,5 +61,106 @@ public class RequestUtilsTest
         assertNotNull(d);
         assertEquals("test2", d.e);
         assertEquals(3, d.f);
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithSimpleObject()
+    {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("test.a", Arrays.asList("1"));
+        params.put("test.b", Arrays.asList("2"));
+
+        JSONObject hubObject = new JSONObject();
+
+        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+
+        assertEquals(1, hubObject.size());
+        assertNotNull(hubObject.getJSONObject("test"));
+        assertEquals(2, hubObject.getJSONObject("test").size());
+        assertEquals("1", hubObject.getJSONObject("test").getString("a"));
+        assertEquals("2", hubObject.getJSONObject("test").getString("b"));
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithDeepSimpleObject()
+    {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("test.a.c", Arrays.asList("1"));
+        params.put("test.a.d", Arrays.asList("2"));
+        params.put("test.b.e", Arrays.asList("3"));
+        params.put("test.b.f", Arrays.asList("4"));
+
+        JSONObject hubObject = new JSONObject();
+
+        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+
+        assertEquals(1, hubObject.size());
+        assertNotNull(hubObject.getJSONObject("test"));
+        assertEquals(2, hubObject.getJSONObject("test").size());
+        assertEquals(2, hubObject.getJSONObject("test").getJSONObject("a").size());
+        assertEquals("1", hubObject.getJSONObject("test").getJSONObject("a").getString("c"));
+        assertEquals("2", hubObject.getJSONObject("test").getJSONObject("a").getString("d"));
+        assertEquals(2, hubObject.getJSONObject("test").getJSONObject("b").size());
+        assertEquals("3", hubObject.getJSONObject("test").getJSONObject("b").getString("e"));
+        assertEquals("4", hubObject.getJSONObject("test").getJSONObject("b").getString("f"));
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithArray()
+    {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("test[]", Arrays.asList("1", "2", "3"));
+
+        JSONObject hubObject = new JSONObject();
+
+        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+
+        assertEquals(1, hubObject.size());
+        assertNotNull(hubObject.getJSONArray("test"));
+        assertEquals(3, hubObject.getJSONArray("test").size());
+        assertTrue(hubObject.getJSONArray("test").contains("1"));
+        assertTrue(hubObject.getJSONArray("test").contains("2"));
+        assertTrue(hubObject.getJSONArray("test").contains("3"));
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithDeepArray()
+    {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("test[].a", Arrays.asList("1", "2"));
+        params.put("test[].b", Arrays.asList("3", "4"));
+        params.put("test2.c[]", Arrays.asList("5", "6"));
+        params.put("test2.d[].e", Arrays.asList("7", "8"));
+        params.put("test2.d[].f", Arrays.asList("9", "0"));
+
+        JSONObject hubObject = new JSONObject();
+
+        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+
+        assertEquals(2, hubObject.size());
+
+        assertNotNull(hubObject.getJSONArray("test"));
+        assertEquals(2, hubObject.getJSONArray("test").size());
+        assertNotNull(hubObject.getJSONArray("test").getJSONObject(0));
+        assertEquals(2, hubObject.getJSONArray("test").getJSONObject(0).size());
+        assertEquals("1", hubObject.getJSONArray("test").getJSONObject(0).getString("a"));
+        assertEquals("3", hubObject.getJSONArray("test").getJSONObject(0).getString("b"));
+        assertNotNull(hubObject.getJSONArray("test").getJSONObject(1));
+        assertEquals(2, hubObject.getJSONArray("test").getJSONObject(1).size());
+        assertEquals("2", hubObject.getJSONArray("test").getJSONObject(1).getString("a"));
+        assertEquals("4", hubObject.getJSONArray("test").getJSONObject(1).getString("b"));
+
+        assertNotNull(hubObject.getJSONObject("test2"));
+        assertEquals(2, hubObject.getJSONObject("test2").size());
+        assertEquals(2, hubObject.getJSONObject("test2").getJSONArray("c").size());
+        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains("5"));
+        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains("6"));
+
+        assertNotNull(hubObject.getJSONObject("test2").getJSONArray("d"));
+        assertEquals(2, hubObject.getJSONObject("test2").getJSONArray("d").size());
+        assertEquals("7", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(0).getString("e"));
+        assertEquals("9", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(0).getString("f"));
+        assertEquals("8", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("e"));
+        assertEquals("0", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("f"));
     }
 }
