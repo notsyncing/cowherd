@@ -2,9 +2,12 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
-import io.github.notsyncing.cowherd.models.*;
-import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.models.ActionResult;
+import io.github.notsyncing.cowherd.models.FilterContext;
+import io.github.notsyncing.cowherd.models.FilterExecutionInfo;
+import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
+import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -13,11 +16,10 @@ import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
-import java.security.Provider;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class RequestExecutor
 {
@@ -110,50 +112,6 @@ public class RequestExecutor
 
         return filterChain;
     }
-
-    /*private static CompletableFuture<Boolean> executeFilters(List<FilterExecutionInfo> matchedFilters)
-    {
-        CompletableFuture<Boolean> filterChain = null;
-
-        if (matchedFilters != null) {
-            for (FilterExecutionInfo filterInfo : matchedFilters) {
-                if (filterInfo.getFilter().getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
-                    try {
-                        filterInfo.getFilter().setFilterInstance(filterInfo.getFilter().getFilterClass().newInstance());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        continue;
-                    }
-                }
-
-                ServiceActionFilter filter = filterInfo.getFilter().getFilterInstance();
-
-                FilterContext context = new FilterContext();
-                context.setFilterParameters(filterInfo.getParameters());
-
-                if (filterChain == null) {
-                    filterChain = filter.filter(context);
-                } else {
-                    final ServiceActionFilter finalFilter = filter;
-                    filterChain = filterChain.thenCompose(b -> {
-                        if (!b) {
-                            CompletableFuture<Boolean> cf = new CompletableFuture<>();
-                            cf.completeExceptionally(new FilterBreakException());
-                            return cf;
-                        } else {
-                            return finalFilter.filter(context);
-                        }
-                    });
-                }
-            }
-        }
-
-        if (filterChain == null) {
-            filterChain = CompletableFuture.completedFuture(true);
-        }
-
-        return filterChain;
-    }*/
 
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
