@@ -201,6 +201,9 @@ public class RequestUtils
                 } else {
                     targetParams.add(null);
                 }
+            } else if (p.getType().isEnum()) {
+                String value = params.get(p.getName()).get(0);
+                targetParams.add(p.getType().getEnumConstants()[Integer.parseInt(value)]);
             } else {
                 if ((jsonParams != null) && (jsonParams.containsKey(p.getName()))) {
                     targetParams.add(jsonParams.getObject(p.getName(), pl[i].getType()));

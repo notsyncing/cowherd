@@ -15,22 +15,58 @@ class TestParamClass
     public int f;
 }
 
+enum TestEnum
+{
+    TestA,
+    TestB
+}
+
 public class RequestUtilsTest
 {
     private Method testMethod1;
+    private Method testMethod2;
 
     public RequestUtilsTest()
     {
         for (Method m : getClass().getDeclaredMethods()) {
             if (m.getName().equals("testMethod1")) {
                 testMethod1 = m;
-                break;
+            } else if (m.getName().equals("testMethod2")) {
+                testMethod2 = m;
             }
         }
     }
 
     private void testMethod1(String a, int b, List<String> c, TestParamClass d)
     {
+    }
+
+    private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g)
+    {
+    }
+
+    @Test
+    public void testConvertParameterListToMethodParameters()
+    {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("a", Arrays.asList("test"));
+        params.put("b", Arrays.asList("2"));
+        params.put("c", Arrays.asList("h", "el", "lo"));
+        params.put("d.e", Arrays.asList("test2"));
+        params.put("d.f", Arrays.asList("3"));
+        params.put("g", Arrays.asList(String.valueOf(TestEnum.TestB.ordinal())));
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod2, null, params, null, null);
+        assertEquals("test", results[0]);
+        assertEquals(2, results[1]);
+        assertArrayEquals(new String[] { "h", "el", "lo" }, ((String[])results[2]));
+
+        TestParamClass d = (TestParamClass)results[3];
+        assertNotNull(d);
+        assertEquals("test2", d.e);
+        assertEquals(3, d.f);
+
+        assertEquals(TestEnum.TestB, results[4]);
     }
 
     @Test
