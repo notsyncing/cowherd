@@ -24,6 +24,7 @@ public abstract class CowherdService
      * @param actionName 要转向到的方法名称
      * @param request 要转向的请求对象
      * @param parameters 要转向的参数列表
+     * @param cookies 要转向的 Cookies
      * @param uploads 要转向的文件上传信息列表
      * @return 指示是否处理完毕的 CompletableFuture 对象
      */
