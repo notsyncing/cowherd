@@ -11,6 +11,10 @@ compileJava {
     options.compilerArgs << "-parameters"
 }
 
+javadoc {
+    options.encoding = "UTF-8"
+}
+
 repositories {
     mavenCentral()
 }
