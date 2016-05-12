@@ -12,6 +12,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
 
@@ -142,11 +143,13 @@ public class CowherdServer
         ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
         clr.setPrefix("APP_ROOT");
         clr.setSuffix(".html");
+        clr.setTemplateMode(TemplateMode.HTML);
         templateEngine.addTemplateResolver(clr);
 
         FileTemplateResolver fr = new FileTemplateResolver();
         fr.setPrefix(GlobalStorage.getContextRoot().toAbsolutePath().toString());
         fr.setSuffix(".html");
+        fr.setTemplateMode(TemplateMode.HTML);
         templateEngine.addTemplateResolver(fr);
     }
 
