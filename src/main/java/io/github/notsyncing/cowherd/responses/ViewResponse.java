@@ -12,19 +12,24 @@ import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 服务方法返回的视图响应，用于向客户端呈现一个视图
+ * 服务方法返回的视图响应，用于向客户端呈现一个视图，同时向视图传递一个模型对象
  */
-public class ViewResponse implements ActionResponse
+public class ViewResponse<T> implements ActionResponse
 {
-    private Object model;
+    private T model;
 
     /**
      * 实例化视图响应对象
      * @param model 向视图传递的模型对象
      */
-    public ViewResponse(Object model)
+    public ViewResponse(T model)
     {
         this.model = model;
+    }
+
+    public T getModel()
+    {
+        return model;
     }
 
     @Override
