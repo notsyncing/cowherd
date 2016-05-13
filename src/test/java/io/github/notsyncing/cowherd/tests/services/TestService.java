@@ -97,11 +97,11 @@ public class TestService extends CowherdService
     @Exported
     @HttpGet
     @Route(value = "/te.html", entry = true)
-    public ViewResponse testTemplateEngine()
+    public ViewResponse<TestModel> testTemplateEngine()
     {
         TestModel m = new TestModel();
         m.setText("Hello, world!");
 
-        return new ViewResponse(m);
+        return new ViewResponse<>(m);
     }
 }
