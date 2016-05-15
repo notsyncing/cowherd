@@ -29,7 +29,7 @@ public class LengthValidatorTest
     }
 
     @Test
-    public void testLengthValidatorExact()
+    public void testValidateExact()
     {
         Length exactLengthAnno = someMethod.getParameters()[0].getAnnotation(Length.class);
 
@@ -39,7 +39,7 @@ public class LengthValidatorTest
     }
 
     @Test
-    public void testLengthValidatorMax()
+    public void testValidateMax()
     {
         Length maxLengthAnno = someMethod.getParameters()[1].getAnnotation(Length.class);
 
@@ -50,7 +50,7 @@ public class LengthValidatorTest
     }
 
     @Test
-    public void testLengthValidatorMin()
+    public void testValidateMin()
     {
         Length minLengthAnno = someMethod.getParameters()[2].getAnnotation(Length.class);
 
@@ -61,7 +61,7 @@ public class LengthValidatorTest
     }
 
     @Test
-    public void testLengthValidatorRange()
+    public void testValidateRange()
     {
         Length rangeLengthAnno = someMethod.getParameters()[3].getAnnotation(Length.class);
 
