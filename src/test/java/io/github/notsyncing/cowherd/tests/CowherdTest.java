@@ -432,4 +432,21 @@ public class CowherdTest
 
         req.end();
     }
+
+    @Test
+    public void testValidatedParameterRequest(TestContext context)
+    {
+        String data = "123456789";
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/validatedParameterRequest?data=" + data);
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(400, resp.statusCode());
+            async.complete();
+        });
+
+        req.end();
+    }
 }

@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.tests;
 
 import com.alibaba.fastjson.JSONObject;
+import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import org.junit.Test;
 
@@ -46,7 +47,7 @@ public class RequestUtilsTest
     }
 
     @Test
-    public void testConvertParameterListToMethodParameters()
+    public void testConvertParameterListToMethodParameters() throws IllegalAccessException, ValidationFailedException, InstantiationException
     {
         Map<String, List<String>> params = new HashMap<>();
         params.put("a", Arrays.asList("test"));
@@ -70,7 +71,7 @@ public class RequestUtilsTest
     }
 
     @Test
-    public void testConvertParameterListToMethodParametersWithJSON()
+    public void testConvertParameterListToMethodParametersWithJSON() throws IllegalAccessException, ValidationFailedException, InstantiationException
     {
         String json = "{" +
                 "\"a\": \"test\"," +

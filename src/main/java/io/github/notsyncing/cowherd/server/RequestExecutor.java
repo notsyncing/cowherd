@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
+import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.FilterContext;
 import io.github.notsyncing.cowherd.models.FilterExecutionInfo;
@@ -38,8 +39,16 @@ public class RequestExecutor
                 }
             }
 
-            Object[] targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                    parameters, cookies, uploads);
+            Object[] targetParams;
+
+            try {
+                targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
+                        parameters, cookies, uploads);
+            } catch (ValidationFailedException e) {
+                request.response().setStatusCode(400);
+                return CompletableFuture.completedFuture(new ActionResult(requestedMethod, null));
+            }
+
             CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
             Object result = requestedMethod.invoke(service, targetParams);
 

@@ -5,6 +5,7 @@ import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.validators.annotations.Length;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -103,5 +104,12 @@ public class TestService extends CowherdService
         m.setText("Hello, world!");
 
         return new ViewResponse<>(m);
+    }
+
+    @Exported
+    @HttpGet
+    public CompletableFuture<String> validatedParameterRequest(@Length(10) String data)
+    {
+        return CompletableFuture.completedFuture(data);
     }
 }

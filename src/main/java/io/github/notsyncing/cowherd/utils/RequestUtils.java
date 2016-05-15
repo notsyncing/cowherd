@@ -6,21 +6,28 @@ import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
+import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.validators.ParameterValidator;
+import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RequestUtils
 {
+    private static Map<Class<? extends ParameterValidator>, ParameterValidator> parameterValidators = new ConcurrentHashMap<>();
+
     public static boolean checkIfHttpMethodIsAllowedOnAction(Method m, HttpMethod httpMethod)
     {
         if (m.isAnnotationPresent(HttpAnyMethod.class)) {
@@ -144,7 +151,7 @@ public class RequestUtils
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
                                                                   Map<String, List<String>> params,
                                                                   List<HttpCookie> cookies,
-                                                                  List<UploadFileInfo> uploads)
+                                                                  List<UploadFileInfo> uploads) throws IllegalAccessException, InstantiationException, ValidationFailedException
     {
         List<Object> targetParams = new ArrayList<>();
         Parameter[] pl = method.getParameters();
@@ -258,7 +265,37 @@ public class RequestUtils
             }
         }
 
+        validateMethodParameters(method, targetParams);
+
         return targetParams.toArray(new Object[targetParams.size()]);
+    }
+
+    private static void validateMethodParameters(Method method, List<Object> targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
+    {
+        for (Parameter p : method.getParameters()) {
+            if ((p.getAnnotations() == null) || (p.getAnnotations().length <= 0)) {
+                continue;
+            }
+
+            for (Annotation a : p.getAnnotations()) {
+                if (!a.annotationType().isAnnotationPresent(ServiceActionParameterValidator.class)) {
+                    continue;
+                }
+
+                ServiceActionParameterValidator validatorAnno = a.annotationType().getAnnotation(ServiceActionParameterValidator.class);
+
+                if (!parameterValidators.containsKey(validatorAnno.value())) {
+                    parameterValidators.put(validatorAnno.value(), validatorAnno.value().newInstance());
+                }
+
+                ParameterValidator validator = parameterValidators.get(validatorAnno.value());
+                Object value = targetParams.get(targetParams.size() - 1);
+
+                if (!validator.validate(p, a, value)) {
+                    throw new ValidationFailedException(p, validator, a, value);
+                }
+            }
+        }
     }
 
     public static void complexKeyToJsonObject(JSONObject hubObject, String key, List<String> values)
