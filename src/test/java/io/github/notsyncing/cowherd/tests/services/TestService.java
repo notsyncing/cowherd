@@ -112,4 +112,12 @@ public class TestService extends CowherdService
     {
         return CompletableFuture.completedFuture(data);
     }
+
+    @Exported
+    @HttpGet
+    @TestAuth
+    public String authRequest()
+    {
+        return "AUTH!";
+    }
 }

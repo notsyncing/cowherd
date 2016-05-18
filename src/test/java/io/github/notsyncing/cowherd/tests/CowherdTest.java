@@ -40,6 +40,8 @@ public class CowherdTest
     public static Map<String, List<String>> testFilterRequestParameters;
     public static ActionResult testFilterRequestResult;
 
+    public static boolean testAuthenticatorTriggered = false;
+
     HttpClientRequest get(String uri)
     {
         HttpClient client = vertx.createHttpClient();
@@ -60,6 +62,7 @@ public class CowherdTest
         testRoutedFilterTriggered = false;
         testFilterRequestParameters = null;
         testFilterRequestResult = null;
+        testAuthenticatorTriggered = false;
     }
 
     @Before
@@ -464,6 +467,28 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals(data, b.toString());
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testAuthenticatedRequest(TestContext context)
+    {
+        assertFalse(testAuthenticatorTriggered);
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/authRequest");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("AUTH!", b.toString());
+                context.assertTrue(testAuthenticatorTriggered);
                 async.complete();
             });
         });
