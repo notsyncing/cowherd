@@ -1,8 +1,9 @@
 package io.github.notsyncing.cowherd.validators;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
 
-public interface ParameterValidator<A, T>
+public interface ParameterValidator<A extends Annotation, T>
 {
     boolean validate(Parameter parameter, A validatorAnnotation, T value);
 
