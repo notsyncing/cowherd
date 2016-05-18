@@ -1,9 +1,6 @@
 package io.github.notsyncing.cowherd.server;
 
-import io.github.notsyncing.cowherd.annotations.Exported;
-import io.github.notsyncing.cowherd.annotations.Filter;
-import io.github.notsyncing.cowherd.annotations.FilterParameter;
-import io.github.notsyncing.cowherd.annotations.Route;
+import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
@@ -22,12 +19,14 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 public class RouteManager
 {
-    private static Map<RouteInfo, Method> routes = new ConcurrentSkipListMap<>((o1, o2) -> o2.getPath().length() - o1.getPath().length());
+    private static Map<RouteInfo, Method> routes = new ConcurrentSkipListMap<>();
+    //private static Map<RouteInfo, Method> routes = new ConcurrentHashMap<>();
 
     public static Map<RouteInfo, Method> getRoutes()
     {
@@ -36,9 +35,14 @@ public class RouteManager
 
     public static void addRoute(RouteInfo route, Method target)
     {
+        if (routes.containsKey(route)) {
+            System.out.println("RouteManager: Route " + route + " already mapped to action " + routes.get(route) +
+                    ", will be overwritten to " + target);
+        }
+
         routes.put(route, target);
 
-        System.out.println("RouteManager: Add route " + route.getPath() + " to action " + target);
+        System.out.println("RouteManager: Add route " + route + " to action " + target);
     }
 
     public static void addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) throws InvalidServiceActionException
@@ -95,7 +99,7 @@ public class RouteManager
     {
         List<FilterExecutionInfo> filters = new ArrayList<>();
 
-        if (m.isAnnotationPresent(Filter.class)) {
+        if ((m.isAnnotationPresent(Filter.class)) || (m.isAnnotationPresent(Filters.class))) {
             Filter[] list = m.getAnnotationsByType(Filter.class);
 
             for (Filter f : list) {

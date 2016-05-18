@@ -82,6 +82,18 @@ public class TestService extends CowherdService
 
     @Exported
     @HttpGet
+    @Filter(TestFilter.class)
+    @Filter(value = TestParameterFilter.class, parameters = {
+            @FilterParameter(name = "a", value = "1"),
+            @FilterParameter(name = "b", value = "2")
+    })
+    public CompletableFuture<String> dualFilteredSimpleRequest()
+    {
+        return CompletableFuture.completedFuture("Hello, world!");
+    }
+
+    @Exported
+    @HttpGet
     public CompletableFuture<String> filteredSimpleRequest2()
     {
         return CompletableFuture.completedFuture("Hello, world 2!");

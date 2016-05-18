@@ -289,6 +289,34 @@ public class CowherdTest
     }
 
     @Test
+    public void testDualFilteredSimpleRequest(TestContext context)
+    {
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/dualFilteredSimpleRequest");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("Hello, world!", b.toString());
+                context.assertTrue(testGlobalFilterTriggered);
+                context.assertTrue(testRoutedFilterTriggered);
+                context.assertTrue(testFilterTriggered);
+
+                context.assertNotNull(testFilterParameters);
+                context.assertEquals(2, testFilterParameters.size());
+                context.assertEquals("1", testFilterParameters.get("a"));
+                context.assertEquals("2", testFilterParameters.get("b"));
+
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
     public void testFilteredSimpleRequest2(TestContext context)
     {
         Async async = context.async();

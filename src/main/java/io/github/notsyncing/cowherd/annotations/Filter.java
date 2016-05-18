@@ -3,10 +3,7 @@ package io.github.notsyncing.cowherd.annotations;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 import java.util.List;
 
 /**
@@ -14,6 +11,7 @@ import java.util.List;
  */
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
+@Repeatable(Filters.class)
 public @interface Filter
 {
     /**

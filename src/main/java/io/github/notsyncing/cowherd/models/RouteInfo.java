@@ -4,7 +4,7 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 
 import java.util.regex.Pattern;
 
-public class RouteInfo
+public class RouteInfo implements Comparable<RouteInfo>
 {
     private String domain;
     private String path;
@@ -83,8 +83,33 @@ public class RouteInfo
     @Override
     public int hashCode()
     {
-        int result = getDomain().hashCode();
+        int result = getDomain() == null ? 0 : getDomain().hashCode();
         result = 31 * result + getPath().hashCode();
         return result;
+    }
+
+    @Override
+    public String toString()
+    {
+        String s = getPath();
+
+        if ((getDomain() != null) && (!getDomain().isEmpty())) {
+            s = getDomain() + "@" + s;
+        }
+
+        return s;
+    }
+
+    @Override
+    public int compareTo(RouteInfo o)
+    {
+        String a = o.toString();
+        String b = toString();
+
+        if (a.length() == b.length()) {
+            return o.toString().compareTo(toString());
+        } else {
+            return a.length() - b.length();
+        }
     }
 }
