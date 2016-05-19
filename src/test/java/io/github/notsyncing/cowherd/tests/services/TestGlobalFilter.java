@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.tests.services;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.Global;
 import io.github.notsyncing.cowherd.models.FilterContext;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
@@ -13,8 +14,19 @@ public class TestGlobalFilter implements ServiceActionFilter
     @Override
     public CompletableFuture<Boolean> early(FilterContext context)
     {
-        CowherdTest.testGlobalFilterTriggered = true;
-        CowherdTest.testGlobalFilterCount++;
+        CowherdTest.testGlobalFilterEarlyTriggerCount++;
+        return CompletableFuture.completedFuture(true);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> before(FilterContext context)
+    {
+        CowherdTest.testGlobalFilterBeforeTriggerCount++;
+
+        if (context.getRequestParameters().containsKey("nopassGlobal")) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         return CompletableFuture.completedFuture(true);
     }
 }

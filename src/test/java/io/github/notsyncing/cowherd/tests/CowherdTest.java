@@ -32,13 +32,13 @@ public class CowherdTest
     Cowherd cowherd;
     Vertx vertx = Vertx.vertx();
 
-    public static boolean testFilterTriggered = false;
-    public static boolean testGlobalFilterTriggered = false;
-    public static boolean testRoutedFilterTriggered = false;
+    public static int testFilterEarlyTriggerCount = 0;
+    public static int testGlobalFilterEarlyTriggerCount = 0;
+    public static int testRoutedFilterEarlyTriggerCount = 0;
 
-    public static int testFilterTriggerCount = 0;
-    public static int testGlobalFilterCount = 0;
-    public static int testRoutedFilterCount = 0;
+    public static int testFilterBeforeTriggerCount = 0;
+    public static int testGlobalFilterBeforeTriggerCount = 0;
+    public static int testRoutedFilterBeforeTriggerCount = 0;
 
     public static Map<String, String> testFilterParameters;
 
@@ -63,12 +63,12 @@ public class CowherdTest
     void resetValues()
     {
         testFilterParameters = null;
-        testFilterTriggered = false;
-        testGlobalFilterTriggered = false;
-        testFilterTriggerCount = 0;
-        testGlobalFilterCount = 0;
-        testRoutedFilterCount = 0;
-        testRoutedFilterTriggered = false;
+        testFilterEarlyTriggerCount = 0;
+        testGlobalFilterEarlyTriggerCount = 0;
+        testRoutedFilterEarlyTriggerCount = 0;
+        testFilterBeforeTriggerCount = 0;
+        testGlobalFilterBeforeTriggerCount = 0;
+        testRoutedFilterBeforeTriggerCount = 0;
         testFilterRequestParameters = null;
         testFilterRequestResult = null;
         testAuthenticatorTriggered = false;
@@ -243,9 +243,9 @@ public class CowherdTest
     @Test
     public void testFilteredSimpleRequest(TestContext context)
     {
-        assertEquals(0, testFilterTriggerCount);
-        assertEquals(0, testGlobalFilterCount);
-        assertEquals(0, testRoutedFilterCount);
+        assertEquals(0, testFilterEarlyTriggerCount);
+        assertEquals(0, testGlobalFilterEarlyTriggerCount);
+        assertEquals(0, testRoutedFilterEarlyTriggerCount);
 
         Async async = context.async();
         HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2");
@@ -256,13 +256,9 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals("Hello, world!", b.toString());
-                context.assertTrue(testGlobalFilterTriggered);
-                context.assertTrue(testRoutedFilterTriggered);
-                context.assertTrue(testFilterTriggered);
-
-                assertEquals(1, testFilterTriggerCount);
-                assertEquals(1, testGlobalFilterCount);
-                assertEquals(1, testRoutedFilterCount);
+                assertEquals(1, testFilterEarlyTriggerCount);
+                assertEquals(1, testGlobalFilterEarlyTriggerCount);
+                assertEquals(1, testRoutedFilterEarlyTriggerCount);
 
                 context.assertNotNull(testFilterRequestParameters);
                 context.assertEquals(2, testFilterRequestParameters.size());
@@ -284,9 +280,13 @@ public class CowherdTest
     @Test
     public void testFilteredSimpleRequestFailed(TestContext context)
     {
-        assertEquals(0, testFilterTriggerCount);
-        assertEquals(0, testGlobalFilterCount);
-        assertEquals(0, testRoutedFilterCount);
+        assertEquals(0, testFilterEarlyTriggerCount);
+        assertEquals(0, testGlobalFilterEarlyTriggerCount);
+        assertEquals(0, testRoutedFilterEarlyTriggerCount);
+
+        assertEquals(0, testFilterBeforeTriggerCount);
+        assertEquals(0, testGlobalFilterBeforeTriggerCount);
+        assertEquals(0, testRoutedFilterBeforeTriggerCount);
 
         Async async = context.async();
         HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2&nopass=1");
@@ -297,13 +297,40 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals("", b.toString());
-                context.assertTrue(testGlobalFilterTriggered);
-                context.assertTrue(testRoutedFilterTriggered);
-                context.assertTrue(testFilterTriggered);
+                context.assertEquals(1, testFilterEarlyTriggerCount);
+                context.assertEquals(1, testGlobalFilterEarlyTriggerCount);
+                context.assertEquals(1, testRoutedFilterEarlyTriggerCount);
 
-                assertEquals(1, testFilterTriggerCount);
-                assertEquals(1, testGlobalFilterCount);
-                assertEquals(1, testRoutedFilterCount);
+                context.assertEquals(1, testFilterBeforeTriggerCount);
+                context.assertEquals(0, testGlobalFilterBeforeTriggerCount);
+                context.assertEquals(0, testRoutedFilterBeforeTriggerCount);
+
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testFilteredSimpleRequestFirstFailed(TestContext context)
+    {
+        assertEquals(0, testFilterEarlyTriggerCount);
+        assertEquals(0, testGlobalFilterEarlyTriggerCount);
+        assertEquals(0, testRoutedFilterEarlyTriggerCount);
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2&nopassGlobal=1");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(403, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("", b.toString());
+                context.assertEquals(1, testGlobalFilterBeforeTriggerCount);
+                context.assertEquals(1, testFilterBeforeTriggerCount);
+                context.assertEquals(0, testRoutedFilterBeforeTriggerCount);
 
                 async.complete();
             });
@@ -349,9 +376,9 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals("Hello, world!", b.toString());
-                context.assertTrue(testGlobalFilterTriggered);
-                context.assertTrue(testRoutedFilterTriggered);
-                context.assertTrue(testFilterTriggered);
+                context.assertEquals(1, testFilterEarlyTriggerCount);
+                context.assertEquals(1, testGlobalFilterEarlyTriggerCount);
+                context.assertEquals(1, testRoutedFilterEarlyTriggerCount);
 
                 context.assertNotNull(testFilterParameters);
                 context.assertEquals(2, testFilterParameters.size());
@@ -377,9 +404,9 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals("Hello, world 2!", b.toString());
-                context.assertTrue(testGlobalFilterTriggered);
-                context.assertTrue(testRoutedFilterTriggered);
-                context.assertFalse(testFilterTriggered);
+                context.assertEquals(1, testFilterEarlyTriggerCount);
+                context.assertEquals(1, testGlobalFilterEarlyTriggerCount);
+                context.assertEquals(1, testRoutedFilterEarlyTriggerCount);
 
                 async.complete();
             });

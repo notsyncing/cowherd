@@ -13,8 +13,14 @@ public class TestRoutedFilter implements ServiceActionFilter
     @Override
     public CompletableFuture<Boolean> early(FilterContext context)
     {
-        CowherdTest.testRoutedFilterTriggered = true;
-        CowherdTest.testRoutedFilterCount++;
+        CowherdTest.testRoutedFilterEarlyTriggerCount++;
+        return CompletableFuture.completedFuture(true);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> before(FilterContext context)
+    {
+        CowherdTest.testRoutedFilterBeforeTriggerCount++;
         return CompletableFuture.completedFuture(true);
     }
 }
