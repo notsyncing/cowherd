@@ -36,6 +36,10 @@ public class CowherdTest
     public static boolean testGlobalFilterTriggered = false;
     public static boolean testRoutedFilterTriggered = false;
 
+    public static int testFilterTriggerCount = 0;
+    public static int testGlobalFilterCount = 0;
+    public static int testRoutedFilterCount = 0;
+
     public static Map<String, String> testFilterParameters;
 
     public static Map<String, List<String>> testFilterRequestParameters;
@@ -61,6 +65,9 @@ public class CowherdTest
         testFilterParameters = null;
         testFilterTriggered = false;
         testGlobalFilterTriggered = false;
+        testFilterTriggerCount = 0;
+        testGlobalFilterCount = 0;
+        testRoutedFilterCount = 0;
         testRoutedFilterTriggered = false;
         testFilterRequestParameters = null;
         testFilterRequestResult = null;
@@ -236,6 +243,10 @@ public class CowherdTest
     @Test
     public void testFilteredSimpleRequest(TestContext context)
     {
+        assertEquals(0, testFilterTriggerCount);
+        assertEquals(0, testGlobalFilterCount);
+        assertEquals(0, testRoutedFilterCount);
+
         Async async = context.async();
         HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2");
         req.exceptionHandler(context::fail);
@@ -249,6 +260,10 @@ public class CowherdTest
                 context.assertTrue(testRoutedFilterTriggered);
                 context.assertTrue(testFilterTriggered);
 
+                assertEquals(1, testFilterTriggerCount);
+                assertEquals(1, testGlobalFilterCount);
+                assertEquals(1, testRoutedFilterCount);
+
                 context.assertNotNull(testFilterRequestParameters);
                 context.assertEquals(2, testFilterRequestParameters.size());
                 context.assertEquals(1, testFilterRequestParameters.get("a").size());
@@ -258,6 +273,37 @@ public class CowherdTest
 
                 context.assertNotNull(testFilterRequestResult);
                 context.assertEquals("Hello, world!", testFilterRequestResult.getResult());
+
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testFilteredSimpleRequestFailed(TestContext context)
+    {
+        assertEquals(0, testFilterTriggerCount);
+        assertEquals(0, testGlobalFilterCount);
+        assertEquals(0, testRoutedFilterCount);
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/filteredSimpleRequest?a=1&b=2&nopass=1");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(403, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("", b.toString());
+                context.assertTrue(testGlobalFilterTriggered);
+                context.assertTrue(testRoutedFilterTriggered);
+                context.assertTrue(testFilterTriggered);
+
+                assertEquals(1, testFilterTriggerCount);
+                assertEquals(1, testGlobalFilterCount);
+                assertEquals(1, testRoutedFilterCount);
 
                 async.complete();
             });

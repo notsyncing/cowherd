@@ -14,6 +14,7 @@ public class TestGlobalFilter implements ServiceActionFilter
     public CompletableFuture<Boolean> early(FilterContext context)
     {
         CowherdTest.testGlobalFilterTriggered = true;
+        CowherdTest.testGlobalFilterCount++;
         return CompletableFuture.completedFuture(true);
     }
 }

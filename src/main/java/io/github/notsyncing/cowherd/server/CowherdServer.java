@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.server;
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
+import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
@@ -69,7 +70,7 @@ public class CowherdServer
 
             writeObjectToResponse(req, o);
         }).exceptionally(ex -> {
-            if (ex.getCause() instanceof AuthenticationFailedException) {
+            if ((ex.getCause() instanceof AuthenticationFailedException) || (ex.getCause() instanceof FilterBreakException)) {
                 req.response().setStatusCode(403);
                 req.response().end();
                 return null;

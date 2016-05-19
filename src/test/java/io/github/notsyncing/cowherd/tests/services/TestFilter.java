@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.tests.services;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.FilterContext;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
@@ -13,6 +14,7 @@ public class TestFilter implements ServiceActionFilter
     public CompletableFuture<Boolean> early(FilterContext context)
     {
         CowherdTest.testFilterTriggered = true;
+        CowherdTest.testFilterTriggerCount++;
         return CompletableFuture.completedFuture(true);
     }
 
@@ -20,6 +22,11 @@ public class TestFilter implements ServiceActionFilter
     public CompletableFuture<Boolean> before(FilterContext context)
     {
         CowherdTest.testFilterRequestParameters = context.getRequestParameters();
+
+        if (context.getRequestParameters().containsKey("nopass")) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         return CompletableFuture.completedFuture(true);
     }
 

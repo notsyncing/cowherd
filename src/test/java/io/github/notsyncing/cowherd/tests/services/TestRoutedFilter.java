@@ -14,6 +14,7 @@ public class TestRoutedFilter implements ServiceActionFilter
     public CompletableFuture<Boolean> early(FilterContext context)
     {
         CowherdTest.testRoutedFilterTriggered = true;
+        CowherdTest.testRoutedFilterCount++;
         return CompletableFuture.completedFuture(true);
     }
 }
