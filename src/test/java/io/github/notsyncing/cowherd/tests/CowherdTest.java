@@ -404,7 +404,7 @@ public class CowherdTest
 
             resp.bodyHandler(b -> {
                 context.assertEquals("Hello, world 2!", b.toString());
-                context.assertEquals(1, testFilterEarlyTriggerCount);
+                context.assertEquals(0, testFilterEarlyTriggerCount);
                 context.assertEquals(1, testGlobalFilterEarlyTriggerCount);
                 context.assertEquals(1, testRoutedFilterEarlyTriggerCount);
 
