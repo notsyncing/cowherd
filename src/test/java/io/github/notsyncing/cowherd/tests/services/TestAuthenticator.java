@@ -15,6 +15,7 @@ public class TestAuthenticator implements ActionAuthenticator<TestAuth>
     public CompletableFuture<Boolean> authenticate(TestAuth authAnnotation, FilterContext context)
     {
         CowherdTest.testAuthenticatorTriggered = true;
+        CowherdTest.testAuthenticatorTriggerCount++;
 
         if (context.getRequestParameters().containsKey("nopass")) {
             return CompletableFuture.completedFuture(false);

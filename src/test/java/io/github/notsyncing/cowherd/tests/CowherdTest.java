@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -41,6 +42,7 @@ public class CowherdTest
     public static ActionResult testFilterRequestResult;
 
     public static boolean testAuthenticatorTriggered = false;
+    public static int testAuthenticatorTriggerCount = 0;
 
     HttpClientRequest get(String uri)
     {
@@ -63,6 +65,7 @@ public class CowherdTest
         testFilterRequestParameters = null;
         testFilterRequestResult = null;
         testAuthenticatorTriggered = false;
+        testAuthenticatorTriggerCount = 0;
     }
 
     @Before
@@ -506,6 +509,7 @@ public class CowherdTest
     public void testAuthenticatedRequest(TestContext context)
     {
         assertFalse(testAuthenticatorTriggered);
+        assertEquals(0, testAuthenticatorTriggerCount);
 
         Async async = context.async();
         HttpClientRequest req = get("/TestService/authRequest");
@@ -517,6 +521,8 @@ public class CowherdTest
             resp.bodyHandler(b -> {
                 context.assertEquals("AUTH!", b.toString());
                 context.assertTrue(testAuthenticatorTriggered);
+                context.assertEquals(1, testAuthenticatorTriggerCount);
+
                 async.complete();
             });
         });
