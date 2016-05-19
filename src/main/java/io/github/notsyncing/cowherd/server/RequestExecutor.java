@@ -54,8 +54,7 @@ public class RequestExecutor
                 targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
                         parameters, cookies, uploads);
             } catch (ValidationFailedException e) {
-                request.response().setStatusCode(400);
-                return CompletableFuture.completedFuture(new ActionResult(requestedMethod, null));
+                return FutureUtils.failed(e);
             }
 
             CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
