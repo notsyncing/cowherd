@@ -523,4 +523,26 @@ public class CowherdTest
 
         req.end();
     }
+
+    @Test
+    public void testAuthenticatedRequestFailed(TestContext context)
+    {
+        assertFalse(testAuthenticatorTriggered);
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/authRequest?nopass=1");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(403, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("", b.toString());
+                context.assertTrue(testAuthenticatorTriggered);
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
 }

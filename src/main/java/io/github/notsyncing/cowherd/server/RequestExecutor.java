@@ -160,15 +160,15 @@ public class RequestExecutor
 
             if (f == null) {
                 f = authenticator.authenticate(a, context);
-            } else {
-                f = f.thenCompose(b -> {
-                    if (!b) {
-                        return FutureUtils.failed(new AuthenticationFailedException());
-                    } else {
-                        return authenticator.authenticate(a, context);
-                    }
-                });
             }
+
+            f = f.thenCompose(b -> {
+                if (!b) {
+                    return FutureUtils.failed(new AuthenticationFailedException());
+                } else {
+                    return authenticator.authenticate(a, context);
+                }
+            });
         }
 
         return f;
