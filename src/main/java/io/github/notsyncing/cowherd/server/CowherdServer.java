@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
@@ -25,10 +26,16 @@ public class CowherdServer
     private Vertx vertx;
     private HttpServer server;
     private TemplateEngine templateEngine;
+    private FileStorage fileStorage;
 
     public TemplateEngine getTemplateEngine()
     {
         return templateEngine;
+    }
+
+    public FileStorage getFileStorage()
+    {
+        return fileStorage;
     }
 
     private void writeResponse(HttpServerResponse resp, byte[] data)
@@ -134,6 +141,8 @@ public class CowherdServer
         server.listen(GlobalStorage.getListenPort());
 
         System.out.println("CowherdServer: listening at port " + GlobalStorage.getListenPort());
+
+        fileStorage = new FileStorage(vertx);
     }
 
     private void initTemplateEngine()

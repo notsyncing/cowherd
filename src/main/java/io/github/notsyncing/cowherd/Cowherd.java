@@ -96,6 +96,9 @@ public class Cowherd
     private void startServer()
     {
         server = new CowherdServer();
+
+        DependencyInjector.registerComponent(server);
+
         server.start();
     }
 

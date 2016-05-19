@@ -1,11 +1,14 @@
 package io.github.notsyncing.cowherd.service;
 
+import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
@@ -71,5 +74,20 @@ public abstract class CowherdService
         for (HttpCookie c : cookies) {
             putCookie(response, c);
         }
+    }
+
+    /**
+     * 获取当前服务器的文件存储对象
+     * @return 文件存储对象
+     */
+    protected FileStorage getFileStorage()
+    {
+        try {
+            return DependencyInjector.getComponent(CowherdServer.class).getFileStorage();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
