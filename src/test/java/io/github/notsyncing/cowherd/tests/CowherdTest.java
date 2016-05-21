@@ -7,9 +7,11 @@ import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.tests.services.*;
+import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -18,13 +20,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(VertxUnitRunner.class)
 public class CowherdTest
@@ -129,6 +130,19 @@ public class CowherdTest
                 async.complete();
             });
         });
+    }
+
+    @Test
+    public void testReadConfiguration() throws IOException
+    {
+        String s = FileUtils.getInternalResourceAsString("/cowherd.config");
+        JsonObject o = new JsonObject(s);
+
+        assertEquals((int)o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
+        assertEquals(o.getString("contextRoot"), CowherdConfiguration.getContextRoot().toString());
+        assertNotNull(CowherdConfiguration.getUserConfiguration());
+        assertEquals(o.getJsonObject("user").getInteger("a"), CowherdConfiguration.getUserConfiguration().getInteger("a"));
+        assertEquals(o.getJsonObject("user").getString("b"), CowherdConfiguration.getUserConfiguration().getString("b"));
     }
 
     @Test

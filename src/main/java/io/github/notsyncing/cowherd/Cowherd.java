@@ -14,7 +14,9 @@ import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
+import io.vertx.core.json.JsonObject;
 
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
@@ -58,6 +60,27 @@ public class Cowherd
 
         if (!StringUtils.isEmpty(contextRoot)) {
             CowherdConfiguration.setContextRoot(Paths.get(contextRoot));
+        }
+
+        InputStream s = getClass().getResourceAsStream("/cowherd.config");
+
+        if (s != null) {
+            String data;
+
+            try {
+                data = StringUtils.streamToString(s);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Cowherd: Failed to load configuration file: " + e.getMessage());
+                return;
+            }
+
+            JsonObject config = new JsonObject(data);
+            CowherdConfiguration.fromConfig(config);
+
+            System.out.println("Cowherd: Loaded configuration file.");
+        } else {
+            System.out.println("Cowherd: No configuration file found.");
         }
     }
 

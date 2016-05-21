@@ -1,6 +1,10 @@
 package io.github.notsyncing.cowherd.commons;
 
+import io.github.notsyncing.cowherd.annotations.ConfigField;
+import io.vertx.core.json.JsonObject;
+
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,14 +15,25 @@ import java.nio.file.Paths;
  */
 public class CowherdConfiguration
 {
+    @ConfigField
     private static int listenPort = 8080;
+
+    @ConfigField
     private static Path contextRoot;
 
+    @ConfigField
     private static long maxUploadFileSize = 2 * 1024 * 1024;
+
+    @ConfigField
     private static Path uploadCacheDir;
 
+    @ConfigField
     private static String apiServiceRoute = "/api/";
+
+    @ConfigField
     private static String apiServiceDomain;
+
+    private static JsonObject userConfiguration;
 
     /**
      * 获取当前监听的端口号
@@ -139,5 +154,48 @@ public class CowherdConfiguration
     public static void setApiServiceDomain(String apiServiceDomain)
     {
         CowherdConfiguration.apiServiceDomain = apiServiceDomain;
+    }
+
+    /**
+     * 获取配置文件中的用户自定义配置项
+     * @return 用户配置
+     */
+    public static JsonObject getUserConfiguration()
+    {
+        return userConfiguration;
+    }
+
+    public static void fromConfig(JsonObject config)
+    {
+        for (Field f : CowherdConfiguration.class.getDeclaredFields()) {
+            if (!f.isAnnotationPresent(ConfigField.class)) {
+                continue;
+            }
+
+            String name = f.getAnnotation(ConfigField.class).value();
+
+            if (name.isEmpty()) {
+                name = f.getName();
+            }
+
+            if (!config.containsKey(name)) {
+                continue;
+            }
+
+            try {
+                if (f.getType().equals(Path.class)) {
+                    f.set(null, Paths.get(config.getString(name)));
+                } else {
+                    f.set(null, config.getValue(name));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+                System.out.println("CowherdConfiguration: Error occured when reading configuration key " + name + ": " + e.getMessage());
+            }
+        }
+
+        if (config.containsKey("user")) {
+            userConfiguration = config.getJsonObject("user");
+        }
     }
 }
