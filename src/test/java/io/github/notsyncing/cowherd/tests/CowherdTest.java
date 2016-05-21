@@ -29,8 +29,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class CowherdTest
 {
-    Cowherd cowherd;
-    Vertx vertx = Vertx.vertx();
+    private Cowherd cowherd;
+    private Vertx vertx = Vertx.vertx();
 
     public static int testFilterEarlyTriggerCount = 0;
     public static int testGlobalFilterEarlyTriggerCount = 0;
@@ -48,19 +48,19 @@ public class CowherdTest
     public static boolean testAuthenticatorTriggered = false;
     public static int testAuthenticatorTriggerCount = 0;
 
-    HttpClientRequest get(String uri)
+    private HttpClientRequest get(String uri)
     {
         HttpClient client = vertx.createHttpClient();
         return client.get(CowherdConfiguration.getListenPort(), "localhost", uri);
     }
 
-    HttpClientRequest post(String uri)
+    private HttpClientRequest post(String uri)
     {
         HttpClient client = vertx.createHttpClient();
         return client.post(CowherdConfiguration.getListenPort(), "localhost", uri);
     }
 
-    void resetValues()
+    private void resetValues()
     {
         testFilterParameters = null;
         testFilterEarlyTriggerCount = 0;
@@ -119,6 +119,18 @@ public class CowherdTest
         assertFalse(FilterManager.isGlobalFilter(TestParameterFilter.class));
     }
 
+    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String data)
+    {
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals(data, b.toString());
+                async.complete();
+            });
+        });
+    }
+
     @Test
     public void testSimpleRequest(TestContext context)
     {
@@ -126,14 +138,7 @@ public class CowherdTest
         HttpClientRequest req = get("/TestService/simpleRequest");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals("Hello, world!", b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, "Hello, world!");
 
         req.end();
     }
@@ -145,14 +150,7 @@ public class CowherdTest
         HttpClientRequest req = get("/TestService/echo?data=test");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals("test", b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, "test");
 
         req.end();
     }
@@ -209,14 +207,7 @@ public class CowherdTest
         HttpClientRequest req = get("/TestService/getFile");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals("Hello, world!", b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, "Hello, world!");
 
         req.end();
     }
@@ -228,14 +219,7 @@ public class CowherdTest
         HttpClientRequest req = get("/api/gateway?__service__=TestService&__action__=simpleRequest");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals("Hello, world!", b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, "Hello, world!");
 
         req.end();
     }
@@ -462,14 +446,7 @@ public class CowherdTest
         HttpClientRequest req = get("/ANYPATH/~/TestService/simpleRequest");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals("Hello, world!", b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, "Hello, world!");
 
         req.end();
     }
@@ -495,14 +472,7 @@ public class CowherdTest
         HttpClientRequest req = get("/te.html");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals(expected, b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, expected);
 
         req.end();
     }
@@ -528,14 +498,7 @@ public class CowherdTest
         HttpClientRequest req = get("/");
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals(expected, b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, expected);
 
         req.end();
     }
@@ -566,14 +529,7 @@ public class CowherdTest
         HttpClientRequest req = get("/TestService/validatedParameterRequest?data=" + data);
         req.exceptionHandler(context::fail);
 
-        req.handler(resp -> {
-            context.assertEquals(200, resp.statusCode());
-
-            resp.bodyHandler(b -> {
-                context.assertEquals(data, b.toString());
-                async.complete();
-            });
-        });
+        checkIfSuccessAndString(context, async, req, data);
 
         req.end();
     }
