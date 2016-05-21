@@ -1,7 +1,7 @@
 package io.github.notsyncing.cowherd.tests;
 
 import io.github.notsyncing.cowherd.Cowherd;
-import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
@@ -51,13 +51,13 @@ public class CowherdTest
     HttpClientRequest get(String uri)
     {
         HttpClient client = vertx.createHttpClient();
-        return client.get(GlobalStorage.getListenPort(), "localhost", uri);
+        return client.get(CowherdConfiguration.getListenPort(), "localhost", uri);
     }
 
     HttpClientRequest post(String uri)
     {
         HttpClient client = vertx.createHttpClient();
-        return client.post(GlobalStorage.getListenPort(), "localhost", uri);
+        return client.post(CowherdConfiguration.getListenPort(), "localhost", uri);
     }
 
     void resetValues()

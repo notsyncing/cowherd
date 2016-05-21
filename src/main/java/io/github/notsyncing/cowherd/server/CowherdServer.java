@@ -1,7 +1,7 @@
 package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
-import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
@@ -151,9 +151,9 @@ public class CowherdServer
         vertx = Vertx.vertx();
         server = vertx.createHttpServer();
         server.requestHandler(this::processRequest);
-        server.listen(GlobalStorage.getListenPort());
+        server.listen(CowherdConfiguration.getListenPort());
 
-        System.out.println("CowherdServer: listening at port " + GlobalStorage.getListenPort());
+        System.out.println("CowherdServer: listening at port " + CowherdConfiguration.getListenPort());
 
         fileStorage = new FileStorage(vertx);
     }
@@ -169,7 +169,7 @@ public class CowherdServer
         templateEngine.addTemplateResolver(clr);
 
         FileTemplateResolver fr = new FileTemplateResolver();
-        fr.setPrefix(GlobalStorage.getContextRoot().toAbsolutePath().toString());
+        fr.setPrefix(CowherdConfiguration.getContextRoot().toAbsolutePath().toString());
         fr.setSuffix(".html");
         fr.setTemplateMode(TemplateMode.HTML);
         templateEngine.addTemplateResolver(fr);

@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
-import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
@@ -117,7 +117,7 @@ public class RequestUtils
         req.uploadHandler(upload -> {
             CompletableFuture<Void> uf = new CompletableFuture<>();
 
-            if (upload.size() > GlobalStorage.getMaxUploadFileSize()) {
+            if (upload.size() > CowherdConfiguration.getMaxUploadFileSize()) {
                 uf.completeExceptionally(new UploadOversizeException(upload.filename()));
                 return;
             }
@@ -125,7 +125,7 @@ public class RequestUtils
             File f;
 
             try {
-                f = new File(GlobalStorage.getUploadCacheDir().toFile(), UUID.randomUUID().toString());
+                f = new File(CowherdConfiguration.getUploadCacheDir().toFile(), UUID.randomUUID().toString());
             } catch (Exception e) {
                 uf.completeExceptionally(e);
                 return;

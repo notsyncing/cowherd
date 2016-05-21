@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 /**
  * 包含全局配置信息
  */
-public class GlobalStorage
+public class CowherdConfiguration
 {
     private static int listenPort = 8080;
     private static Path contextRoot;
@@ -35,7 +35,7 @@ public class GlobalStorage
      */
     public static void setListenPort(int listenPort)
     {
-        GlobalStorage.listenPort = listenPort;
+        CowherdConfiguration.listenPort = listenPort;
     }
 
     /**
@@ -46,7 +46,7 @@ public class GlobalStorage
     {
         if (contextRoot == null) {
             try {
-                contextRoot = Paths.get(GlobalStorage.class.getResource("/APP_ROOT").toURI());
+                contextRoot = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
@@ -61,7 +61,7 @@ public class GlobalStorage
      */
     public static void setContextRoot(Path contextRoot)
     {
-        GlobalStorage.contextRoot = contextRoot;
+        CowherdConfiguration.contextRoot = contextRoot;
     }
 
     /**
@@ -79,7 +79,7 @@ public class GlobalStorage
      */
     public static void setMaxUploadFileSize(long maxUploadFileSize)
     {
-        GlobalStorage.maxUploadFileSize = maxUploadFileSize;
+        CowherdConfiguration.maxUploadFileSize = maxUploadFileSize;
     }
 
     /**
@@ -102,7 +102,7 @@ public class GlobalStorage
      */
     public static void setUploadCacheDir(Path uploadCacheDir)
     {
-        GlobalStorage.uploadCacheDir = uploadCacheDir;
+        CowherdConfiguration.uploadCacheDir = uploadCacheDir;
     }
 
     /**
@@ -120,7 +120,7 @@ public class GlobalStorage
      */
     public static void setApiServiceRoute(String apiServiceRoute)
     {
-        GlobalStorage.apiServiceRoute = apiServiceRoute;
+        CowherdConfiguration.apiServiceRoute = apiServiceRoute;
     }
 
     /**
@@ -138,6 +138,6 @@ public class GlobalStorage
      */
     public static void setApiServiceDomain(String apiServiceDomain)
     {
-        GlobalStorage.apiServiceDomain = apiServiceDomain;
+        CowherdConfiguration.apiServiceDomain = apiServiceDomain;
     }
 }

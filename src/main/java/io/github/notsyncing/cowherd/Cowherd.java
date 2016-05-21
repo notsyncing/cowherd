@@ -4,7 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.annotations.Component;
-import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.FilterManager;
@@ -54,18 +54,18 @@ public class Cowherd
 
     private void configure()
     {
-        GlobalStorage.setListenPort(listenPort);
+        CowherdConfiguration.setListenPort(listenPort);
 
         if (!StringUtils.isEmpty(contextRoot)) {
-            GlobalStorage.setContextRoot(Paths.get(contextRoot));
+            CowherdConfiguration.setContextRoot(Paths.get(contextRoot));
         }
     }
 
     private void addInternalServices()
     {
         RouteInfo apiRoute = new RouteInfo();
-        apiRoute.setPath(GlobalStorage.getApiServiceRoute());
-        apiRoute.setDomain(GlobalStorage.getApiServiceDomain());
+        apiRoute.setPath(CowherdConfiguration.getApiServiceRoute());
+        apiRoute.setDomain(CowherdConfiguration.getApiServiceDomain());
 
         ServiceManager.addServiceClass(CowherdAPIService.class, apiRoute);
     }

@@ -1,7 +1,7 @@
 package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.*;
-import io.github.notsyncing.cowherd.commons.GlobalStorage;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.FileResponse;
@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
@@ -191,9 +190,9 @@ public class RouteManager
             reqPath = reqPath.substring(1);
         }
 
-        Path file = GlobalStorage.getContextRoot().resolve(reqPath);
+        Path file = CowherdConfiguration.getContextRoot().resolve(reqPath);
 
-        if (!file.toAbsolutePath().toString().startsWith(GlobalStorage.getContextRoot().toString())) {
+        if (!file.toAbsolutePath().toString().startsWith(CowherdConfiguration.getContextRoot().toString())) {
             request.response().setStatusCode(404).end();
             return false;
         }
