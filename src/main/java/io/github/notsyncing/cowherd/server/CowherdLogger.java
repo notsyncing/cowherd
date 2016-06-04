@@ -44,15 +44,17 @@ public class CowherdLogger
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("RollingBuilder");
 
-        AppenderComponentBuilder appenderBuilder = builder.newAppender("stdout", "CONSOLE").addAttribute("target",
-                ConsoleAppender.Target.SYSTEM_OUT);
-        appenderBuilder.add(builder.newLayout("PatternLayout")
-                .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable"));
+        LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
+                .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable");
+        AppenderComponentBuilder appenderBuilder = builder.newAppender("stdout", "CONSOLE")
+                .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
+        appenderBuilder.add(layoutBuilder);
         builder.add(appenderBuilder);
 
+        RootLoggerComponentBuilder rlb = builder.newRootLogger(Level.DEBUG)
+                .add(builder.newAppenderRef("stdout"));
+
         if (CowherdConfiguration.getLogDir() != null) {
-            LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
-                    .addAttribute("pattern", "%d %t.%c %level %msg%n");
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
                     .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"));
 
@@ -63,10 +65,10 @@ public class CowherdLogger
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            builder.add(builder.newRootLogger(Level.DEBUG)
-                    .add(builder.newAppenderRef("rolling"))
-                    .add(builder.newAppenderRef("stdout")));
+            rlb.add(builder.newAppenderRef("rolling"));
         }
+
+        builder.add(rlb);
 
         Configuration conf = builder.build();
 

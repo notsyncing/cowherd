@@ -58,6 +58,8 @@ public class Cowherd
 
     private void configure()
     {
+        CowherdLogger.loggerConfigChanged();
+
         CowherdConfiguration.setListenPort(listenPort);
 
         if (!StringUtils.isEmpty(contextRoot)) {
