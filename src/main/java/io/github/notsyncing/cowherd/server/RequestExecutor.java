@@ -1,16 +1,12 @@
 package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.ContentType;
-import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.authentication.ActionAuthenticator;
 import io.github.notsyncing.cowherd.authentication.annotations.ServiceActionAuthenticator;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
-import io.github.notsyncing.cowherd.models.ActionResult;
-import io.github.notsyncing.cowherd.models.FilterContext;
-import io.github.notsyncing.cowherd.models.FilterExecutionInfo;
-import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.DependencyInjector;
@@ -19,9 +15,9 @@ import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocket;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
@@ -71,6 +67,31 @@ public class RequestExecutor
             CompletableFuture f = new CompletableFuture();
             f.completeExceptionally(e);
             return f;
+        }
+    }
+
+    public static CompletableFuture<ActionResult> executeRequestedWebSocketAction(Method requestedMethod, HttpServerRequest request,
+                                                                         Map<String, List<String>> parameters,
+                                                                         List<HttpCookie> cookies)
+    {
+        ServerWebSocket ws = request.upgrade();
+
+        try {
+            Object[] targetParams;
+
+            try {
+                targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
+                        parameters, cookies, null, ws);
+            } catch (ValidationFailedException e) {
+                return FutureUtils.failed(e);
+            }
+
+            CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
+            requestedMethod.invoke(service, targetParams);
+
+            return CompletableFuture.completedFuture(new WebSocketActionResult(requestedMethod, null));
+        } catch (Exception e) {
+            return FutureUtils.failed(e);
         }
     }
 
@@ -231,6 +252,40 @@ public class RequestExecutor
                 c.setResult(r);
                 return f.after(c);
             }));
+        });
+    }
+
+    public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(Method requestedAction,
+                                                                                 List<FilterExecutionInfo> matchedFilters,
+                                                                                 Map<String, List<String>> additionalParams,
+                                                                                 HttpServerRequest req)
+    {
+        prepareFilters(matchedFilters);
+
+        CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
+
+        return filterChain.thenCompose(b -> {
+            CompletableFuture<Map<String, List<String>>> paramFuture = RequestUtils.extractRequestParameters(req,
+                    additionalParams);
+
+            final Map<String, List<String>>[] paramsRef = new Map[1];
+            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
+
+            return paramFuture.thenCompose(p -> {
+                paramsRef[0] = p;
+
+                FilterContext context = new FilterContext();
+                context.setRequestCookies(cookies);
+                context.setRequest(req);
+                context.setRequestParameters(paramsRef[0]);
+
+                return executeAuthenticators(requestedAction, context);
+            }).thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
+                c.setRequest(req);
+                c.setRequestParameters(paramsRef[0]);
+                c.setRequestCookies(cookies);
+                return f.before(c);
+            })).thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req, paramsRef[0], cookies));
         });
     }
 }

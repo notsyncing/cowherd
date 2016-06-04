@@ -2,10 +2,12 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpMethod;
@@ -75,6 +77,10 @@ public class RouteManager
                 info.setPath(route.value());
                 info.setDomain(route.domain());
                 info.setEntry(route.entry());
+            }
+
+            if (m.isAnnotationPresent(WebSocket.class)) {
+                info.setType(RouteType.WebSocket);
             }
 
             addRoute(info, m);
@@ -171,11 +177,19 @@ public class RouteManager
             return CompletableFuture.completedFuture(new ActionResult());
         }
 
+        RouteInfo r = p.getKey();
         Method m = p.getValue();
         System.out.println(" ... action " + m);
 
-        return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
-                RouteUtils.extractRouteParameters(uri, p.getKey()), request);
+        if (r.getType() == RouteType.Http) {
+            return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
+                    RouteUtils.extractRouteParameters(uri, r), request);
+        } else if (r.getType() == RouteType.WebSocket) {
+            return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
+                    RouteUtils.extractRouteParameters(uri, r), request);
+        }
+
+        return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() + " in route " + r));
     }
 
     private static boolean handleFileRequest(HttpServerRequest request) throws IOException, ParseException

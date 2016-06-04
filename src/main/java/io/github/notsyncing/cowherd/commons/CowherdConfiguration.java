@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.commons;
 
+import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.annotations.ConfigField;
 import io.vertx.core.json.JsonObject;
 
@@ -32,6 +33,9 @@ public class CowherdConfiguration
 
     @ConfigField
     private static String apiServiceDomain;
+
+    @ConfigField("websocket")
+    private static WebsocketConfig websocketConfig;
 
     private static JsonObject userConfiguration;
 
@@ -157,6 +161,24 @@ public class CowherdConfiguration
     }
 
     /**
+     * 获取 WebSocket 服务的设置
+     * @return WebSocket 服务设置信息
+     */
+    public static WebsocketConfig getWebsocketConfig()
+    {
+        return websocketConfig;
+    }
+
+    /**
+     * 设置 WebSocket 服务
+     * @param websocketConfig 要设置的 WebSocket 服务信息
+     */
+    public static void setWebsocketConfig(WebsocketConfig websocketConfig)
+    {
+        CowherdConfiguration.websocketConfig = websocketConfig;
+    }
+
+    /**
      * 获取配置文件中的用户自定义配置项
      * @return 用户配置
      */
@@ -185,6 +207,8 @@ public class CowherdConfiguration
             try {
                 if (f.getType().equals(Path.class)) {
                     f.set(null, Paths.get(config.getString(name)));
+                } else if (config.getValue(name).getClass().equals(JsonObject.class)) {
+                    f.set(null, JSON.parseObject(config.getJsonObject(name).toString(), f.getType()));
                 } else {
                     f.set(null, config.getValue(name));
                 }

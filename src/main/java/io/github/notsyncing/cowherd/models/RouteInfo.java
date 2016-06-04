@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.models;
 
+import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 
 import java.util.regex.Pattern;
@@ -11,6 +12,7 @@ public class RouteInfo implements Comparable<RouteInfo>
     private Pattern domainPattern;
     private Pattern pathPattern;
     private boolean entry;
+    private RouteType type = RouteType.Http;
 
     public String getDomain()
     {
@@ -66,6 +68,16 @@ public class RouteInfo implements Comparable<RouteInfo>
     public void setEntry(boolean entry)
     {
         this.entry = entry;
+    }
+
+    public RouteType getType()
+    {
+        return type;
+    }
+
+    public void setType(RouteType type)
+    {
+        this.type = type;
     }
 
     @Override

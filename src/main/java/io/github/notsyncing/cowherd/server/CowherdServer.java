@@ -8,6 +8,7 @@ import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
+import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -61,6 +62,10 @@ public class CowherdServer
     private void processRequest(HttpServerRequest req)
     {
         RouteManager.handleRequest(req).thenAccept(o -> {
+            if (o instanceof WebSocketActionResult) {
+                return;
+            }
+
             if (o.getResult() == null) {
                 if (!req.response().ended()) {
                     req.response().end();

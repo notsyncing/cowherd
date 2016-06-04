@@ -23,6 +23,7 @@ import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class RequestUtils
 {
@@ -151,7 +152,8 @@ public class RequestUtils
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
                                                                   Map<String, List<String>> params,
                                                                   List<HttpCookie> cookies,
-                                                                  List<UploadFileInfo> uploads) throws IllegalAccessException, InstantiationException, ValidationFailedException
+                                                                  List<UploadFileInfo> uploads,
+                                                                  Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException
     {
         List<Object> targetParams = new ArrayList<>();
         Parameter[] pl = method.getParameters();
@@ -215,20 +217,29 @@ public class RequestUtils
                 if ((jsonParams != null) && (jsonParams.containsKey(p.getName()))) {
                     targetParams.add(jsonParams.getObject(p.getName(), pl[i].getType()));
                 } else {
-                    if (!params.containsKey(p.getName())) {
-                        targetParams.add(null);
+                    Object o = Stream.of(otherParameters)
+                            .filter(op -> p.getType().isAssignableFrom(op.getClass()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (o != null) {
+                        targetParams.add(o);
                     } else {
-                        List<String> values = params.get(p.getName());
-
-                        if (values.size() <= 0) {
+                        if (!params.containsKey(p.getName())) {
                             targetParams.add(null);
-                            continue;
-                        }
-
-                        if (p.getType().isArray()) {
-                            targetParams.add(TypeUtils.stringListToArrayType(p.getType().getComponentType(), values));
                         } else {
-                            targetParams.add(TypeUtils.stringToType(p.getType(), values.get(0)));
+                            List<String> values = params.get(p.getName());
+
+                            if (values.size() <= 0) {
+                                targetParams.add(null);
+                                continue;
+                            }
+
+                            if (p.getType().isArray()) {
+                                targetParams.add(TypeUtils.stringListToArrayType(p.getType().getComponentType(), values));
+                            } else {
+                                targetParams.add(TypeUtils.stringToType(p.getType(), values.get(0)));
+                            }
                         }
                     }
                 }

@@ -140,6 +140,9 @@ public class CowherdTest
 
         assertEquals((int)o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
         assertEquals(o.getString("contextRoot"), CowherdConfiguration.getContextRoot().toString());
+        assertNotNull(CowherdConfiguration.getWebsocketConfig());
+        assertTrue(CowherdConfiguration.getWebsocketConfig().isEnabled());
+        assertEquals("/websocket", CowherdConfiguration.getWebsocketConfig().getPath());
         assertNotNull(CowherdConfiguration.getUserConfiguration());
         assertEquals(o.getJsonObject("user").getInteger("a"), CowherdConfiguration.getUserConfiguration().getInteger("a"));
         assertEquals(o.getJsonObject("user").getString("b"), CowherdConfiguration.getUserConfiguration().getString("b"));
@@ -593,5 +596,30 @@ public class CowherdTest
         });
 
         req.end();
+    }
+
+    @Test
+    public void testWebSocketRequest(TestContext context)
+    {
+        Async async = context.async();
+        HttpClient client = vertx.createHttpClient();
+
+        final int[] state = { 0 };
+
+        client.websocket(CowherdConfiguration.getListenPort(), "localhost", "/TestService/webSocketRequest?id=2", s -> {
+            s.frameHandler(f -> {
+                if (state[0] == 0) {
+                    context.assertEquals("Hello, 2", f.textData());
+                    state[0] = 1;
+
+                    s.writeFinalTextFrame("Ping");
+                } else if (state[0] == 1) {
+                    context.assertEquals("Pong", f.textData());
+                    s.close();
+                    client.close();
+                    async.complete();
+                }
+            });
+        });
     }
 }

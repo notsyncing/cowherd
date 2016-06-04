@@ -6,6 +6,7 @@ import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
+import io.vertx.core.http.ServerWebSocket;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -131,5 +132,18 @@ public class TestService extends CowherdService
     public String authRequest()
     {
         return "AUTH!";
+    }
+
+    @Exported
+    @WebSocket
+    public void webSocketRequest(ServerWebSocket webSocket, int id)
+    {
+        webSocket.writeFinalTextFrame("Hello, " + id);
+
+        webSocket.frameHandler(f -> {
+            if (f.textData().equals("Ping")) {
+                webSocket.writeFinalTextFrame("Pong");
+            }
+        });
     }
 }
