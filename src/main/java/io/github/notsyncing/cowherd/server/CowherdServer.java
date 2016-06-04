@@ -65,7 +65,7 @@ public class CowherdServer
     {
         String accessLog = req.remoteAddress().host() + ":" + req.remoteAddress().port() + " -> " +
                 req.localAddress().host() + ":" + req.localAddress().port() + " (" + req.getHeader("User-Agent") +
-                ") " + req.method() + " " + req.uri();
+                ") " + req.version() + " " + req.method() + " " + (req.isSSL() ? "SECURE " : "") + req.uri();
 
         RouteManager.handleRequest(req).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
