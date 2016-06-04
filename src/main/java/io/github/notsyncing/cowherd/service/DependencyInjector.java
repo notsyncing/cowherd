@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.annotations.Component;
 import io.github.notsyncing.cowherd.models.ComponentInfo;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -18,6 +19,8 @@ public class DependencyInjector
 {
     private static Map<Class, ComponentInfo> components = new ConcurrentHashMap<>();
     private static Map<Class, Object> singletons = new ConcurrentHashMap<>();
+
+    private static CowherdLogger log = CowherdLogger.getInstance(DependencyInjector.class);
 
     /**
      * 清除依赖注入器的对象缓存和已注册类列表
@@ -73,7 +76,7 @@ public class DependencyInjector
             singletons.put(type, object);
         }
 
-        System.out.println("Created object " + object);
+        log.d("Created object " + object);
         return object;
     }
 
@@ -99,7 +102,7 @@ public class DependencyInjector
 
         components.put(interfaceType, info);
 
-        System.out.println("DependencyInjector: Registered component " + objectType);
+        log.d("Registered component " + objectType);
     }
 
     /**
@@ -155,8 +158,7 @@ public class DependencyInjector
                 try {
                     makeObject(info.getInterfaceType());
                 } catch (Exception e) {
-                    System.out.println("DependencyInjector: Failed to make object " + info.getInterfaceType() + ": " + e.getMessage());
-                    e.printStackTrace();
+                    log.e("Failed to make object " + info.getInterfaceType() + ": " + e.getMessage(), e);
                 }
             }
         }

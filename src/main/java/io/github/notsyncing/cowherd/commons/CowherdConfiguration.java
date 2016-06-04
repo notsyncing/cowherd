@@ -209,7 +209,7 @@ public class CowherdConfiguration
             }
         }
 
-        CowherdLogger.getInstance().loggerConfigChanged();
+        CowherdLogger.loggerConfigChanged();
     }
 
     /**

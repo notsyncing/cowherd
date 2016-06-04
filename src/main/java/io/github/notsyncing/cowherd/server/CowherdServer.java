@@ -31,6 +31,7 @@ public class CowherdServer
     private HttpServer server;
     private TemplateEngine templateEngine;
     private FileStorage fileStorage;
+    private CowherdLogger log = CowherdLogger.getInstance(this);
 
     public TemplateEngine getTemplateEngine()
     {
@@ -158,7 +159,7 @@ public class CowherdServer
         server.requestHandler(this::processRequest);
         server.listen(CowherdConfiguration.getListenPort());
 
-        System.out.println("CowherdServer: listening at port " + CowherdConfiguration.getListenPort());
+        log.i("Listening at port " + CowherdConfiguration.getListenPort());
 
         fileStorage = new FileStorage(vertx);
     }

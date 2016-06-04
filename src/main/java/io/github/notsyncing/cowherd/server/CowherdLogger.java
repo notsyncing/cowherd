@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.builder.api.*;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 
@@ -13,29 +14,32 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CowherdLogger
 {
-    private static CowherdLogger instance = new CowherdLogger();
+    private static LoggerContext context = LoggerContext.getContext();
+    private static Map<String, Logger> loggers = new ConcurrentHashMap<>();
+    private static Logger log;
 
-    private LoggerContext context;
-    private Map<Enum, Logger> loggers = new ConcurrentHashMap<>();
-    private Logger log;
+    private String tag;
 
-    private CowherdLogger()
+    private CowherdLogger(String tag)
     {
-        context = LoggerContext.getContext();
+        this.tag = tag;
     }
 
-    public static CowherdLogger getInstance()
+    public static CowherdLogger getInstance(Object o)
     {
-        return instance;
+        CowherdLogger.registerTag(o.getClass().getSimpleName());
+
+        return new CowherdLogger(o.getClass().getSimpleName());
     }
 
-    public static CowherdLogger getInstance(Enum tag, Object o)
+    public static CowherdLogger getInstance(Class c)
     {
-        instance.registerTag(tag, o.getClass().getSimpleName());
-        return instance;
+        CowherdLogger.registerTag(c.getSimpleName());
+
+        return new CowherdLogger(c.getSimpleName());
     }
 
-    public void loggerConfigChanged()
+    public static void loggerConfigChanged()
     {
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("RollingBuilder");
@@ -43,12 +47,12 @@ public class CowherdLogger
         AppenderComponentBuilder appenderBuilder = builder.newAppender("stdout", "CONSOLE").addAttribute("target",
                 ConsoleAppender.Target.SYSTEM_OUT);
         appenderBuilder.add(builder.newLayout("PatternLayout")
-                .addAttribute("pattern", "%d %c %level %msg%n%throwable"));
+                .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable"));
         builder.add(appenderBuilder);
 
         if (CowherdConfiguration.getLogDir() != null) {
             LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
-                    .addAttribute("pattern", "%d %c %level %msg%n");
+                    .addAttribute("pattern", "%d %t.%c %level %msg%n");
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
                     .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"));
 
@@ -64,33 +68,88 @@ public class CowherdLogger
                     .add(builder.newAppenderRef("stdout")));
         }
 
-        context.updateLoggers(builder.build());
+        Configuration conf = builder.build();
 
-        for (Enum key : loggers.keySet()) {
-            loggers.replace(key, context.getLogger(loggers.get(key).getName()));
-        }
+        context.stop();
+        context.updateLoggers(conf);
+        context.start(conf);
 
-        log = context.getLogger(getClass().getSimpleName());
+        log = context.getLogger(CowherdLogger.class.getSimpleName());
         log.info("Log configuration reloaded.");
     }
 
-    public void registerTag(Enum tag, String text)
+    public static void registerTag(String tag)
     {
-        loggers.put(tag, context.getLogger(text));
+        loggers.put(tag, context.getLogger(tag));
     }
 
-    public void registerTag(Enum tag, Class clazz)
+    public static void registerTag(Class clazz)
     {
-        registerTag(tag, clazz.getSimpleName());
+        registerTag(clazz.getSimpleName());
     }
 
-    public void log(Enum tag, Level level, String message)
+    public void log(Level level, String message)
     {
         loggers.get(tag).log(level, message);
     }
 
-    public void log(Enum tag, Level level, String message, Throwable ex)
+    public void log(Level level, String message, Throwable ex)
     {
         loggers.get(tag).log(level, message, ex);
+    }
+
+    public void i(String message)
+    {
+        log(Level.INFO, message);
+    }
+
+    public void w(String message)
+    {
+        log(Level.WARN, message);
+    }
+
+    public void w(String message, Throwable ex)
+    {
+        log(Level.WARN, message, ex);
+    }
+
+    public void e(String message)
+    {
+        log(Level.ERROR, message);
+    }
+
+    public void e(String message, Throwable ex)
+    {
+        log(Level.ERROR, message, ex);
+    }
+
+    public void t(String message)
+    {
+        log(Level.TRACE, message);
+    }
+
+    public void t(String message, Throwable ex)
+    {
+        log(Level.TRACE, message, ex);
+    }
+
+    public void f(String message)
+    {
+        log(Level.FATAL, message);
+    }
+
+    public void f(String message, Throwable ex)
+    {
+        log(Level.FATAL, message, ex);
+    }
+
+    public void d(String message)
+    {
+        log(Level.DEBUG, message);
+    }
+
+    public void d(String message, Throwable ex)
+    {
+        log(Level.DEBUG, message, ex);
     }
 }

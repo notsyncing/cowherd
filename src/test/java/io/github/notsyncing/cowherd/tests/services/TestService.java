@@ -4,6 +4,7 @@ import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
 import io.vertx.core.http.ServerWebSocket;
@@ -33,12 +34,7 @@ class TestModel
 @Route("/TestService")
 public class TestService extends CowherdService
 {
-    public TestService()
-    {
-        super();
-
-        getLogger().registerTag(TestLogTag.TestService, getClass());
-    }
+    private CowherdLogger log = getLogger();
 
     @Exported
     @HttpGet

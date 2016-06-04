@@ -1,7 +1,7 @@
 package io.github.notsyncing.cowherd.files;
 
-import io.github.notsyncing.cowherd.annotations.Component;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 
@@ -23,6 +23,7 @@ public class FileStorage
 {
     private Map<Enum, Path> storagePaths = new ConcurrentHashMap<>();
     private FileSystem fs;
+    private CowherdLogger log = CowherdLogger.getInstance(this);
 
     public FileStorage(Vertx vertx)
     {
@@ -49,7 +50,7 @@ public class FileStorage
     public void registerStoragePath(Enum tag, Path path) throws IOException
     {
         if (storagePaths.containsKey(tag)) {
-            System.out.println("FileStorage: Tag " + tag + " already registered to path " + storagePaths.get(tag) +
+            log.w("Tag " + tag + " already registered to path " + storagePaths.get(tag) +
                     ", will be overwritten to " + path);
         }
 
@@ -57,9 +58,9 @@ public class FileStorage
 
         if (!Files.exists(path)) {
             Path p = Files.createDirectories(path);
-            System.out.println("FileStorage: Created storage path " + p + " for tag " + tag);
+            log.i("Created storage path " + p + " for tag " + tag);
         } else {
-            System.out.println("FileStorage: Registered storage path " + path + " to tag " + tag);
+            log.i("Registered storage path " + path + " to tag " + tag);
         }
     }
 

@@ -97,6 +97,6 @@ public abstract class CowherdService
      */
     protected CowherdLogger getLogger()
     {
-        return CowherdLogger.getInstance();
+        return CowherdLogger.getInstance(this);
     }
 }

@@ -4,6 +4,7 @@ import io.github.notsyncing.cowherd.annotations.InstantiateType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.RouteManager;
 
 import java.lang.reflect.InvocationTargetException;
@@ -16,6 +17,8 @@ public class ServiceManager
 {
     private static Map<String, CowherdServiceInfo> services = new ConcurrentHashMap<>();
     private static Map<String, CowherdService> serviceInstances = new ConcurrentHashMap<>();
+
+    private static CowherdLogger log = CowherdLogger.getInstance(ServiceManager.class);
 
     private static void processServiceAnnotations(CowherdServiceInfo info)
     {
@@ -66,7 +69,7 @@ public class ServiceManager
 
                 addServiceInfo(name, info, customRoute);
 
-                System.out.println("ServiceManager: Added service " + serviceClass);
+                log.d("Added service " + serviceClass);
             }
         } catch (Exception e) {
             e.printStackTrace();

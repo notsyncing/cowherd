@@ -29,6 +29,8 @@ public class RouteManager
     private static Map<RouteInfo, Method> routes = new ConcurrentSkipListMap<>();
     //private static Map<RouteInfo, Method> routes = new ConcurrentHashMap<>();
 
+    private static CowherdLogger log = CowherdLogger.getInstance(RouteManager.class);
+
     public static Map<RouteInfo, Method> getRoutes()
     {
         return routes;
@@ -37,13 +39,13 @@ public class RouteManager
     public static void addRoute(RouteInfo route, Method target)
     {
         if (routes.containsKey(route)) {
-            System.out.println("RouteManager: Route " + route + " already mapped to action " + routes.get(route) +
+            log.w("Route " + route + " already mapped to action " + routes.get(route) +
                     ", will be overwritten to " + target);
         }
 
         routes.put(route, target);
 
-        System.out.println("RouteManager: Add route " + route + " to action " + target);
+        log.d("Add route " + route + " to action " + target);
     }
 
     public static void addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) throws InvalidServiceActionException
@@ -143,7 +145,7 @@ public class RouteManager
 
     public static CompletableFuture<ActionResult> handleRequest(HttpServerRequest request)
     {
-        System.out.print("RouteManager: Request: " + request.path());
+        log.d("Request: " + request.path());
 
         String contentType = request.getHeader("Content-Type");
 
@@ -170,7 +172,7 @@ public class RouteManager
             }
 
             if (!processed) {
-                System.out.println(" ... no route");
+                log.d(" ... no route");
                 request.response().setStatusCode(404).end();
             }
 
@@ -179,7 +181,7 @@ public class RouteManager
 
         RouteInfo r = p.getKey();
         Method m = p.getValue();
-        System.out.println(" ... action " + m);
+        log.d(" ... action " + m);
 
         if (r.getType() == RouteType.Http) {
             return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
@@ -221,13 +223,13 @@ public class RouteManager
                 if (fileModifyTime <= reqQueryTime) {
                     request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
                     request.response().setStatusCode(304).end();
-                    System.out.println(" ... local file not modified");
+                    log.d(" ... local file not modified");
                     needSend = false;
                 }
             }
 
             if (needSend) {
-                System.out.println(" ... local file: " + file);
+                log.d(" ... local file: " + file);
                 FileResponse fileResp = new FileResponse(file);
                 fileResp.writeToResponse(new ActionContext(request));
                 return true;
