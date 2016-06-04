@@ -4,11 +4,11 @@ import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdServer;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
@@ -89,5 +89,14 @@ public abstract class CowherdService
         }
 
         return null;
+    }
+
+    /**
+     * 获取日志记录器
+     * @return 日志记录器
+     */
+    protected CowherdLogger getLogger()
+    {
+        return CowherdLogger.getInstance();
     }
 }

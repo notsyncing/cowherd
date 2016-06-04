@@ -5,7 +5,9 @@ import com.beust.jcommander.Parameter;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.annotations.Component;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.commons.LogTags;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.server.ServiceActionFilter;
@@ -15,6 +17,7 @@ import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.Level;
 
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -29,6 +32,7 @@ public class Cowherd
     String contextRoot;
 
     private CowherdServer server;
+    private CowherdLogger log = CowherdLogger.getInstance(LogTags.CowherdServer, this);;
 
     public static void main(String[] args)
     {
@@ -70,18 +74,19 @@ public class Cowherd
             try {
                 data = StringUtils.streamToString(s);
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Cowherd: Failed to load configuration file: " + e.getMessage());
+                log.log(LogTags.CowherdServer, Level.ERROR, "Failed to load configuration file: " + e.getMessage(), e);
                 return;
             }
 
             JsonObject config = new JsonObject(data);
             CowherdConfiguration.fromConfig(config);
 
-            System.out.println("Cowherd: Loaded configuration file.");
+            log.log(LogTags.CowherdServer, Level.INFO, "Loaded configuration file.");
         } else {
-            System.out.println("Cowherd: No configuration file found.");
+            log.log(LogTags.CowherdServer, Level.INFO, "No configuration file found.");
         }
+
+        log.log(LogTags.CowherdServer, Level.INFO, "Cowherd web server is starting...");
     }
 
     private void addInternalServices()

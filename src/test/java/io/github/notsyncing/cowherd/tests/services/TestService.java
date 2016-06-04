@@ -33,6 +33,13 @@ class TestModel
 @Route("/TestService")
 public class TestService extends CowherdService
 {
+    public TestService()
+    {
+        super();
+
+        getLogger().registerTag(TestLogTag.TestService, getClass());
+    }
+
     @Exported
     @HttpGet
     public CompletableFuture<String> simpleRequest()

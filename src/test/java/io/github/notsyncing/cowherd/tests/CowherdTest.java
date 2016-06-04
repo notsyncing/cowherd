@@ -143,6 +143,7 @@ public class CowherdTest
         assertNotNull(CowherdConfiguration.getWebsocketConfig());
         assertTrue(CowherdConfiguration.getWebsocketConfig().isEnabled());
         assertEquals("/websocket", CowherdConfiguration.getWebsocketConfig().getPath());
+        assertEquals("/tmp/cowherd_logs", CowherdConfiguration.getLogDir().toString());
         assertNotNull(CowherdConfiguration.getUserConfiguration());
         assertEquals(o.getJsonObject("user").getInteger("a"), CowherdConfiguration.getUserConfiguration().getInteger("a"));
         assertEquals(o.getJsonObject("user").getString("b"), CowherdConfiguration.getUserConfiguration().getString("b"));

@@ -2,10 +2,12 @@ package io.github.notsyncing.cowherd.commons;
 
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.annotations.ConfigField;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +38,9 @@ public class CowherdConfiguration
 
     @ConfigField("websocket")
     private static WebsocketConfig websocketConfig;
+
+    @ConfigField
+    private static Path logDir;
 
     private static JsonObject userConfiguration;
 
@@ -179,6 +184,35 @@ public class CowherdConfiguration
     }
 
     /**
+     * 获取日志存放目录
+     * @return 日志存放目录
+     */
+    public static Path getLogDir()
+    {
+        return logDir;
+    }
+
+    /**
+     * 设置日志存放目录
+     * @param logDir 要使用的日志存放目录
+     */
+    public static void setLogDir(Path logDir)
+    {
+        CowherdConfiguration.logDir = logDir;
+
+        if (!Files.exists(logDir)) {
+            try {
+                Files.createDirectories(logDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Failed to create log directory: " + logDir);
+            }
+        }
+
+        CowherdLogger.getInstance().loggerConfigChanged();
+    }
+
+    /**
      * 获取配置文件中的用户自定义配置项
      * @return 用户配置
      */
@@ -205,14 +239,27 @@ public class CowherdConfiguration
             }
 
             try {
+                Object v;
+
                 if (f.getType().equals(Path.class)) {
-                    f.set(null, Paths.get(config.getString(name)));
+                    v = Paths.get(config.getString(name));
                 } else if (config.getValue(name).getClass().equals(JsonObject.class)) {
-                    f.set(null, JSON.parseObject(config.getJsonObject(name).toString(), f.getType()));
+                    v = JSON.parseObject(config.getJsonObject(name).toString(), f.getType());
                 } else {
-                    f.set(null, config.getValue(name));
+                    v = config.getValue(name);
                 }
-            } catch (IllegalAccessException e) {
+
+                String setterName = "set" + f.getName()
+                        .replaceFirst(f.getName().substring(0, 1), f.getName()
+                                .substring(0, 1).toUpperCase());
+
+                try {
+                    Method setter = CowherdConfiguration.class.getMethod(setterName, f.getType());
+                    setter.invoke(null, v);
+                } catch (NoSuchMethodException e) {
+                    f.set(null, v);
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("CowherdConfiguration: Error occured when reading configuration key " + name + ": " + e.getMessage());
             }
