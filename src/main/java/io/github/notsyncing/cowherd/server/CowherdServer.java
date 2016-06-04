@@ -32,6 +32,7 @@ public class CowherdServer
     private TemplateEngine templateEngine;
     private FileStorage fileStorage;
     private CowherdLogger log = CowherdLogger.getInstance(this);
+    private CowherdLogger accessLogger = CowherdLogger.getAccessLogger();
 
     public TemplateEngine getTemplateEngine()
     {
@@ -62,8 +63,13 @@ public class CowherdServer
 
     private void processRequest(HttpServerRequest req)
     {
+        String accessLog = req.remoteAddress().host() + ":" + req.remoteAddress().port() + " -> " +
+                req.localAddress().host() + ":" + req.localAddress().port() + " (" + req.getHeader("User-Agent") +
+                ") " + req.method() + " " + req.uri();
+
         RouteManager.handleRequest(req).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
+                logAccess(req, accessLog);
                 return;
             }
 
@@ -72,18 +78,24 @@ public class CowherdServer
                     req.response().end();
                 }
 
+                logAccess(req, accessLog);
                 return;
             }
 
             writeObjectToResponse(req, o);
+            logAccess(req, accessLog);
         }).exceptionally(ex -> {
             if ((ex.getCause() instanceof AuthenticationFailedException) || (ex.getCause() instanceof FilterBreakException)) {
                 req.response().setStatusCode(403);
                 req.response().end();
+
+                logAccess(req, accessLog);
                 return null;
             } else if (ex.getCause() instanceof ValidationFailedException) {
                 req.response().setStatusCode(400);
                 req.response().end();
+
+                logAccess(req, accessLog);
                 return null;
             }
 
@@ -96,8 +108,14 @@ public class CowherdServer
             req.response().setStatusMessage(e.getMessage());
 
             writeResponse(req.response(), data);
+            logAccess(req, accessLog);
             return null;
         });
+    }
+
+    private void logAccess(HttpServerRequest req, String accessLog)
+    {
+        accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten());
     }
 
     private void writeObjectToResponse(HttpServerRequest req, ActionResult o)

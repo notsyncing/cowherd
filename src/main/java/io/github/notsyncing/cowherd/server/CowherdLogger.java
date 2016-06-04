@@ -39,6 +39,11 @@ public class CowherdLogger
         return new CowherdLogger(c.getSimpleName());
     }
 
+    public static CowherdLogger getAccessLogger()
+    {
+        return new CowherdLogger("AccessLogger");
+    }
+
     public static void loggerConfigChanged()
     {
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
@@ -66,6 +71,18 @@ public class CowherdLogger
             builder.add(appenderBuilder);
 
             rlb.add(builder.newAppenderRef("rolling"));
+
+            appenderBuilder = builder.newAppender("rollingAccess", "RollingFile")
+                    .addAttribute("fileName", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log"))
+                    .addAttribute("filePattern", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access-{yyyy-MM-dd}.log.gz"))
+                    .add(layoutBuilder)
+                    .addComponent(triggeringPolicy);
+            builder.add(appenderBuilder);
+
+            LoggerComponentBuilder lcb = builder.newLogger("AccessLogger", Level.DEBUG)
+                    .add(builder.newAppenderRef("rollingAccess"));
+
+            builder.add(lcb);
         }
 
         builder.add(rlb);
@@ -75,6 +92,8 @@ public class CowherdLogger
         context.stop();
         context.updateLoggers(conf);
         context.start(conf);
+
+        loggers.put("AccessLogger", context.getLogger("AccessLogger"));
 
         log = context.getLogger(CowherdLogger.class.getSimpleName());
         log.info("Log configuration reloaded.");
