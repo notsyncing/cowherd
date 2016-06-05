@@ -2,13 +2,18 @@ package io.github.notsyncing.cowherd.tests.services;
 
 import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
+import io.github.notsyncing.cowherd.annotations.httpmethods.HttpPost;
+import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.utils.FutureUtils;
+import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
 import io.vertx.core.http.ServerWebSocket;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -148,5 +153,18 @@ public class TestService extends CowherdService
                 webSocket.writeFinalTextFrame("Pong");
             }
         });
+    }
+
+    @Exported
+    @HttpPost
+    public CompletableFuture<String> uploadRequest(UploadFileInfo file, int id)
+    {
+        try {
+            String data = StringUtils.streamToString(new FileInputStream(file.getFile()));
+            return CompletableFuture.completedFuture("id: " + id + " filename: " + file.getFilename() + " param: " +
+                    file.getParameterName() + " data: " + data);
+        } catch (Exception e) {
+            return FutureUtils.failed(e);
+        }
     }
 }

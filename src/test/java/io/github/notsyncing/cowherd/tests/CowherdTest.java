@@ -8,6 +8,7 @@ import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.tests.services.*;
 import io.github.notsyncing.cowherd.utils.FileUtils;
+import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
@@ -15,12 +16,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -622,5 +632,29 @@ public class CowherdTest
                 }
             });
         });
+    }
+
+    @Test
+    public void testUploadFileRequest() throws IOException
+    {
+        Path tf = Files.createTempFile("cowherd-test", ".txt");
+        Files.write(tf, "Hello".getBytes());
+
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost f = new HttpPost("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/uploadRequest");
+        MultipartEntityBuilder b = MultipartEntityBuilder.create();
+        b.addTextBody("id", "5");
+        b.addBinaryBody("file", tf.toFile(), ContentType.APPLICATION_OCTET_STREAM, "test.txt");
+        HttpEntity e = b.build();
+
+        f.setEntity(e);
+
+        CloseableHttpResponse resp = httpClient.execute(f);
+        HttpEntity respEntity = resp.getEntity();
+
+        String data = StringUtils.streamToString(respEntity.getContent());
+        assertEquals("id: 5 filename: test.txt param: file data: Hello", data);
+
+        Files.deleteIfExists(tf);
     }
 }
