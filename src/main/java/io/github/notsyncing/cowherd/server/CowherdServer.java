@@ -191,6 +191,7 @@ public class CowherdServer
         clr.setPrefix("APP_ROOT/");
         clr.setSuffix(".html");
         clr.setTemplateMode(TemplateMode.HTML);
+        clr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
         templateEngine.addTemplateResolver(clr);
 
         for (Path r : CowherdConfiguration.getContextRoots()) {
@@ -202,6 +203,7 @@ public class CowherdServer
             fr.setPrefix(r.toString());
             fr.setSuffix(".html");
             fr.setTemplateMode(TemplateMode.HTML);
+            fr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
             templateEngine.addTemplateResolver(fr);
         }
     }

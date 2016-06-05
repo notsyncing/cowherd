@@ -45,7 +45,7 @@ public class CowherdConfiguration
     private static Path logDir;
 
     @ConfigField
-    private static boolean everyHtmlIsTemplate;
+    private static boolean everyHtmlIsTemplate = false;
 
     private static JsonObject userConfiguration;
 
