@@ -187,20 +187,19 @@ public class CowherdServer
     {
         templateEngine = new TemplateEngine();
 
-        ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
-        clr.setPrefix("APP_ROOT/");
-        clr.setSuffix(".html");
-        clr.setTemplateMode(TemplateMode.HTML);
-        clr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
-        templateEngine.addTemplateResolver(clr);
-
         for (Path r : CowherdConfiguration.getContextRoots()) {
             if (r.getName(r.getNameCount() - 1).toString().equals("$")) {
+                ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
+                clr.setPrefix("APP_ROOT/");
+                clr.setSuffix(".html");
+                clr.setTemplateMode(TemplateMode.HTML);
+                clr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
+                templateEngine.addTemplateResolver(clr);
                 continue;
             }
 
             FileTemplateResolver fr = new FileTemplateResolver();
-            fr.setPrefix(r.toString());
+            fr.setPrefix(r.toString() + "/");
             fr.setSuffix(".html");
             fr.setTemplateMode(TemplateMode.HTML);
             fr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
