@@ -228,7 +228,7 @@ public class RouteManager
                 if ((fn.endsWith(".html")) && (CowherdConfiguration.isEveryHtmlIsTemplate())) {
                     fn = fn.substring(0, fn.length() - 5);
                     log.d(" ... view: " + file);
-                    return new ViewResponse(null, "/" + fn);
+                    return new ViewResponse(null, fn);
                 }
 
                 String ifModifiedSince = request.getHeader("If-Modified-Since");

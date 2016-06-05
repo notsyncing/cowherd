@@ -188,7 +188,7 @@ public class CowherdServer
         templateEngine = new TemplateEngine();
 
         ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
-        clr.setPrefix("APP_ROOT");
+        clr.setPrefix("APP_ROOT/");
         clr.setSuffix(".html");
         clr.setTemplateMode(TemplateMode.HTML);
         templateEngine.addTemplateResolver(clr);
