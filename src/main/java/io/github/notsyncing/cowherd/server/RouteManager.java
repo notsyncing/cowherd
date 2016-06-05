@@ -16,8 +16,10 @@ import io.vertx.core.http.HttpServerRequest;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -194,7 +196,7 @@ public class RouteManager
         return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() + " in route " + r));
     }
 
-    private static boolean handleFileRequest(HttpServerRequest request) throws IOException, ParseException
+    private static boolean handleFileRequest(HttpServerRequest request) throws IOException, ParseException, URISyntaxException
     {
         boolean needSend = true;
 
@@ -206,36 +208,43 @@ public class RouteManager
             reqPath = reqPath.substring(1);
         }
 
-        Path file = CowherdConfiguration.getContextRoot().resolve(reqPath);
-
-        if (!file.toAbsolutePath().toString().startsWith(CowherdConfiguration.getContextRoot().toString())) {
-            request.response().setStatusCode(404).end();
-            return false;
-        }
-
-        if (Files.isRegularFile(file)) {
-            String ifModifiedSince = request.getHeader("If-Modified-Since");
-
-            if (!StringUtils.isEmpty(ifModifiedSince)) {
-                long fileModifyTime = Files.getLastModifiedTime(file).toMillis() / 1000;
-                long reqQueryTime = StringUtils.parseHttpDateString(ifModifiedSince).getTime() / 1000;
-
-                if (fileModifyTime <= reqQueryTime) {
-                    request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
-                    request.response().setStatusCode(304).end();
-                    log.d(" ... local file not modified");
-                    needSend = false;
-                }
+        for (Path contextRoot : CowherdConfiguration.getContextRoots()) {
+            if (contextRoot.getName(contextRoot.getNameCount() - 1).toString().equals("$")) {
+                contextRoot = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
             }
 
-            if (needSend) {
-                log.d(" ... local file: " + file);
-                FileResponse fileResp = new FileResponse(file);
-                fileResp.writeToResponse(new ActionContext(request));
+            Path file = contextRoot.resolve(reqPath);
+
+            if (!file.toAbsolutePath().toString().startsWith(contextRoot.toString())) {
+                continue;
+            }
+
+            if (Files.isRegularFile(file)) {
+                String ifModifiedSince = request.getHeader("If-Modified-Since");
+
+                if (!StringUtils.isEmpty(ifModifiedSince)) {
+                    long fileModifyTime = Files.getLastModifiedTime(file).toMillis() / 1000;
+                    long reqQueryTime = StringUtils.parseHttpDateString(ifModifiedSince).getTime() / 1000;
+
+                    if (fileModifyTime <= reqQueryTime) {
+                        request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
+                        request.response().setStatusCode(304).end();
+                        log.d(" ... local file not modified");
+                        needSend = false;
+                    }
+                }
+
+                if (needSend) {
+                    log.d(" ... local file: " + file);
+                    FileResponse fileResp = new FileResponse(file);
+                    fileResp.writeToResponse(new ActionContext(request));
+                }
+
                 return true;
             }
         }
 
-        return !needSend;
+        request.response().setStatusCode(404).end();
+        return false;
     }
 }

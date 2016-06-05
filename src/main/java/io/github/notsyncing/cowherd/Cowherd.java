@@ -18,7 +18,11 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.json.JsonObject;
 
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Cowherd
@@ -27,7 +31,7 @@ public class Cowherd
     int listenPort = 8080;
 
     @Parameter(names = { "-r", "--context-root" })
-    String contextRoot;
+    List<String> contextRoots = new ArrayList<>();
 
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
@@ -62,8 +66,8 @@ public class Cowherd
 
         CowherdConfiguration.setListenPort(listenPort);
 
-        if (!StringUtils.isEmpty(contextRoot)) {
-            CowherdConfiguration.setContextRoot(Paths.get(contextRoot));
+        if (contextRoots.size() > 0) {
+            CowherdConfiguration.setContextRoots(contextRoots.stream().map(s -> Paths.get(s)).toArray(Path[]::new));
         }
 
         InputStream s = getClass().getResourceAsStream("/cowherd.config");
@@ -82,6 +86,18 @@ public class Cowherd
             CowherdConfiguration.fromConfig(config);
 
             log.i("Loaded configuration file.");
+
+            for (Path p : CowherdConfiguration.getContextRoots()) {
+                if (p.getName(p.getNameCount() - 1).toString().equals("$")) {
+                    try {
+                        p = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                log.i("Context root: " + p);
+            }
         } else {
             log.i("No configuration file found.");
         }

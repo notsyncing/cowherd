@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.tests;
 
+import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.ActionResult;
@@ -149,7 +150,10 @@ public class CowherdTest
         JsonObject o = new JsonObject(s);
 
         assertEquals((int)o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
-        assertEquals(o.getString("contextRoot"), CowherdConfiguration.getContextRoot().toString());
+
+        List<Path> contextRoots = JSON.parseArray(o.getJsonArray("contextRoots").toString(), Path.class);
+        assertArrayEquals(contextRoots.toArray(new Path[0]), CowherdConfiguration.getContextRoots());
+
         assertNotNull(CowherdConfiguration.getWebsocketConfig());
         assertTrue(CowherdConfiguration.getWebsocketConfig().isEnabled());
         assertEquals("/websocket", CowherdConfiguration.getWebsocketConfig().getPath());

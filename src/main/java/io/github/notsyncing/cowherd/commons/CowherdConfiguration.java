@@ -6,12 +6,14 @@ import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * 包含全局配置信息
@@ -22,7 +24,7 @@ public class CowherdConfiguration
     private static int listenPort = 8080;
 
     @ConfigField
-    private static Path contextRoot;
+    private static Path[] contextRoots;
 
     @ConfigField
     private static long maxUploadFileSize = 2 * 1024 * 1024;
@@ -66,26 +68,26 @@ public class CowherdConfiguration
      * 获取上下文路径
      * @return 上下文路径
      */
-    public static Path getContextRoot()
+    public static Path[] getContextRoots()
     {
-        if (contextRoot == null) {
+        if (contextRoots == null) {
             try {
-                contextRoot = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
+                contextRoots = new Path[] { Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI()) };
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
         }
 
-        return contextRoot;
+        return contextRoots;
     }
 
     /**
      * 设置上下文路径
-     * @param contextRoot 要使用的上下文路径
+     * @param contextRoots 要使用的上下文路径
      */
-    public static void setContextRoot(Path contextRoot)
+    public static void setContextRoots(Path[] contextRoots)
     {
-        CowherdConfiguration.contextRoot = contextRoot;
+        CowherdConfiguration.contextRoots = contextRoots;
     }
 
     /**
@@ -245,6 +247,13 @@ public class CowherdConfiguration
                     v = Paths.get(config.getString(name));
                 } else if (config.getValue(name).getClass().equals(JsonObject.class)) {
                     v = JSON.parseObject(config.getJsonObject(name).toString(), f.getType());
+                } else if (f.getType().isArray()) {
+                    List l = JSON.parseArray(config.getJsonArray(name).toString(), f.getType().getComponentType());
+                    v = Array.newInstance(f.getType().getComponentType(), l.size());
+
+                    for (int i = 0; i < l.size(); i++) {
+                        Array.set(v, i, l.get(i));
+                    }
                 } else {
                     v = config.getValue(name);
                 }

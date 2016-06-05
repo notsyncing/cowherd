@@ -23,6 +23,7 @@ import org.thymeleaf.templateresolver.FileTemplateResolver;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
 public class CowherdServer
@@ -192,11 +193,17 @@ public class CowherdServer
         clr.setTemplateMode(TemplateMode.HTML);
         templateEngine.addTemplateResolver(clr);
 
-        FileTemplateResolver fr = new FileTemplateResolver();
-        fr.setPrefix(CowherdConfiguration.getContextRoot().toAbsolutePath().toString());
-        fr.setSuffix(".html");
-        fr.setTemplateMode(TemplateMode.HTML);
-        templateEngine.addTemplateResolver(fr);
+        for (Path r : CowherdConfiguration.getContextRoots()) {
+            if (r.getName(r.getNameCount() - 1).toString().equals("$")) {
+                continue;
+            }
+
+            FileTemplateResolver fr = new FileTemplateResolver();
+            fr.setPrefix(r.toString());
+            fr.setSuffix(".html");
+            fr.setTemplateMode(TemplateMode.HTML);
+            templateEngine.addTemplateResolver(fr);
+        }
     }
 
     /**
