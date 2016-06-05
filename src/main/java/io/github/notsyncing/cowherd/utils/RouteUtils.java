@@ -23,6 +23,10 @@ public class RouteUtils
             return false;
         }
 
+        if (info.getPathPattern() == null) {
+            return false;
+        }
+
         return (info.getPathPattern().matcher(uri.getPath()).find());
     }
 
