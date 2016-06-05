@@ -98,6 +98,10 @@ public class Cowherd
 
                 log.i("Context root: " + p);
             }
+
+            if (CowherdConfiguration.isEveryHtmlIsTemplate()) {
+                log.w("You've enabled everyHtmlIsTemplate, please keep in mind that this is not suitable for production!");
+            }
         } else {
             log.i("No configuration file found.");
         }

@@ -5,7 +5,9 @@ import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
+import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
+import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
@@ -159,11 +161,11 @@ public class RouteManager
         Map.Entry<RouteInfo, Method> p = findMatchedAction(uri);
 
         if (p == null) {
-            boolean processed = false;
+            ActionResponse resp = null;
 
             if (request.method() == HttpMethod.GET) {
                 try {
-                    processed = handleFileRequest(request);
+                    resp = handleFileRequest(request);
                 } catch (Exception e) {
                     e.printStackTrace();
 
@@ -173,12 +175,13 @@ public class RouteManager
                 }
             }
 
-            if (!processed) {
+            if ((resp == null) && (!request.response().ended())) {
                 log.d(" ... no route");
                 request.response().setStatusCode(404).end();
+                return CompletableFuture.completedFuture(new ActionResult());
+            } else {
+                return CompletableFuture.completedFuture(new ActionResult(null, resp));
             }
-
-            return CompletableFuture.completedFuture(new ActionResult());
         }
 
         RouteInfo r = p.getKey();
@@ -196,7 +199,7 @@ public class RouteManager
         return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() + " in route " + r));
     }
 
-    private static boolean handleFileRequest(HttpServerRequest request) throws IOException, ParseException, URISyntaxException
+    private static ActionResponse handleFileRequest(HttpServerRequest request) throws IOException, ParseException, URISyntaxException
     {
         boolean needSend = true;
 
@@ -220,6 +223,14 @@ public class RouteManager
             }
 
             if (Files.isRegularFile(file)) {
+                String fn = contextRoot.relativize(file).toString();
+
+                if ((fn.endsWith(".html")) && (CowherdConfiguration.isEveryHtmlIsTemplate())) {
+                    fn = fn.substring(0, fn.length() - 5);
+                    log.d(" ... view: " + file);
+                    return new ViewResponse(null, "/" + fn);
+                }
+
                 String ifModifiedSince = request.getHeader("If-Modified-Since");
 
                 if (!StringUtils.isEmpty(ifModifiedSince)) {
@@ -229,21 +240,20 @@ public class RouteManager
                     if (fileModifyTime <= reqQueryTime) {
                         request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
                         request.response().setStatusCode(304).end();
-                        log.d(" ... local file not modified");
                         needSend = false;
                     }
                 }
 
                 if (needSend) {
                     log.d(" ... local file: " + file);
-                    FileResponse fileResp = new FileResponse(file);
-                    fileResp.writeToResponse(new ActionContext(request));
+                    return new FileResponse(file);
+                } else {
+                    log.d(" ... local file: " + file + " (not modified)");
+                    return null;
                 }
-
-                return true;
             }
         }
 
-        return false;
+        return null;
     }
 }

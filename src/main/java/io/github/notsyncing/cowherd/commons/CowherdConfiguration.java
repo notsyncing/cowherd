@@ -44,6 +44,9 @@ public class CowherdConfiguration
     @ConfigField
     private static Path logDir;
 
+    @ConfigField
+    private static boolean everyHtmlIsTemplate;
+
     private static JsonObject userConfiguration;
 
     /**
@@ -212,6 +215,16 @@ public class CowherdConfiguration
         }
 
         CowherdLogger.loggerConfigChanged();
+    }
+
+    public static boolean isEveryHtmlIsTemplate()
+    {
+        return everyHtmlIsTemplate;
+    }
+
+    public static void setEveryHtmlIsTemplate(boolean everyHtmlIsTemplate)
+    {
+        CowherdConfiguration.everyHtmlIsTemplate = everyHtmlIsTemplate;
     }
 
     /**

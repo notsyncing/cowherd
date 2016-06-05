@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.responses;
 
 import io.github.notsyncing.cowherd.annotations.Route;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.InvalidViewResponseException;
 import io.github.notsyncing.cowherd.models.ActionContext;
 import io.vertx.core.http.HttpServerResponse;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class ViewResponse<T> implements ActionResponse
 {
     private T model;
+    private String viewName = null;
 
     /**
      * 实例化视图响应对象
@@ -25,6 +27,12 @@ public class ViewResponse<T> implements ActionResponse
     public ViewResponse(T model)
     {
         this.model = model;
+    }
+
+    public ViewResponse(T model, String viewName)
+    {
+        this.model = model;
+        this.viewName = viewName;
     }
 
     public T getModel()
@@ -40,17 +48,23 @@ public class ViewResponse<T> implements ActionResponse
         Method action = context.getActionMethod();
         HttpServerResponse resp = context.getRequest().response();
 
-        if (!action.isAnnotationPresent(Route.class)) {
-            future.completeExceptionally(new InvalidViewResponseException("Action " + action.toString() +
-                    " has no route annotation with view page!"));
-            return future;
+        if (!CowherdConfiguration.isEveryHtmlIsTemplate()) {
+            if (!action.isAnnotationPresent(Route.class)) {
+                future.completeExceptionally(new InvalidViewResponseException("Action " + action.toString() +
+                        " has no route annotation with view page!"));
+                return future;
+            }
         }
 
-        Route route = action.getAnnotation(Route.class);
-        String templateName = route.value();
+        String templateName = viewName;
 
-        if (templateName.endsWith(".html")) {
-            templateName = templateName.substring(0, templateName.length() - 5);
+        if (templateName == null) {
+            Route route = action.getAnnotation(Route.class);
+            templateName = route.value();
+
+            if (templateName.endsWith(".html")) {
+                templateName = templateName.substring(0, templateName.length() - 5);
+            }
         }
 
         Context c = new Context();
