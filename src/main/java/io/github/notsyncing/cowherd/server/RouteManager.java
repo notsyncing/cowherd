@@ -244,7 +244,6 @@ public class RouteManager
             }
         }
 
-        request.response().setStatusCode(404).end();
         return false;
     }
 }
