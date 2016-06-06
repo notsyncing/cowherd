@@ -72,6 +72,10 @@ public class FileResponse implements ActionResponse
         }
 
         if (stream != null) {
+            if (contentType == null) {
+                contentType = "text/plain";
+            }
+
             resp.putHeader("Content-Type", contentType);
             resp.putHeader("Content-Length", String.valueOf(stream.available()));
             FileUtils.pumpInputStreamToWriteStream(stream, resp);
