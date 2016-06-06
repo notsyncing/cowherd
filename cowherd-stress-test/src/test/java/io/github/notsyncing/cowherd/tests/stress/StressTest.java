@@ -22,8 +22,10 @@ public class StressTest
     private TestApp app;
 
     @Before
-    public void setUp()
+    public void setUp() throws InterruptedException
     {
+        Thread.sleep(20 * 1000);
+
         app = new TestApp();
         app.run();
     }
@@ -49,7 +51,7 @@ public class StressTest
                         }
                     }
                 })
-                .numRoundsPerThread(100)
+                .numRoundsPerThread(10)
                 .numThreads(1000);
 
         tester.run();
