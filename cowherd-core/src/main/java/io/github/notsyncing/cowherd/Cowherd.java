@@ -19,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -90,7 +91,14 @@ public class Cowherd
             for (Path p : CowherdConfiguration.getContextRoots()) {
                 if (p.getName(p.getNameCount() - 1).toString().equals("$")) {
                     try {
-                        p = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
+                        URL url = CowherdConfiguration.class.getResource("/APP_ROOT");
+
+                        if (url == null) {
+                            log.w("No APP_ROOT found in classpath!");
+                            continue;
+                        }
+
+                        p = Paths.get(url.toURI());
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                     }
