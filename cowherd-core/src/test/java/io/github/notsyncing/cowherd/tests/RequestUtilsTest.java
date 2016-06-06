@@ -42,7 +42,7 @@ public class RequestUtilsTest
     {
     }
 
-    private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g)
+    private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g, TestEnum h)
     {
     }
 
@@ -68,6 +68,7 @@ public class RequestUtilsTest
         assertEquals(3, d.f);
 
         assertEquals(TestEnum.TestB, results[4]);
+        assertNull(results[5]);
     }
 
     @Test
