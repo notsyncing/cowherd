@@ -87,9 +87,13 @@ public class RequestExecutor
             }
 
             CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
-            requestedMethod.invoke(service, targetParams);
+            Object result = requestedMethod.invoke(service, targetParams);
 
-            return CompletableFuture.completedFuture(new WebSocketActionResult(requestedMethod, null));
+            if (result instanceof CompletableFuture) {
+                return ((CompletableFuture)result).thenApply(r -> new WebSocketActionResult(requestedMethod, null));
+            } else {
+                return CompletableFuture.completedFuture(new WebSocketActionResult(requestedMethod, null));
+            }
         } catch (Exception e) {
             return FutureUtils.failed(e);
         }
