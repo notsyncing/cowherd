@@ -227,6 +227,7 @@ public class RequestExecutor
             final List<UploadFileInfo>[] uploadsRef = new List[1];
             final Map<String, List<String>>[] paramsRef = new Map[1];
             List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
+            final ActionResult[] result = new ActionResult[1];
 
             return paramFuture.thenCompose(p -> {
                 paramsRef[0] = p;
@@ -248,10 +249,15 @@ public class RequestExecutor
                 c.setRequestCookies(cookies);
                 return f.before(c);
             })).thenCompose(c -> executeRequestedAction(requestedAction, req, paramsRef[0], cookies, uploadsRef[0])
-            ).thenCompose(r -> executeFilters(matchedFilters, (f, c) -> {
-                c.setResult(r);
-                return f.after(c);
-            }));
+            ).thenCompose(r -> {
+                result[0] = r;
+
+                return executeFilters(matchedFilters, (f, c) -> {
+                    c.setResult(r);
+                    return f.after(c);
+                });
+            })
+            .thenApply(r -> r == null ? result[0] : r);
         });
     }
 
