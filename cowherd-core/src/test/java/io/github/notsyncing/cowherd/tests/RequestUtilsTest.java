@@ -42,7 +42,7 @@ public class RequestUtilsTest
     {
     }
 
-    private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g, TestEnum h)
+    private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g, TestEnum h, boolean i, boolean j)
     {
     }
 
@@ -56,6 +56,8 @@ public class RequestUtilsTest
         params.put("d.e", Arrays.asList("test2"));
         params.put("d.f", Arrays.asList("3"));
         params.put("g", Arrays.asList(String.valueOf(TestEnum.TestB.ordinal())));
+        params.put("i", Arrays.asList("false"));
+        params.put("j", Arrays.asList("true"));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod2, null, params, null, null);
         assertEquals("test", results[0]);
@@ -69,6 +71,8 @@ public class RequestUtilsTest
 
         assertEquals(TestEnum.TestB, results[4]);
         assertNull(results[5]);
+        assertFalse((boolean)results[6]);
+        assertTrue((boolean)results[7]);
     }
 
     @Test

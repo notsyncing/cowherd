@@ -8,7 +8,7 @@ public class TypeUtils
 {
     public static Boolean stringToBoolean(String s)
     {
-        return ((s != null) && (!s.isEmpty()) && ((s.toLowerCase().equals("true")) || (!s.equals("0"))));
+        return ((s != null) && (!s.isEmpty()) && ((s.toLowerCase().equals("true")) || (s.equals("1"))));
     }
 
     public static Integer stringToInt(String s)
