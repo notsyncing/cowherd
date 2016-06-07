@@ -6,6 +6,9 @@ import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
+import io.github.notsyncing.cowherd.utils.StringUtils;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
@@ -57,7 +60,7 @@ public abstract class CowherdService
      */
     protected void putCookie(HttpServerResponse response, HttpCookie cookie)
     {
-        response.headers().add("Set-Cookie", cookie.toString());
+        response.headers().add("Set-Cookie", StringUtils.cookieToString(cookie));
     }
 
     /**
