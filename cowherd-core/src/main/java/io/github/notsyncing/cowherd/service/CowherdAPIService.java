@@ -61,7 +61,7 @@ public class CowherdAPIService extends CowherdService
 
         String js = "(function () {\n";
 
-        js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/es6-promise/3.0.2/dist/es6-promise.min.js") + "\n\n";
+        js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/es6-promise/3.1.2/dist/es6-promise.min.js") + "\n\n";
         js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/reqwest/2.0.5/reqwest.min.js") + "\n\n";
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
