@@ -11,12 +11,14 @@ import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.HttpCookie;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -166,5 +168,16 @@ public class TestService extends CowherdService
         } catch (Exception e) {
             return FutureUtils.failed(e);
         }
+    }
+
+    @Exported
+    @HttpGet
+    public String cookiesRequest(HttpServerResponse resp, String a, String b, String c)
+    {
+        putCookie(resp, new HttpCookie("a", a));
+        putCookie(resp, new HttpCookie("b", b));
+        putCookie(resp, new HttpCookie("c", c));
+
+        return "done";
     }
 }

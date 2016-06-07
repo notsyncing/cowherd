@@ -57,7 +57,7 @@ public abstract class CowherdService
      */
     protected void putCookie(HttpServerResponse response, HttpCookie cookie)
     {
-        response.putHeader("Set-Cookie", cookie.toString());
+        response.headers().add("Set-Cookie", cookie.toString());
     }
 
     /**

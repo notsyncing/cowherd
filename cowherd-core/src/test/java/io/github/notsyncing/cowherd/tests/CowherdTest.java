@@ -17,8 +17,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -30,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.HttpCookie;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -149,7 +152,7 @@ public class CowherdTest
         String s = FileUtils.getInternalResourceAsString("/cowherd.config");
         JsonObject o = new JsonObject(s);
 
-        assertEquals((int)o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
+        assertEquals((int) o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
 
         List<Path> contextRoots = JSON.parseArray(o.getJsonArray("contextRoots").toString(), Path.class);
         assertArrayEquals(contextRoots.toArray(new Path[0]), CowherdConfiguration.getContextRoots());
@@ -619,7 +622,7 @@ public class CowherdTest
         Async async = context.async();
         HttpClient client = vertx.createHttpClient();
 
-        final int[] state = { 0 };
+        final int[] state = {0};
 
         client.websocket(CowherdConfiguration.getListenPort(), "localhost", "/TestService/webSocketRequest?id=2", s -> {
             s.frameHandler(f -> {
@@ -660,5 +663,20 @@ public class CowherdTest
         assertEquals("id: 5 filename: test.txt param: file data: Hello", data);
 
         Files.deleteIfExists(tf);
+    }
+
+    @Test
+    public void testCookiesRequest() throws IOException
+    {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet g = new HttpGet("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/cookiesRequest?a=1&b=2&c=3");
+
+            try (CloseableHttpResponse resp = client.execute(g)) {
+                Header[] cookieHeaders = resp.getHeaders("Set-Cookie");
+                assertEquals("a=\"1\"", cookieHeaders[0].getValue());
+                assertEquals("b=\"2\"", cookieHeaders[1].getValue());
+                assertEquals("c=\"3\"", cookieHeaders[2].getValue());
+            }
+        }
     }
 }
