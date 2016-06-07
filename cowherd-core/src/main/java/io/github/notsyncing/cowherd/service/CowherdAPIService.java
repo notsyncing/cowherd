@@ -115,6 +115,10 @@ public class CowherdAPIService extends CowherdService
         } else {
             String n = getGenericReturnTypeName(m);
 
+            if (n.contains("<")) {
+                return "";
+            }
+
             if ((!n.equals(m.getReturnType().getName())) && (Enum.class.isAssignableFrom(Class.forName(n)))) {
                 e = (Class<? extends Enum>) Class.forName(getGenericReturnTypeName(m));
             }
