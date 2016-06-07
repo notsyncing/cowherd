@@ -5,12 +5,19 @@ import java.net.HttpCookie;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
 public class StringUtils
 {
+    private static final DateFormat cookiesDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z");
+
+    static {
+        cookiesDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
+
     public static String appendUrl(String source, String append)
     {
         return source.endsWith("/") ? source + append : source + "/" + append;
@@ -73,6 +80,22 @@ public class StringUtils
 
         if (cookie.getPortlist() != null) {
             b.append("; port=").append(cookie.getPortlist());
+        }
+
+        if (cookie.getMaxAge() != -1) {
+            b.append("; max-age=").append(cookie.getMaxAge());
+
+            Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+            c.add(Calendar.SECOND, (int)cookie.getMaxAge());
+            b.append("; expires=").append(cookiesDateFormat.format(c.getTime()));
+        }
+
+        if (cookie.getSecure()) {
+            b.append("; secure");
+        }
+
+        if (cookie.isHttpOnly()) {
+            b.append("; httponly");
         }
 
         return b.toString();
