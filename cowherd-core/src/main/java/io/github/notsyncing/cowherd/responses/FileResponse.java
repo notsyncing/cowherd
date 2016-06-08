@@ -64,6 +64,12 @@ public class FileResponse implements ActionResponse
         CompletableFuture future = new CompletableFuture();
 
         if (file != null) {
+            if (!Files.isRegularFile(file)) {
+                resp.setStatusCode(404).end();
+                future.complete(null);
+                return future;
+            }
+
             stream = Files.newInputStream(file);
             contentType = Files.probeContentType(file);
 
