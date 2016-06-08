@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class FileResponse implements ActionResponse
 {
     private Path file;
+    private Path scope;
     private InputStream stream;
     private String contentType;
 
@@ -33,6 +34,17 @@ public class FileResponse implements ActionResponse
     public FileResponse(Path file)
     {
         this.file = file;
+    }
+
+    /**
+     * 实例化文件响应对象，并检查该文件是否超出指定的路径范围
+     * @param file 要发送的文件
+     * @param scope 指定的路径范围
+     */
+    public FileResponse(Path file, Path scope)
+    {
+        this.file = file;
+        this.scope = scope;
     }
 
     /**
@@ -64,6 +76,16 @@ public class FileResponse implements ActionResponse
         CompletableFuture future = new CompletableFuture();
 
         if (file != null) {
+            if (scope != null) {
+                String s = scope.relativize(file).toString();
+
+                if (s.contains("..")) {
+                    resp.setStatusCode(404).end();
+                    future.complete(null);
+                    return future;
+                }
+            }
+
             if (!Files.isRegularFile(file)) {
                 resp.setStatusCode(404).end();
                 future.complete(null);
