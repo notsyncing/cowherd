@@ -146,6 +146,10 @@ public class FileStorage
      */
     public CompletableFuture<Path> storeFile(UploadFileInfo file, Enum tag, String newFileName, boolean noRemoveOld)
     {
+        if (file == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return storeFile(file.getFile(), tag, newFileName, noRemoveOld);
     }
 
@@ -157,6 +161,10 @@ public class FileStorage
      */
     public CompletableFuture<Path> storeFile(UploadFileInfo file, Enum tag)
     {
+        if (file == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return storeFile(file.getFile(), tag, file.getFilename(), false);
     }
 
@@ -168,6 +176,10 @@ public class FileStorage
      */
     public CompletableFuture<Path> storeFileWithRandomName(UploadFileInfo file, Enum tag)
     {
+        if (file == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         String fn = file.getFilename();
         int e = fn.lastIndexOf('.');
         String ext = e > 0 ? fn.substring(e) : "";
