@@ -673,9 +673,9 @@ public class CowherdTest
 
             try (CloseableHttpResponse resp = client.execute(g)) {
                 Header[] cookieHeaders = resp.getHeaders("Set-Cookie");
-                assertEquals("a=\"1\"", cookieHeaders[0].getValue());
-                assertEquals("b=\"2\"", cookieHeaders[1].getValue());
-                assertEquals("c=\"3\"", cookieHeaders[2].getValue());
+                assertEquals("a=1", cookieHeaders[0].getValue());
+                assertEquals("b=2", cookieHeaders[1].getValue());
+                assertEquals("c=3", cookieHeaders[2].getValue());
             }
         }
     }
