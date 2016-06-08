@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
@@ -271,10 +272,8 @@ public class RequestUtils
 
             Object o = complexParams.get(p.getName());
 
-            if (o instanceof JSONArray) {
-                targetParams.set(i, ((JSONArray)o).toJavaObject(p.getType()));
-            } else if (o instanceof JSONObject) {
-                targetParams.set(i, ((JSONObject)o).toJavaObject(p.getType()));
+            if ((o instanceof JSONArray) || (o instanceof JSONObject)) {
+                targetParams.set(i, JSON.parseObject(o.toString(), p.getParameterizedType()));
             } else {
                 targetParams.set(i, o);
             }
