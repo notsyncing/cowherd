@@ -47,6 +47,9 @@ public class CowherdConfiguration
     @ConfigField
     private static boolean everyHtmlIsTemplate = false;
 
+    @ConfigField
+    private static String[] allowOrigins;
+
     private static JsonObject userConfiguration;
 
     /**
@@ -225,6 +228,24 @@ public class CowherdConfiguration
     public static void setEveryHtmlIsTemplate(boolean everyHtmlIsTemplate)
     {
         CowherdConfiguration.everyHtmlIsTemplate = everyHtmlIsTemplate;
+    }
+
+    /**
+     * 获取允许 CORS 的域名列表
+     * @return 允许 CORS 的域名列表
+     */
+    public static String[] getAllowOrigins()
+    {
+        return allowOrigins;
+    }
+
+    /**
+     * 设置允许 CORS 的域名列表
+     * @param allowOrigins 允许 CORS 的域名列表
+     */
+    public static void setAllowOrigins(String[] allowOrigins)
+    {
+        CowherdConfiguration.allowOrigins = allowOrigins;
     }
 
     /**
