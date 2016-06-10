@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RouteManager
 {
@@ -187,6 +188,38 @@ public class RouteManager
         RouteInfo r = p.getKey();
         Method m = p.getValue();
         log.d(" ... action " + m);
+
+        if (!m.isAnnotationPresent(DisableCORS.class)) {
+            if (request.headers().contains("Origin")) {
+                String origin = request.getHeader("Origin");
+                String remoteAddr = request.remoteAddress().host();
+                boolean allow = true;
+
+                if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost")) && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))) {
+                    if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
+                        origin = "NOT_ALLOWED";
+                        allow = false;
+                    }
+                }
+
+                if (allow) {
+                    if (request.headers().contains("Access-Control-Request-Headers")) {
+                        request.response().putHeader("Access-Control-Allow-Headers", request.getHeader("Access-Control-Request-Headers"));
+                    }
+
+                    if (request.headers().contains("Access-Control-Request-Method")) {
+                        request.response().putHeader("Access-Control-Allow-Methods", request.getHeader("Access-Control-Request-Method"));
+                    }
+                }
+
+                request.response().putHeader("Access-Control-Allow-Origin", origin);
+
+                if (request.method() == HttpMethod.OPTIONS) {
+                    request.response().end();
+                    return CompletableFuture.completedFuture(new ActionResult());
+                }
+            }
+        }
 
         if (r.getType() == RouteType.Http) {
             return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),

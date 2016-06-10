@@ -4,13 +4,11 @@ import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpAnyMethod;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
-import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.io.IOException;
@@ -35,36 +33,6 @@ public class CowherdAPIService extends CowherdService
                                      Map<String, List<String>> __parameters__, List<HttpCookie> __cookies__,
                                      List<UploadFileInfo> __uploads__)
     {
-        if (request.headers().contains("Origin")) {
-            String origin = request.getHeader("Origin");
-            String remoteAddr = request.remoteAddress().host();
-            boolean allow = true;
-
-            if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost")) && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))) {
-                if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
-                    origin = "NOT_ALLOWED";
-                    allow = false;
-                }
-            }
-
-            if (allow) {
-                if (request.headers().contains("Access-Control-Request-Headers")) {
-                    request.response().putHeader("Access-Control-Allow-Headers", request.getHeader("Access-Control-Request-Headers"));
-                }
-
-                if (request.headers().contains("Access-Control-Request-Method")) {
-                    request.response().putHeader("Access-Control-Allow-Methods", request.getHeader("Access-Control-Request-Method"));
-                }
-            }
-
-            request.response().putHeader("Access-Control-Allow-Origin", origin);
-
-            if (request.method() == HttpMethod.OPTIONS) {
-                request.response().end();
-                return CompletableFuture.completedFuture(null);
-            }
-        }
-
         return delegateTo(__service__, __action__, request, __parameters__, __cookies__,  __uploads__);
     }
 
