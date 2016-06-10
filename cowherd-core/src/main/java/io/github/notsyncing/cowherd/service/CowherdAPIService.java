@@ -37,9 +37,10 @@ public class CowherdAPIService extends CowherdService
     {
         if (request.headers().contains("Origin")) {
             String origin = request.getHeader("Origin");
+            String remoteAddr = request.remoteAddress().host();
             boolean allow = true;
 
-            if ((!request.remoteAddress().host().equals("127.0.0.1")) && (!request.remoteAddress().host().equals("localhost"))) {
+            if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost")) && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))) {
                 if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
                     origin = "NOT_ALLOWED";
                     allow = false;
