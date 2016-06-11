@@ -210,6 +210,8 @@ public class RouteManager
                     if (request.headers().contains("Access-Control-Request-Method")) {
                         request.response().putHeader("Access-Control-Allow-Methods", request.getHeader("Access-Control-Request-Method"));
                     }
+
+                    request.response().putHeader("Access-Control-Allow-Credentials", "true");
                 }
 
                 request.response().putHeader("Access-Control-Allow-Origin", origin);
