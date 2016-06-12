@@ -381,8 +381,9 @@ public class RequestUtils
         List<HttpCookie> cookies = null;
 
         if (cookieHeader != null) {
-            cookies = HttpCookie.parse(cookieHeader);
+            cookies = CookieUtils.parseServerCookies(cookieHeader);
         }
+
         return cookies;
     }
 }

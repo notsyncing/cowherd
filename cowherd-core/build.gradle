@@ -35,6 +35,7 @@ dependencies {
     testCompile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
     testCompile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
     testCompile 'io.vertx:vertx-unit:3.2.1'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '1.10.19'
 }
 
 task sourceJar(type: Jar) {

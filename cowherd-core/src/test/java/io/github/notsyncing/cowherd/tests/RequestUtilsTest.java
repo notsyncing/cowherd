@@ -3,12 +3,16 @@ package io.github.notsyncing.cowherd.tests;
 import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
+import io.vertx.core.http.HttpServerRequest;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
+import java.net.HttpCookie;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 class TestParamClass
 {
@@ -204,5 +208,30 @@ public class RequestUtilsTest
         assertEquals("9", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(0).getString("f"));
         assertEquals("8", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("e"));
         assertEquals("0", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("f"));
+    }
+
+    @Test
+    public void testParseHttpCookies()
+    {
+        String cookieString = "a=1; b=2; c=3";
+
+        HttpServerRequest req = Mockito.mock(HttpServerRequest.class);
+        when(req.getHeader("Cookie")).thenReturn(cookieString);
+
+        List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
+
+        assertEquals(3, cookies.size());
+
+        HttpCookie a = cookies.get(0);
+        assertEquals("a", a.getName());
+        assertEquals("1", a.getValue());
+
+        HttpCookie b = cookies.get(1);
+        assertEquals("b", b.getName());
+        assertEquals("2", b.getValue());
+
+        HttpCookie c = cookies.get(2);
+        assertEquals("c", c.getName());
+        assertEquals("3", c.getValue());
     }
 }
