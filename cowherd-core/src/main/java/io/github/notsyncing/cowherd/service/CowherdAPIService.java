@@ -168,6 +168,7 @@ public class CowherdAPIService extends CowherdService
         js += "reqwest({\n";
         js += "url: '" + base + "api/gateway',\n";
         js += "method: '" + RouteUtils.getActionHttpMethodString(m) + "',\n";
+        js += "withCredentials: true,\n";
         js += "data: {\n";
         js += "__service__: '" + info.getFullName() + "',\n";
         js += "__action__: '" + m.getName() + "'";
