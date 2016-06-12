@@ -220,6 +220,11 @@ public class RouteManager
                     request.response().end();
                     return CompletableFuture.completedFuture(new ActionResult());
                 }
+
+                if (!allow) {
+                    request.response().setStatusCode(403).end();
+                    return CompletableFuture.completedFuture(new ActionResult());
+                }
             }
         }
 
