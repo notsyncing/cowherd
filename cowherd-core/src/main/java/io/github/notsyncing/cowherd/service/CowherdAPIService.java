@@ -143,6 +143,19 @@ public class CowherdAPIService extends CowherdService
         return js;
     }
 
+    private Parameter[] stripMethodParameters(Method m)
+    {
+        Parameter[] params = Stream.of(m.getParameters())
+                .filter(p -> !p.getType().equals(HttpCookie.class))
+                .toArray(Parameter[]::new);
+
+        if (params == null) {
+            params = new Parameter[0];
+        }
+
+        return params;
+    }
+
     private String generateMethodCall(String base, CowherdServiceInfo info, Method m)
     {
         String js = "";
@@ -154,9 +167,10 @@ public class CowherdAPIService extends CowherdService
         }
 
         js += "." + m.getName() + " = function (";
+        Parameter[] params = stripMethodParameters(m);
 
-        if (m.getParameterCount() > 0) {
-            for (Parameter p : m.getParameters()) {
+        if (params.length > 0) {
+            for (Parameter p : params) {
                 js += p.getName() + ", ";
             }
 
@@ -173,10 +187,10 @@ public class CowherdAPIService extends CowherdService
         js += "__service__: '" + info.getFullName() + "',\n";
         js += "__action__: '" + m.getName() + "'";
 
-        if (m.getParameterCount() > 0) {
+        if (params.length > 0) {
             js += ",\n";
 
-            for (Parameter p : m.getParameters()) {
+            for (Parameter p : params) {
                 js += p.getName() + ": " + p.getName() + ",\n";
             }
 
