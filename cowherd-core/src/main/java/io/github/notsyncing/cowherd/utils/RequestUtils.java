@@ -319,6 +319,11 @@ public class RequestUtils
         for (int i = 0; i < values.size(); i++) {
             Object currObj;
             Object prevObj = hubObject;
+            Object v = values.get(i);
+
+            if (StringUtils.isInteger((String)v)) {
+                v = Integer.parseInt((String)v);
+            }
 
             for (int j = 0; j < keySections.length; j++) {
                 String keyPart = keySections[j];
@@ -336,7 +341,7 @@ public class RequestUtils
 
                     if (currentKeyIsArray) {
                         if (j >= keySections.length - 1) {
-                            prevArray.add(values.get(i));
+                            prevArray.add(v);
                         }
                     } else {
                         if (i < prevArray.size()) {
@@ -345,21 +350,21 @@ public class RequestUtils
                             prevArray.add(currObj);
                         }
 
-                        ((JSONObject)currObj).put(name, values.get(i));
+                        ((JSONObject)currObj).put(name, v);
                     }
                 } else {
                     JSONObject prevObject = (JSONObject) prevObj;
 
                     if (j >= keySections.length - 1) {
                         if (!currentKeyIsArray) {
-                            prevObject.put(name, values.get(i));
+                            prevObject.put(name, v);
                         } else {
                             if (!prevObject.containsKey(name)) {
                                 prevObject.put(name, currObj);
                             }
 
                             JSONArray a = prevObject.getJSONArray(name);
-                            a.add(values.get(i));
+                            a.add(v);
                         }
                     } else {
                         if (!prevObject.containsKey(name)) {

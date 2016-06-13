@@ -164,9 +164,9 @@ public class RequestUtilsTest
         assertEquals(1, hubObject.size());
         assertNotNull(hubObject.getJSONArray("test"));
         assertEquals(3, hubObject.getJSONArray("test").size());
-        assertTrue(hubObject.getJSONArray("test").contains("1"));
-        assertTrue(hubObject.getJSONArray("test").contains("2"));
-        assertTrue(hubObject.getJSONArray("test").contains("3"));
+        assertTrue(hubObject.getJSONArray("test").contains(1));
+        assertTrue(hubObject.getJSONArray("test").contains(2));
+        assertTrue(hubObject.getJSONArray("test").contains(3));
     }
 
     @Test
@@ -199,8 +199,8 @@ public class RequestUtilsTest
         assertNotNull(hubObject.getJSONObject("test2"));
         assertEquals(2, hubObject.getJSONObject("test2").size());
         assertEquals(2, hubObject.getJSONObject("test2").getJSONArray("c").size());
-        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains("5"));
-        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains("6"));
+        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains(5));
+        assertTrue(hubObject.getJSONObject("test2").getJSONArray("c").contains(6));
 
         assertNotNull(hubObject.getJSONObject("test2").getJSONArray("d"));
         assertEquals(2, hubObject.getJSONObject("test2").getJSONArray("d").size());
