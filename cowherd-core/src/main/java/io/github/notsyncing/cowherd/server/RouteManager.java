@@ -84,6 +84,7 @@ public class RouteManager
                 info.setPath(route.value());
                 info.setDomain(route.domain());
                 info.setEntry(route.entry());
+                info.setViewPath(StringUtils.isEmpty(route.viewPath()) ? null : route.viewPath());
             }
 
             if (m.isAnnotationPresent(WebSocket.class)) {

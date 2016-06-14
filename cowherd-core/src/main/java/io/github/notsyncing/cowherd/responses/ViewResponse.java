@@ -60,7 +60,7 @@ public class ViewResponse<T> implements ActionResponse
 
         if (templateName == null) {
             Route route = action.getAnnotation(Route.class);
-            templateName = route.value();
+            templateName = route.viewPath();
 
             if (templateName.endsWith(".html")) {
                 templateName = templateName.substring(0, templateName.length() - 5);

@@ -26,4 +26,9 @@ public @interface Route
      * 是否为默认路由，即访问 / 时的路由
      */
     boolean entry() default false;
+
+    /**
+     * 指向一个视图时，指定视图的路径
+     */
+    String viewPath() default "";
 }
