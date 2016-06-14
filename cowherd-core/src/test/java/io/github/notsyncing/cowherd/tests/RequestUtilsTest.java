@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.tests;
 
 import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
 import org.junit.Test;
@@ -53,15 +54,17 @@ public class RequestUtilsTest
     @Test
     public void testConvertParameterListToMethodParameters() throws IllegalAccessException, ValidationFailedException, InstantiationException
     {
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("a", Arrays.asList("test"));
-        params.put("b", Arrays.asList("2"));
-        params.put("c", Arrays.asList("h", "el", "lo"));
-        params.put("d.e", Arrays.asList("test2"));
-        params.put("d.f", Arrays.asList("3"));
-        params.put("g", Arrays.asList(String.valueOf(TestEnum.TestB.ordinal())));
-        params.put("i", Arrays.asList("false"));
-        params.put("j", Arrays.asList("true"));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("a", "test"));
+        params.add(new Pair<>("b", "2"));
+        params.add(new Pair<>("c", "h"));
+        params.add(new Pair<>("c", "el"));
+        params.add(new Pair<>("c", "lo"));
+        params.add(new Pair<>("d.e", "test2"));
+        params.add(new Pair<>("d.f", "3"));
+        params.add(new Pair<>("g", String.valueOf(TestEnum.TestB.ordinal())));
+        params.add(new Pair<>("i", "false"));
+        params.add(new Pair<>("j", "true"));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod2, null, params, null, null);
         assertEquals("test", results[0]);
@@ -92,11 +95,8 @@ public class RequestUtilsTest
                 "}" +
                 "}";
 
-        List<String> s = new ArrayList<>();
-        s.add(json);
-
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("__json__", s);
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("__json__", json));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod1, null, params, null, null);
         assertEquals("test", results[0]);
@@ -112,13 +112,13 @@ public class RequestUtilsTest
     @Test
     public void testComplexKeyToJsonObjectWithSimpleObject()
     {
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("test.a", Arrays.asList("1"));
-        params.put("test.b", Arrays.asList("2"));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("test.a", "1"));
+        params.add(new Pair<>("test.b", "2"));
 
         JSONObject hubObject = new JSONObject();
 
-        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
 
         assertEquals(1, hubObject.size());
         assertNotNull(hubObject.getJSONObject("test"));
@@ -130,15 +130,15 @@ public class RequestUtilsTest
     @Test
     public void testComplexKeyToJsonObjectWithDeepSimpleObject()
     {
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("test.a.c", Arrays.asList("1"));
-        params.put("test.a.d", Arrays.asList("2"));
-        params.put("test.b.e", Arrays.asList("3"));
-        params.put("test.b.f", Arrays.asList("4"));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("test.a.c", "1"));
+        params.add(new Pair<>("test.a.d", "2"));
+        params.add(new Pair<>("test.b.e", "3"));
+        params.add(new Pair<>("test.b.f", "4"));
 
         JSONObject hubObject = new JSONObject();
 
-        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
 
         assertEquals(1, hubObject.size());
         assertNotNull(hubObject.getJSONObject("test"));
@@ -154,12 +154,14 @@ public class RequestUtilsTest
     @Test
     public void testComplexKeyToJsonObjectWithArray()
     {
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("test[]", Arrays.asList("1", "2", "3"));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("test[]", "1"));
+        params.add(new Pair<>("test[]", "2"));
+        params.add(new Pair<>("test[]", "3"));
 
         JSONObject hubObject = new JSONObject();
 
-        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
 
         assertEquals(1, hubObject.size());
         assertNotNull(hubObject.getJSONArray("test"));
@@ -172,16 +174,21 @@ public class RequestUtilsTest
     @Test
     public void testComplexKeyToJsonObjectWithDeepArray()
     {
-        Map<String, List<String>> params = new HashMap<>();
-        params.put("test[].a", Arrays.asList("1", "2"));
-        params.put("test[].b", Arrays.asList("3", "4"));
-        params.put("test2.c[]", Arrays.asList("5", "6"));
-        params.put("test2.d[].e", Arrays.asList("7", "8"));
-        params.put("test2.d[].f", Arrays.asList("9", "0"));
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("test[].a", "1"));
+        params.add(new Pair<>("test[].b", "3"));
+        params.add(new Pair<>("test[].a", "2"));
+        params.add(new Pair<>("test[].b", "4"));
+        params.add(new Pair<>("test2.c[]", "5"));
+        params.add(new Pair<>("test2.c[]", "6"));
+        params.add(new Pair<>("test2.d[].e", "7"));
+        params.add(new Pair<>("test2.d[].f", "9"));
+        params.add(new Pair<>("test2.d[].e", "8"));
+        params.add(new Pair<>("test2.d[].f", "0"));
 
         JSONObject hubObject = new JSONObject();
 
-        params.forEach((k, v) -> RequestUtils.complexKeyToJsonObject(hubObject, k, v));
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
 
         assertEquals(2, hubObject.size());
 
@@ -208,6 +215,61 @@ public class RequestUtilsTest
         assertEquals("9", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(0).getString("f"));
         assertEquals("8", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("e"));
         assertEquals("0", hubObject.getJSONObject("test2").getJSONArray("d").getJSONObject(1).getString("f"));
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithNestedArray()
+    {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("test.a[].b[]", "1"));
+        params.add(new Pair<>("test.a[].b[]", "2"));
+
+        JSONObject hubObject = new JSONObject();
+
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
+
+        assertEquals(1, hubObject.size());
+        assertEquals(1, hubObject.getJSONObject("test").size());
+
+        assertNotNull(hubObject.getJSONObject("test").getJSONArray("a"));
+        assertEquals(1, hubObject.getJSONObject("test").getJSONArray("a").size());
+        assertNotNull(hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0));
+        assertEquals(1, hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0).size());
+
+        assertNotNull(hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0).getJSONArray("b"));
+        assertEquals(2, hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0).getJSONArray("b").size());
+        assertEquals(1, (int)hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0).getJSONArray("b").getInteger(0));
+        assertEquals(2, (int)hubObject.getJSONObject("test").getJSONArray("a").getJSONObject(0).getJSONArray("b").getInteger(1));
+    }
+
+    @Test
+    public void testComplexKeyToJsonObjectWithComplexData()
+    {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("data.id", "1"));
+        params.add(new Pair<>("data.groupType", "4"));
+        params.add(new Pair<>("data.auth[].module", "2"));
+        params.add(new Pair<>("data.auth[].auth[]", "3"));
+
+        JSONObject hubObject = new JSONObject();
+
+        RequestUtils.complexKeyToJsonObject(hubObject, params);
+
+        assertEquals(1, hubObject.size());
+        assertEquals(3, hubObject.getJSONObject("data").size());
+
+        assertEquals(1, (int)hubObject.getJSONObject("data").getInteger("id"));
+        assertEquals(4, (int)hubObject.getJSONObject("data").getInteger("groupType"));
+
+        assertNotNull(hubObject.getJSONObject("data").getJSONArray("auth"));
+        assertEquals(1, hubObject.getJSONObject("data").getJSONArray("auth").size());
+        assertNotNull(hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0));
+        assertEquals(2, hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).size());
+        assertEquals(2, (int)hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getInteger("module"));
+
+        assertNotNull(hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth"));
+        assertEquals(1, hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth").size());
+        assertEquals(3, (int)hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth").getInteger(0));
     }
 
     @Test

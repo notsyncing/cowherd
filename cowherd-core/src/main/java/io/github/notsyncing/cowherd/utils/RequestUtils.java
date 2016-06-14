@@ -1,13 +1,11 @@
 package io.github.notsyncing.cowherd.utils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson.*;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
 import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
@@ -24,6 +22,7 @@ import java.net.HttpCookie;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RequestUtils
@@ -57,7 +56,6 @@ public class RequestUtils
         }
 
         return (httpMethod == HttpMethod.HEAD) && (m.isAnnotationPresent(HttpHead.class));
-
     }
 
     public static boolean checkIfRequestHasBody(HttpServerRequest req)
@@ -82,24 +80,23 @@ public class RequestUtils
         }
     }
 
-    public static CompletableFuture<Map<String, List<String>>> extractRequestParameters(HttpServerRequest req,
-                                                                                        Map<String, List<String>> additionalParams)
+    public static CompletableFuture<List<Pair<String, String>>> extractRequestParameters(HttpServerRequest req,
+                                                                                         List<Pair<String, String>> additionalParams)
     {
-        CompletableFuture<Map<String, List<String>>> future = new CompletableFuture<>();
-        Map<String, List<String>> params = new HashMap<>(additionalParams);
+        CompletableFuture<List<Pair<String, String>>> future = new CompletableFuture<>();
+        List<Pair<String, String>> params = new ArrayList<>(additionalParams);
 
-        req.params().forEach(e -> mapFlatParametersToList(params, e));
+        req.params().forEach(e -> params.add(new Pair<>(e.getKey(), e.getValue())));
 
         if (req.isExpectMultipart()) {
             req.endHandler(r -> {
-                req.formAttributes().forEach(e -> mapFlatParametersToList(params, e));
+                req.formAttributes().forEach(e -> params.add(new Pair<>(e.getKey(), e.getValue())));
                 future.complete(params);
             });
         } else {
             if (checkIfRequestHasBody(req)) {
                 req.bodyHandler(body -> {
-                    QueryStringDecoder decoder = new QueryStringDecoder(body.toString(), false);
-                    params.putAll(decoder.parameters());
+                    params.addAll(StringUtils.parseQueryString(body.toString()));
 
                     future.complete(params);
                 });
@@ -151,140 +148,148 @@ public class RequestUtils
     }
 
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
-                                                                  Map<String, List<String>> params,
+                                                                  List<Pair<String, String>> params,
                                                                   List<HttpCookie> cookies,
                                                                   List<UploadFileInfo> uploads,
                                                                   Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException
     {
-        List<Object> targetParams = new ArrayList<>();
         Parameter[] pl = method.getParameters();
-        JSONObject jsonParams = null;
 
-        if (params.containsKey("__json__")) {
-            String json = params.get("__json__").get(0);
-            jsonParams = JSON.parseObject(json);
+        if ((pl == null) || (pl.length <= 0)) {
+            return null;
         }
 
-        for (int i = 0; i < pl.length; i++) {
-            Parameter p = pl[i];
+        Object[] targetParams = new Object[pl.length];
+        List<Parameter> methodParams = Arrays.asList(pl);
+        Map<String, Parameter> methodParamMap = methodParams.stream()
+                .collect(Collectors.toMap(Parameter::getName, p -> p));
+        JSONObject jsonParams = null;
+        List<Pair<String, String>> complexParamPairs = new ArrayList<>();
 
-            if (!p.isNamePresent()) {
-                throw new RuntimeException("Parameter #" + i + " <" + p.getType() + "> of method " + method.getName() +
+        for (Pair<String, String> reqParam : params) {
+            if (reqParam.getKey().equals("__json__")) {
+                jsonParams = JSON.parseObject(reqParam.getValue());
+            }
+
+            if ((reqParam.getKey().contains(".")) || (reqParam.getKey().contains("["))) {
+                complexParamPairs.add(reqParam);
+                continue;
+            }
+
+            if (!methodParamMap.containsKey(reqParam.getKey())) {
+                continue;
+            }
+
+            Parameter methodParam = methodParamMap.get(reqParam.getKey());
+            int methodParamIndex = methodParams.indexOf(methodParam);
+
+            if (!methodParam.isNamePresent()) {
+                throw new RuntimeException("Parameter #" + methodParamIndex + " <" +
+                        methodParam.getType() + "> of method " + method.getName() +
                         " has no name present, you must compile your program with -parameters!");
             }
 
-            if (p.getName().equals("__parameters__")) {
-                targetParams.add(params);
-            } else if (p.getName().equals("__uploads__")) {
-                targetParams.add(uploads);
-            } else if (p.getName().equals("__cookies__")) {
-                targetParams.add(cookies);
-            } else if (p.getType() == UploadFileInfo.class) {
+            if (methodParam.getType().isEnum()) {
+                targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[Integer.parseInt(reqParam.getValue())];
+            } else if (methodParam.getType().isArray()) {
+                List<String> values = params.stream()
+                        .filter(p -> p.getKey().equals(reqParam.getKey()))
+                        .map(Pair::getValue)
+                        .collect(Collectors.toList());
+
+                targetParams[methodParamIndex] = TypeUtils.stringListToArrayType(methodParam.getType().getComponentType(), values);
+            } else {
+                targetParams[methodParamIndex] = TypeUtils.stringToType(methodParam.getType(), reqParam.getValue());
+            }
+        }
+
+        for (int i = 0; i < methodParams.size(); i++) {
+            Parameter methodParam = methodParams.get(i);
+
+            if (methodParam.getName().equals("__parameters__")) {
+                targetParams[i] = params;
+            } else if (methodParam.getName().equals("__uploads__")) {
+                targetParams[i] = uploads;
+            } else if (methodParam.getName().equals("__cookies__")) {
+                targetParams[i] = cookies;
+            } else if (methodParam.getType() == UploadFileInfo.class) {
                 if (uploads != null) {
                     Optional<UploadFileInfo> ufi = uploads.stream()
-                            .filter(u -> u.getParameterName().equals(p.getName()))
+                            .filter(u -> u.getParameterName().equals(methodParam.getName()))
                             .findFirst();
 
-                    targetParams.add(ufi.isPresent() ? ufi.get() : null);
+                    targetParams[i] = ufi.isPresent() ? ufi.get() : null;
                 } else {
-                    targetParams.add(null);
+                    targetParams[i] = null;
                 }
-            } else if (p.getType() == UploadFileInfo[].class) {
+            } else if (methodParam.getType() == UploadFileInfo[].class) {
                 if (uploads != null) {
-                    targetParams.add(uploads.toArray(new UploadFileInfo[uploads.size()]));
+                    targetParams[i] = uploads.toArray(new UploadFileInfo[uploads.size()]);
                 } else {
-                    targetParams.add(null);
+                    targetParams[i] = null;
                 }
-            } else if (p.getType() == HttpServerRequest.class) {
-                targetParams.add(req);
-            } else if (p.getType() == HttpServerResponse.class) {
-                targetParams.add(req.response());
-            } else if (p.getType() == HttpCookie.class) {
+            } else if (methodParam.getType() == HttpServerRequest.class) {
+                targetParams[i] = req;
+            } else if (methodParam.getType() == HttpServerResponse.class) {
+                targetParams[i] = req.response();
+            } else if (methodParam.getType() == HttpCookie.class) {
                 if (cookies != null) {
-                    String name = p.getName();
+                    String name = methodParam.getName();
                     HttpCookie cookie = cookies.stream()
                             .filter(c -> c.getName().equals(name))
                             .findFirst()
                             .orElse(null);
 
-                    targetParams.add(cookie);
+                    targetParams[i] = cookie;
                 } else {
-                    targetParams.add(null);
+                    targetParams[i] = null;
                 }
-            } else if (p.getType().isEnum()) {
-                if (params.containsKey(p.getName())) {
-                    String value = params.get(p.getName()).get(0);
-                    targetParams.add(p.getType().getEnumConstants()[Integer.parseInt(value)]);
-                } else {
-                    targetParams.add(null);
-                }
+            } else if ((jsonParams != null) && (jsonParams.containsKey(methodParam.getName()))) {
+                targetParams[i] = jsonParams.getObject(methodParam.getName(), pl[i].getType());
             } else {
-                if ((jsonParams != null) && (jsonParams.containsKey(p.getName()))) {
-                    targetParams.add(jsonParams.getObject(p.getName(), pl[i].getType()));
-                } else {
-                    Object o = Stream.of(otherParameters)
-                            .filter(op -> p.getType().isAssignableFrom(op.getClass()))
-                            .findFirst()
-                            .orElse(null);
+                Object o = Stream.of(otherParameters)
+                        .filter(op -> methodParam.getType().isAssignableFrom(op.getClass()))
+                        .findFirst()
+                        .orElse(null);
 
-                    if (o != null) {
-                        targetParams.add(o);
-                    } else {
-                        if (!params.containsKey(p.getName())) {
-                            targetParams.add(null);
-                        } else {
-                            List<String> values = params.get(p.getName());
-
-                            if (values.size() <= 0) {
-                                targetParams.add(null);
-                                continue;
-                            }
-
-                            if (p.getType().isArray()) {
-                                targetParams.add(TypeUtils.stringListToArrayType(p.getType().getComponentType(), values));
-                            } else {
-                                targetParams.add(TypeUtils.stringToType(p.getType(), values.get(0)));
-                            }
-                        }
-                    }
+                if (o != null) {
+                    targetParams[i] = o;
                 }
             }
         }
 
-        JSONObject complexParams = new JSONObject();
+        if (complexParamPairs.size() > 0) {
+            JSONObject complexParams = new JSONObject();
 
-        params.forEach((k, v) -> {
-            if ((k.contains(".")) || (k.contains("["))) {
-                complexKeyToJsonObject(complexParams, k, v);
-            }
-        });
+            complexKeyToJsonObject(complexParams, complexParamPairs);
 
-        for (int i = 0; i < targetParams.size(); i++) {
-            if (targetParams.get(i) != null) {
-                continue;
-            }
+            for (int i = 0; i < targetParams.length; i++) {
+                if (targetParams[i] != null) {
+                    continue;
+                }
 
-            Parameter p = pl[i];
+                Parameter p = pl[i];
 
-            if (!complexParams.containsKey(p.getName())) {
-                continue;
-            }
+                if (!complexParams.containsKey(p.getName())) {
+                    continue;
+                }
 
-            Object o = complexParams.get(p.getName());
+                Object o = complexParams.get(p.getName());
 
-            if ((o instanceof JSONArray) || (o instanceof JSONObject)) {
-                targetParams.set(i, JSON.parseObject(o.toString(), p.getParameterizedType()));
-            } else {
-                targetParams.set(i, o);
+                if ((o instanceof JSONArray) || (o instanceof JSONObject)) {
+                    targetParams[i] = JSON.parseObject(o.toString(), p.getParameterizedType());
+                } else {
+                    targetParams[i] = o;
+                }
             }
         }
 
         validateMethodParameters(method, targetParams);
 
-        return targetParams.toArray(new Object[targetParams.size()]);
+        return targetParams;
     }
 
-    private static void validateMethodParameters(Method method, List<Object> targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
+    private static void validateMethodParameters(Method method, Object[] targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
     {
         for (Parameter p : method.getParameters()) {
             if ((p.getAnnotations() == null) || (p.getAnnotations().length <= 0)) {
@@ -303,7 +308,7 @@ public class RequestUtils
                 }
 
                 ParameterValidator validator = parameterValidators.get(validatorAnno.value());
-                Object value = targetParams.get(targetParams.size() - 1);
+                Object value = targetParams[targetParams.length - 1];
 
                 if (!validator.validate(p, a, value)) {
                     throw new ValidationFailedException(p, validator, a, value);
@@ -312,70 +317,177 @@ public class RequestUtils
         }
     }
 
-    public static void complexKeyToJsonObject(JSONObject hubObject, String key, List<String> values)
+    public static void complexKeyToJsonObject(JSONObject hubObject, List<Pair<String, String>> pairs)
     {
-        String[] keySections = key.split("\\.");
+        if (hubObject == null) {
+            return;
+        }
 
-        for (int i = 0; i < values.size(); i++) {
-            Object currObj;
-            Object prevObj = hubObject;
-            Object v = values.get(i);
+        if ((pairs == null) || (pairs.size() <= 0)) {
+            return;
+        }
 
-            if (StringUtils.isInteger((String)v)) {
-                v = Integer.parseInt((String)v);
+        List<Pair<String, String>> jsonPaths = new ArrayList<>();
+        Map<String, Integer> arrayCounters = new HashMap<>();
+        Map<String, String> arrayNextKey = new HashMap<>();
+
+        for (Pair<String, String> p : pairs) {
+            if (!p.getKey().contains("[]")) {
+                jsonPaths.add(new Pair<>(p.getKey(), p.getValue()));
+            } else {
+                int lastArrayIndex = 0;
+                String lastAddedArrayPath = null;
+                boolean incArrayIndex = false;
+
+                while (lastArrayIndex >= 0) {
+                    lastArrayIndex = p.getKey().indexOf("[]", lastArrayIndex + 1);
+
+                    if (lastArrayIndex < 0) {
+                        break;
+                    }
+
+                    String currArrayPath = p.getKey().substring(0, lastArrayIndex);
+
+                    if (!arrayCounters.containsKey(currArrayPath)) {
+                        arrayCounters.put(currArrayPath, 0);
+                        lastAddedArrayPath = currArrayPath;
+                    }
+
+                    String nextKey = p.getKey().substring(lastArrayIndex + 2);
+                    nextKey = nextKey.substring(nextKey.indexOf(".") + 1);
+
+                    if (nextKey.contains("[")) {
+                        nextKey = nextKey.substring(nextKey.indexOf("[") + 1);
+                    }
+
+                    if (!arrayNextKey.containsKey(currArrayPath)) {
+                        arrayNextKey.put(currArrayPath, nextKey);
+                    } else if (arrayNextKey.get(currArrayPath).equals(nextKey)) {
+                        incArrayIndex = true;
+                    }
+                }
+
+                lastArrayIndex = p.getKey().lastIndexOf("[]");
+                String arrayPath = p.getKey().substring(0, lastArrayIndex);
+
+                if ((!arrayPath.equals(lastAddedArrayPath)) && (incArrayIndex)) {
+                    arrayCounters.replace(arrayPath, arrayCounters.get(arrayPath) + 1);
+                }
+
+                lastArrayIndex = 0;
+                String finalArrayPath = p.getKey();
+
+                while (lastArrayIndex >= 0) {
+                    lastArrayIndex = finalArrayPath.indexOf("[]", lastArrayIndex + 1);
+
+                    if (lastArrayIndex < 0) {
+                        break;
+                    }
+
+                    String currArrayPath = finalArrayPath.substring(0, lastArrayIndex).replaceAll("\\[\\d+\\]", "[]");
+                    int currArrayIndex = arrayCounters.get(currArrayPath);
+                    finalArrayPath = finalArrayPath.substring(0, lastArrayIndex) + "[" + currArrayIndex + "]" +
+                            finalArrayPath.substring(lastArrayIndex + 2);
+                }
+
+                jsonPaths.add(new Pair<>(finalArrayPath, p.getValue()));
+            }
+        }
+
+        for (Pair<String, String> path : jsonPaths) {
+            String[] sections = path.getKey().split("\\.");
+            JSON parentObj = hubObject;
+            Object value = path.getValue();
+
+            if (StringUtils.isInteger((String)value)) {
+                value = Integer.parseInt((String)value);
             }
 
-            for (int j = 0; j < keySections.length; j++) {
-                String keyPart = keySections[j];
-                String name = keyPart.replaceAll("\\[\\]", "");
-                boolean currentKeyIsArray = keyPart.endsWith("[]");
+            for (int i = 0; i < sections.length; i++) {
+                String keyName = sections[i].replaceAll("\\[\\d+\\]", "");
+                boolean currKeyIsArray = sections[i].contains("[");
 
-                if (currentKeyIsArray) {
-                    currObj = new JSONArray();
-                } else {
-                    currObj = new JSONObject();
-                }
+                if (!currKeyIsArray) {
+                    if (i < sections.length - 1) {
+                        JSONObject o = new JSONObject();
 
-                if (prevObj instanceof JSONArray) {
-                    JSONArray prevArray = (JSONArray) prevObj;
+                        if (parentObj instanceof JSONArray) {
+                            ((JSONArray)parentObj).add(o);
+                        } else if (parentObj instanceof JSONObject) {
+                            JSONObject parentObject = (JSONObject)parentObj;
 
-                    if (currentKeyIsArray) {
-                        if (j >= keySections.length - 1) {
-                            prevArray.add(v);
+                            if (!parentObject.containsKey(keyName)) {
+                                parentObject.put(keyName, o);
+                            } else {
+                                o = parentObject.getJSONObject(keyName);
+                            }
                         }
+
+                        parentObj = o;
                     } else {
-                        if (i < prevArray.size()) {
-                            currObj = prevArray.get(i);
-                        } else {
-                            prevArray.add(currObj);
+                        if (parentObj instanceof JSONArray) {
+                            JSONObject o = new JSONObject();
+                            o.put(keyName, value);
+                            ((JSONArray)parentObj).add(o);
+                        } else if (parentObj instanceof JSONObject) {
+                            ((JSONObject)parentObj).put(keyName, value);
                         }
-
-                        ((JSONObject)currObj).put(name, v);
                     }
                 } else {
-                    JSONObject prevObject = (JSONObject) prevObj;
+                    int indexStart = sections[i].indexOf("[");
+                    int indexEnd = sections[i].indexOf("]");
+                    int currArrayIndex = Integer.parseInt(sections[i].substring(indexStart + 1, indexEnd));
 
-                    if (j >= keySections.length - 1) {
-                        if (!currentKeyIsArray) {
-                            prevObject.put(name, v);
-                        } else {
-                            if (!prevObject.containsKey(name)) {
-                                prevObject.put(name, currObj);
+                    if (i < sections.length - 1) {
+                        if (parentObj instanceof JSONArray) {
+                            JSONArray parentArray = (JSONArray) parentObj;
+                            JSONObject o;
+
+                            if (currArrayIndex >= parentArray.size()) {
+                                o = new JSONObject();
+                                o.put(keyName, new JSONArray());
+                                o.getJSONArray(keyName).add(new JSONObject());
+                                parentObj = (JSON)o.getJSONArray(keyName).get(0);
+                            } else {
+                                parentObj = parentArray.getJSONObject(currArrayIndex).getJSONArray(keyName);
+                            }
+                        } else if (parentObj instanceof JSONObject) {
+                            JSONObject parentObject = (JSONObject)parentObj;
+                            JSONArray currArray;
+
+                            if (!parentObject.containsKey(keyName)) {
+                                parentObject.put(keyName, new JSONArray());
                             }
 
-                            JSONArray a = prevObject.getJSONArray(name);
-                            a.add(v);
+                            currArray = ((JSONObject) parentObj).getJSONArray(keyName);
+
+                            if (currArrayIndex >= currArray.size()) {
+                                currArray.add(new JSONObject());
+                            }
+
+                            parentObj = currArray.getJSONObject(currArrayIndex);
                         }
                     } else {
-                        if (!prevObject.containsKey(name)) {
-                            prevObject.put(name, currObj);
-                        } else {
-                            currObj = prevObject.get(name);
+                        if (parentObj instanceof JSONArray) {
+
+                        } else if (parentObj instanceof JSONObject) {
+                            JSONObject parentObject = (JSONObject)parentObj;
+                            JSONArray currArray;
+
+                            if (!parentObject.containsKey(keyName)) {
+                                parentObject.put(keyName, new JSONArray());
+                            }
+
+                            currArray = ((JSONObject) parentObj).getJSONArray(keyName);
+
+                            if (currArrayIndex >= currArray.size()) {
+                                currArray.add(value);
+                            } else {
+                                currArray.set(currArrayIndex, value);
+                            }
                         }
                     }
                 }
-
-                prevObj = currObj;
             }
         }
     }

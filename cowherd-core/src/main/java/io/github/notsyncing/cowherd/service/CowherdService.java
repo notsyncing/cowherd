@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
@@ -33,7 +34,7 @@ public abstract class CowherdService
      * @return 指示是否处理完毕的 CompletableFuture 对象
      */
     protected CompletableFuture delegateTo(String serviceName, String actionName, HttpServerRequest request,
-                                           Map<String, List<String>> parameters, List<HttpCookie> cookies,
+                                           List<Pair<String, String>> parameters, List<HttpCookie> cookies,
                                            List<UploadFileInfo> uploads)
     {
         Method m = ServiceManager.getServiceAction(serviceName, actionName);

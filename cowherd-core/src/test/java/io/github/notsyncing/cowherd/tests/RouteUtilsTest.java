@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.tests;
 
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import org.junit.Test;
@@ -43,9 +44,11 @@ public class RouteUtilsTest
         info.setDomain("(?<domain>(.*?)).test.com");
         info.setPath("/a/bc/(?<res>(.*?))$");
 
-        Map<String, List<String>> params = RouteUtils.extractRouteParameters(uri, info);
+        List<Pair<String, String>> params = RouteUtils.extractRouteParameters(uri, info);
 
-        assertEquals("www", params.get("domain").get(0));
-        assertEquals("def", params.get("res").get(0));
+        assertEquals("domain", params.get(0).getKey());
+        assertEquals("www", params.get(0).getValue());
+        assertEquals("res", params.get(1).getKey());
+        assertEquals("def", params.get(1).getValue());
     }
 }

@@ -1,16 +1,17 @@
 package io.github.notsyncing.cowherd.utils;
 
+import io.github.notsyncing.cowherd.annotations.Exported;
+import io.github.notsyncing.cowherd.models.Pair;
+
 import java.io.*;
+import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
 
 public class StringUtils
 {
-
     static {
         CookieUtils.cookiesDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
@@ -85,5 +86,25 @@ public class StringUtils
             }
         }
         return true;
+    }
+
+    public static List<Pair<String, String>> parseQueryString(String qs)
+    {
+        List<Pair<String, String>> l = new ArrayList<>();
+        String[] pairs = qs.split("&");
+
+        try {
+            for (String p : pairs) {
+                int i = p.indexOf("=");
+                String key = URLDecoder.decode(p.substring(0, i), "utf-8");
+                String value = URLDecoder.decode(p.substring(i + 1), "utf-8");
+
+                l.add(new Pair<>(key, value));
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return l;
     }
 }

@@ -22,7 +22,7 @@ public class TestFilter implements ServiceActionFilter
         CowherdTest.testFilterRequestParameters = context.getRequestParameters();
         CowherdTest.testFilterBeforeTriggerCount++;
 
-        if (context.getRequestParameters().containsKey("nopass")) {
+        if (context.getRequestParameters().stream().anyMatch(p -> p.getKey().equals("nopass"))) {
             return CompletableFuture.completedFuture(false);
         }
 

@@ -1,11 +1,14 @@
 package io.github.notsyncing.cowherd.utils;
 
+import io.github.notsyncing.cowherd.models.Pair;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class RegexUtils
 {
@@ -38,6 +41,18 @@ public class RegexUtils
                     map.put(n, l);
                 }
             }
+        }
+    }
+
+    public static void addMatchedGroupsToPairList(String s, Pattern p, List<Pair<String, String>> list)
+    {
+        Matcher domainMatcher = p.matcher(s);
+
+        if (domainMatcher.find()) {
+            list.addAll(getGroupNames(p)
+                    .stream()
+                    .map(n -> new Pair<>(n, domainMatcher.group(n)))
+                    .collect(Collectors.toList()));
         }
     }
 }

@@ -17,7 +17,7 @@ public class TestAuthenticator implements ActionAuthenticator<TestAuth>
         CowherdTest.testAuthenticatorTriggered = true;
         CowherdTest.testAuthenticatorTriggerCount++;
 
-        if (context.getRequestParameters().containsKey("nopass")) {
+        if (context.getRequestParameters().stream().anyMatch(p -> p.getKey().equals("nopass"))) {
             return CompletableFuture.completedFuture(false);
         }
 

@@ -1,12 +1,14 @@
 package io.github.notsyncing.cowherd.utils;
 
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,16 +32,16 @@ public class RouteUtils
         return (info.getPathPattern().matcher(uri.getPath()).find());
     }
 
-    public static Map<String, List<String>> extractRouteParameters(URI uri, RouteInfo route)
+    public static List<Pair<String, String>> extractRouteParameters(URI uri, RouteInfo route)
     {
-        Map<String, List<String>> params = new HashMap<>();
+        List<Pair<String, String>> params = new ArrayList<>();
 
         if (route.getDomainPattern() != null) {
-            RegexUtils.addMatchedGroupsToMap(uri.getHost(), route.getDomainPattern(), params);
+            RegexUtils.addMatchedGroupsToPairList(uri.getHost(), route.getDomainPattern(), params);
         }
 
         if (route.getPathPattern() != null) {
-            RegexUtils.addMatchedGroupsToMap(uri.getPath(), route.getPathPattern(), params);
+            RegexUtils.addMatchedGroupsToPairList(uri.getPath(), route.getPathPattern(), params);
         }
 
         return params;

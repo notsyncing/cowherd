@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.ActionResult;
+import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
@@ -57,7 +58,7 @@ public class CowherdTest
 
     public static Map<String, String> testFilterParameters;
 
-    public static Map<String, List<String>> testFilterRequestParameters;
+    public static List<Pair<String, String>> testFilterRequestParameters;
     public static ActionResult testFilterRequestResult;
 
     public static boolean testAuthenticatorTriggered = false;
@@ -281,10 +282,10 @@ public class CowherdTest
 
                 context.assertNotNull(testFilterRequestParameters);
                 context.assertEquals(2, testFilterRequestParameters.size());
-                context.assertEquals(1, testFilterRequestParameters.get("a").size());
-                context.assertEquals("1", testFilterRequestParameters.get("a").get(0));
-                context.assertEquals(1, testFilterRequestParameters.get("b").size());
-                context.assertEquals("2", testFilterRequestParameters.get("b").get(0));
+                context.assertEquals("a", testFilterRequestParameters.get(0).getKey());
+                context.assertEquals("1", testFilterRequestParameters.get(0).getValue());
+                context.assertEquals("b", testFilterRequestParameters.get(1).getKey());
+                context.assertEquals("2", testFilterRequestParameters.get(1).getValue());
 
                 context.assertNotNull(testFilterRequestResult);
                 context.assertEquals("Hello, world!", testFilterRequestResult.getResult());

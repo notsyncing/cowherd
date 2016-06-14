@@ -11,7 +11,7 @@ public class FilterContext
     private Map<String, String> filterParameters;
     private HttpServerRequest request;
     private List<UploadFileInfo> requestUploads;
-    private Map<String, List<String>> requestParameters;
+    private List<Pair<String, String>> requestParameters;
     private List<HttpCookie> requestCookies;
     private ActionResult result;
 
@@ -45,12 +45,12 @@ public class FilterContext
         this.requestUploads = requestUploads;
     }
 
-    public Map<String, List<String>> getRequestParameters()
+    public List<Pair<String, String>> getRequestParameters()
     {
         return requestParameters;
     }
 
-    public void setRequestParameters(Map<String, List<String>> requestParameters)
+    public void setRequestParameters(List<Pair<String, String>> requestParameters)
     {
         this.requestParameters = requestParameters;
     }

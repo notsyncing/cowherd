@@ -31,7 +31,7 @@ public class RequestExecutor
 {
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
-                                                                         Map<String, List<String>> parameters,
+                                                                         List<Pair<String, String>> parameters,
                                                                          List<HttpCookie> cookies,
                                                                          List<UploadFileInfo> uploads)
     {
@@ -71,8 +71,8 @@ public class RequestExecutor
     }
 
     public static CompletableFuture<ActionResult> executeRequestedWebSocketAction(Method requestedMethod, HttpServerRequest request,
-                                                                         Map<String, List<String>> parameters,
-                                                                         List<HttpCookie> cookies)
+                                                                                  List<Pair<String, String>> parameters,
+                                                                                  List<HttpCookie> cookies)
     {
         ServerWebSocket ws = request.upgrade();
 
@@ -207,7 +207,7 @@ public class RequestExecutor
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
                                                                         List<FilterExecutionInfo> matchedFilters,
-                                                                        Map<String, List<String>> additionalParams,
+                                                                        List<Pair<String, String>> additionalParams,
                                                                         HttpServerRequest req)
     {
         if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.method())) {
@@ -225,11 +225,11 @@ public class RequestExecutor
 
         return filterChain.thenCompose(b -> {
             CompletableFuture<List<UploadFileInfo>> uploadFuture = RequestUtils.extractUploads(req);
-            CompletableFuture<Map<String, List<String>>> paramFuture = RequestUtils.extractRequestParameters(req,
+            CompletableFuture<List<Pair<String, String>>> paramFuture = RequestUtils.extractRequestParameters(req,
                     additionalParams);
 
             final List<UploadFileInfo>[] uploadsRef = new List[1];
-            final Map<String, List<String>>[] paramsRef = new Map[1];
+            final List<Pair<String, String>>[] paramsRef = new List[1];
             List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
             final ActionResult[] result = new ActionResult[1];
 
@@ -261,13 +261,13 @@ public class RequestExecutor
                     return f.after(c);
                 });
             })
-            .thenApply(r -> r == null ? result[0] : r);
+                    .thenApply(r -> r == null ? result[0] : r);
         });
     }
 
     public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(Method requestedAction,
                                                                                  List<FilterExecutionInfo> matchedFilters,
-                                                                                 Map<String, List<String>> additionalParams,
+                                                                                 List<Pair<String, String>> additionalParams,
                                                                                  HttpServerRequest req)
     {
         prepareFilters(matchedFilters);
@@ -275,10 +275,10 @@ public class RequestExecutor
         CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
 
         return filterChain.thenCompose(b -> {
-            CompletableFuture<Map<String, List<String>>> paramFuture = RequestUtils.extractRequestParameters(req,
+            CompletableFuture<List<Pair<String, String>>> paramFuture = RequestUtils.extractRequestParameters(req,
                     additionalParams);
 
-            final Map<String, List<String>>[] paramsRef = new Map[1];
+            final List<Pair<String, String>>[] paramsRef = new List[1];
             List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
 
             return paramFuture.thenCompose(p -> {

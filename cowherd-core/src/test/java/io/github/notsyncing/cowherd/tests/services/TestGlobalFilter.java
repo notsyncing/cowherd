@@ -23,7 +23,7 @@ public class TestGlobalFilter implements ServiceActionFilter
     {
         CowherdTest.testGlobalFilterBeforeTriggerCount++;
 
-        if (context.getRequestParameters().containsKey("nopassGlobal")) {
+        if (context.getRequestParameters().stream().anyMatch(p -> p.getKey().equals("nopassGlobal"))) {
             return CompletableFuture.completedFuture(false);
         }
 
