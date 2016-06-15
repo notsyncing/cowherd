@@ -10,6 +10,7 @@ import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
+import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -174,6 +175,9 @@ public class CowherdServer
     private void initServer()
     {
         vertx = Vertx.vertx();
+
+        DependencyInjector.registerComponent(vertx);
+
         server = vertx.createHttpServer();
         server.requestHandler(this::processRequest);
         server.listen(CowherdConfiguration.getListenPort());
