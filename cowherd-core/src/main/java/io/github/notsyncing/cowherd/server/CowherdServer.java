@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.impl.VertxImpl;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -35,6 +36,11 @@ public class CowherdServer
     private FileStorage fileStorage;
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private CowherdLogger accessLogger = CowherdLogger.getAccessLogger();
+
+    public CowherdServer(Vertx vertx)
+    {
+        this.vertx = vertx;
+    }
 
     public TemplateEngine getTemplateEngine()
     {
@@ -174,9 +180,11 @@ public class CowherdServer
 
     private void initServer()
     {
-        vertx = Vertx.vertx();
+        if (vertx == null) {
+            vertx = Vertx.vertx();
 
-        DependencyInjector.registerComponent(vertx);
+            DependencyInjector.registerComponent(Vertx.class, vertx);
+        }
 
         server = vertx.createHttpServer();
         server.requestHandler(this::processRequest);

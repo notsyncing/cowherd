@@ -15,6 +15,7 @@ import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.io.InputStream;
@@ -34,6 +35,7 @@ public class Cowherd
     @Parameter(names = { "-r", "--context-root" })
     List<String> contextRoots = new ArrayList<>();
 
+    private Vertx vertx = Vertx.vertx();
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
 
@@ -115,6 +117,8 @@ public class Cowherd
         }
 
         log.i("Cowherd web server is starting...");
+
+        DependencyInjector.registerComponent(Vertx.class, vertx);
     }
 
     private void addInternalServices()
@@ -151,7 +155,7 @@ public class Cowherd
 
     private void startServer()
     {
-        server = new CowherdServer();
+        server = new CowherdServer(vertx);
 
         DependencyInjector.registerComponent(server);
 
