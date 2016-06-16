@@ -396,6 +396,11 @@ public class RequestUtils
             }
         }
 
+        fillJSONObjectByPaths(hubObject, jsonPaths);
+    }
+
+    private static void fillJSONObjectByPaths(JSONObject hubObject, List<Pair<String, String>> jsonPaths)
+    {
         for (Pair<String, String> path : jsonPaths) {
             String[] sections = path.getKey().split("\\.");
             JSON parentObj = hubObject;
