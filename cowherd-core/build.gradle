@@ -24,8 +24,6 @@ dependencies {
     compile 'com.beust:jcommander:1.48'
     compile 'io.github.lukehutch:fast-classpath-scanner:1.9.18'
     compile 'com.alibaba:fastjson:1.2.11'
-    compile 'org.webjars.npm:es6-promise:3.1.2'
-    compile 'org.webjars.npm:reqwest:2.0.5'
     compile 'org.thymeleaf:thymeleaf:3.0.0.RELEASE'
     compile group: 'org.thymeleaf.extras', name: 'thymeleaf-extras-java8time', version: '3.0.0.RELEASE'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6'

@@ -62,9 +62,6 @@ public class CowherdAPIService extends CowherdService
 
         String js = "(function () {\n";
 
-        js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/es6-promise/3.1.2/dist/es6-promise.min.js") + "\n\n";
-        js += FileUtils.getInternalResourceAsString("/META-INF/resources/webjars/reqwest/2.0.5/reqwest.min.js") + "\n\n";
-
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
             if ((!"ALL".equals(service)) && (!info.getName().equals(service))) {
                 continue;
@@ -179,11 +176,9 @@ public class CowherdAPIService extends CowherdService
         }
 
         js += ") {\n";
-        js += "return new Promise(function (resolve, reject) {\n";
-        js += "reqwest({\n";
+        js += "return MagicForm.ajax({\n";
         js += "url: '" + base + "api/gateway',\n";
         js += "method: '" + RouteUtils.getActionHttpMethodString(m) + "',\n";
-        js += "withCredentials: true,\n";
         js += "data: {\n";
         js += "__service__: '" + info.getFullName() + "',\n";
         js += "__action__: '" + m.getName() + "'";
@@ -199,10 +194,7 @@ public class CowherdAPIService extends CowherdService
         }
 
         js += "\n";
-        js += "},\n";
-        js += "error: function (err) {\nreject(err);\n},\n";
-        js += "success: function (resp) {\nresolve(resp.responseText ? resp.responseText : resp);\n}\n";
-        js += "});\n";
+        js += "}\n";
         js += "});\n";
         js += "};\n";
 
