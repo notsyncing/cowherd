@@ -11,6 +11,7 @@ import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 
@@ -172,11 +173,11 @@ public class TestService extends CowherdService
 
     @Exported
     @HttpGet
-    public String cookiesRequest(HttpServerResponse resp, String a, String b, String c)
+    public String cookiesRequest(HttpServerRequest req, String a, String b, String c)
     {
-        putCookie(resp, new HttpCookie("a", a));
-        putCookie(resp, new HttpCookie("b", b));
-        putCookie(resp, new HttpCookie("c", c));
+        putCookie(req, new HttpCookie("a", a));
+        putCookie(req, new HttpCookie("b", b));
+        putCookie(req, new HttpCookie("c", c));
 
         return "done";
     }

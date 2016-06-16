@@ -680,4 +680,33 @@ public class CowherdTest
             }
         }
     }
+
+    @Test
+    public void testAlternativeCookieHeaders() throws IOException
+    {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet g = new HttpGet("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/cookiesRequest?a=1&b=2&c=3");
+            g.addHeader("Cowherd-Need-Alternative-Cookie-Headers", "true");
+
+            try (CloseableHttpResponse resp = client.execute(g)) {
+                Header[] cookieHeaders = resp.getHeaders("Cowherd-Set-Cookie");
+                assertEquals("a=1", cookieHeaders[0].getValue());
+                assertEquals("b=2", cookieHeaders[1].getValue());
+                assertEquals("c=3", cookieHeaders[2].getValue());
+            }
+        }
+    }
+
+    @Test
+    public void testNotAllowedAlternativeCookieHeaders() throws IOException
+    {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet g = new HttpGet("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/cookiesRequest?a=1&b=2&c=3");
+
+            try (CloseableHttpResponse resp = client.execute(g)) {
+                Header[] cookieHeaders = resp.getHeaders("Cowherd-Set-Cookie");
+                assertEquals(0, cookieHeaders.length);
+            }
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package io.github.notsyncing.cowherd.service;
 
+import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
@@ -8,6 +10,7 @@ import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.github.notsyncing.cowherd.utils.CookieUtils;
+import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
@@ -54,27 +57,36 @@ public abstract class CowherdService
 
     /**
      * 向客户端响应中写入一个 Cookie
-     * @param response 当前的请求对象
+     * @param request 当前的请求对象
      * @param cookie 要写入的 Cookie
      */
-    protected void putCookie(HttpServerResponse response, HttpCookie cookie)
+    protected void putCookie(HttpServerRequest request, HttpCookie cookie)
     {
-        response.headers().add("Set-Cookie", CookieUtils.cookieToString(cookie));
+        String cookieString = CookieUtils.cookieToString(cookie);
+        request.response().headers().add("Set-Cookie", cookieString);
+
+        AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
+
+        if ((ch != null) && ((StringUtils.isEmpty(ch.getOnlyOn()))
+                || ("true".equals(request.getHeader(ch.getOnlyOn()))))
+                && (!StringUtils.isEmpty(ch.getSetCookie()))) {
+            request.response().headers().add(ch.getSetCookie(), cookieString);
+        }
     }
 
     /**
      * 向客户端响应中写入多个 Cookies
-     * @param response 当前的请求对象
+     * @param request 当前的请求对象
      * @param cookies 要写入的 Cookie 列表
      */
-    protected void putCookies(HttpServerResponse response, HttpCookie... cookies)
+    protected void putCookies(HttpServerRequest request, HttpCookie... cookies)
     {
         if (cookies == null) {
             return;
         }
 
         for (HttpCookie c : cookies) {
-            putCookie(response, c);
+            putCookie(request, c);
         }
     }
 

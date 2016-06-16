@@ -1,7 +1,9 @@
 package io.github.notsyncing.cowherd.utils;
 
 import com.alibaba.fastjson.*;
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
+import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
@@ -495,6 +497,15 @@ public class RequestUtils
     public static List<HttpCookie> parseHttpCookies(HttpServerRequest request)
     {
         String cookieHeader = request.getHeader("Cookie");
+
+        AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
+
+        if ((cookieHeader == null) && (ch != null) && ((!StringUtils.isEmpty(ch.getOnlyOn()))
+                || ("true".equals(request.getHeader(ch.getOnlyOn()))))
+                && (!StringUtils.isEmpty(ch.getCookie()))) {
+            cookieHeader = request.getHeader(ch.getCookie());
+        }
+
         List<HttpCookie> cookies = null;
 
         if (cookieHeader != null) {

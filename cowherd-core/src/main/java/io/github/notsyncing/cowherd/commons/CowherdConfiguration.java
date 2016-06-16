@@ -50,6 +50,9 @@ public class CowherdConfiguration
     @ConfigField
     private static String[] allowOrigins;
 
+    @ConfigField
+    private static AlternativeCookieHeaderConfig alternativeCookieHeaders;
+
     private static JsonObject userConfiguration;
 
     /**
@@ -246,6 +249,25 @@ public class CowherdConfiguration
     public static void setAllowOrigins(String[] allowOrigins)
     {
         CowherdConfiguration.allowOrigins = allowOrigins;
+    }
+
+    /**
+     * 获取备用 HTTP Cookie 头设置
+     * @return 备用 HTTP Cookie 头设置
+     */
+    public static AlternativeCookieHeaderConfig getAlternativeCookieHeaders()
+    {
+        return alternativeCookieHeaders;
+    }
+
+    public static void setAlternativeCookieHeaders(AlternativeCookieHeaderConfig alternativeCookieHeaders)
+    {
+        CowherdConfiguration.alternativeCookieHeaders = alternativeCookieHeaders;
+    }
+
+    public static void setUserConfiguration(JsonObject userConfiguration)
+    {
+        CowherdConfiguration.userConfiguration = userConfiguration;
     }
 
     /**
