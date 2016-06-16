@@ -29,4 +29,13 @@ public class FileUtils
 
         return length;
     }
+
+    public static String guessContentType(String filename)
+    {
+        if (filename.endsWith(".css")) {
+            return "text/css";
+        }
+
+        return null;
+    }
 }

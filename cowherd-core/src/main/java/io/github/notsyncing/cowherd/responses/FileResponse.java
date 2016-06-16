@@ -7,6 +7,7 @@ import io.vertx.core.http.HttpServerResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
@@ -94,6 +95,14 @@ public class FileResponse implements ActionResponse
 
             stream = Files.newInputStream(file);
             contentType = Files.probeContentType(file);
+
+            if (contentType == null) {
+                contentType = URLConnection.guessContentTypeFromName(file.getFileName().toString());
+
+                if (contentType == null) {
+                    contentType = FileUtils.guessContentType(file.getFileName().toString());
+                }
+            }
 
             resp.putHeader("Last-Modified",
                     StringUtils.dateToHttpDateString(new Date(Files.getLastModifiedTime(file).toMillis())));
