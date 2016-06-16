@@ -195,7 +195,7 @@ public class CowherdAPIService extends CowherdService
 
         js += "\n";
         js += "}\n";
-        js += "});\n";
+        js += "}).then(function (resp) { return resp.response; });\n";
         js += "};\n";
 
         return js;
