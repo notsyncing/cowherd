@@ -6,3 +6,4 @@ gradlew
 gradlew.bat
 cowherd-core/build
 cowherd-stress-test/build
+out/
