@@ -71,6 +71,10 @@ public abstract class CowherdService
                 || ("true".equals(request.getHeader(ch.getOnlyOn()))))
                 && (!StringUtils.isEmpty(ch.getSetCookie()))) {
             request.response().headers().add(ch.getSetCookie(), cookieString);
+
+            if (request.response().headers().contains("Access-Control-Allow-Origin")) {
+                request.response().headers().add("Access-Control-Expose-Headers", ch.getSetCookie());
+            }
         }
     }
 
