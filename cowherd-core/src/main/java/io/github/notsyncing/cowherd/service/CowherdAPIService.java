@@ -17,9 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -62,6 +60,7 @@ public class CowherdAPIService extends CowherdService
         }
 
         String js = "(function () {\n";
+        Set<Class<? extends Enum>> generatedEnumClasses = new HashSet<>();
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
             if ((!"ALL".equals(service)) && (!info.getName().equals(service))) {
@@ -82,8 +81,8 @@ public class CowherdAPIService extends CowherdService
                     continue;
                 }
 
-                js += generateMethodReturnEnum(info, m);
-
+                js += generateMethodReturnEnum(info, m, generatedEnumClasses);
+                js += generateMethodParameterEnums(info, m, generatedEnumClasses);
                 js += generateMethodCall(base, info, m);
             }
         }
@@ -104,7 +103,8 @@ public class CowherdAPIService extends CowherdService
     }
 
     @SuppressWarnings("unchecked")
-    private String generateMethodReturnEnum(CowherdServiceInfo info, Method m) throws ClassNotFoundException
+    private String generateMethodReturnEnum(CowherdServiceInfo info, Method m,
+                                            Set<Class<? extends Enum>> generatedEnumClasses) throws ClassNotFoundException
     {
         String js = "";
         Class<? extends Enum> e = null;
@@ -124,6 +124,10 @@ public class CowherdAPIService extends CowherdService
         }
 
         if (e != null) {
+            if (generatedEnumClasses.contains(e)) {
+                return "";
+            }
+
             if (!StringUtils.isEmpty(info.getNamespace())) {
                 js += "window." + info.getNamespace() + "." + e.getSimpleName();
             } else {
@@ -137,6 +141,46 @@ public class CowherdAPIService extends CowherdService
                     .collect(Collectors.joining(",\n"));
 
             js += "\n};\n";
+        }
+
+        generatedEnumClasses.add(e);
+
+        return js;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String generateMethodParameterEnums(CowherdServiceInfo info, Method m,
+                                                Set<Class<? extends Enum>> generatedEnumClasses) throws ClassNotFoundException
+    {
+        String js = "";
+        Class<? extends Enum> e;
+
+        for (Parameter p : m.getParameters()) {
+            if (!p.getType().isEnum()) {
+                continue;
+            }
+
+            e = (Class<? extends Enum>)p.getType();
+
+            if (generatedEnumClasses.contains(e)) {
+                continue;
+            }
+
+            if (!StringUtils.isEmpty(info.getNamespace())) {
+                js += "window." + info.getNamespace() + "." + e.getSimpleName();
+            } else {
+                js += "window." + e.getSimpleName();
+            }
+
+            js += " = {\n";
+
+            js += Stream.of(e.getEnumConstants())
+                    .map(n -> n.name() + ": " + n.ordinal())
+                    .collect(Collectors.joining(",\n"));
+
+            js += "\n};\n";
+
+            generatedEnumClasses.add(e);
         }
 
         return js;
