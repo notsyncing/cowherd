@@ -11,6 +11,7 @@ import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -144,7 +145,15 @@ public class CowherdAPIService extends CowherdService
     private Parameter[] stripMethodParameters(Method m)
     {
         Parameter[] params = Stream.of(m.getParameters())
-                .filter(p -> !p.getType().equals(HttpCookie.class))
+                .filter(p -> (!p.getType().equals(HttpCookie.class))
+                        && (!p.getType().equals(HttpServerRequest.class))
+                        && (!p.getType().equals(HttpServerResponse.class))
+                        && (!p.getType().equals(UploadFileInfo.class))
+                        && (!UploadFileInfo.class.equals(p.getType().getComponentType()))
+                        && (!p.getName().equals("__json__"))
+                        && (!p.getName().equals("__parameters__"))
+                        && (!p.getName().equals("__uploads__"))
+                        && (!p.getName().equals("__cookies__")))
                 .toArray(Parameter[]::new);
 
         if (params == null) {
