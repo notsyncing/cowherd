@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.utils;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 public class TypeUtils
@@ -41,6 +42,15 @@ public class TypeUtils
         return Double.parseDouble(s);
     }
 
+    public static Instant stringToInstant(String s)
+    {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
+        return Instant.parse(s);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T stringToType(Class<T> c, String s)
     {
@@ -64,6 +74,8 @@ public class TypeUtils
             return (T)stringToDouble(s);
         } else if (c == BigDecimal.class) {
             return (T)new BigDecimal(s);
+        } else if (c == Instant.class) {
+            return (T)stringToInstant(s);
         }
 
         return (T)s;
