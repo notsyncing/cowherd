@@ -14,31 +14,55 @@ public class TypeUtils
 
     public static Integer stringToInt(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Integer.parseInt(s);
     }
 
     public static Byte stringToByte(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Byte.parseByte(s);
     }
 
     public static Long stringToLong(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Long.parseLong(s);
     }
 
     public static Short stringToShort(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Short.parseShort(s);
     }
 
     public static Float stringToFloat(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Float.parseFloat(s);
     }
 
     public static Double stringToDouble(String s)
     {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
         return Double.parseDouble(s);
     }
 
