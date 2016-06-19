@@ -69,7 +69,7 @@ public class StringUtils
             return false;
         }
         int length = str.length();
-        if (length == 0) {
+        if ((length == 0) || (length > 8)) {
             return false;
         }
         int i = 0;
