@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxImpl;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
@@ -198,6 +199,7 @@ public class CowherdServer
     private void initTemplateEngine()
     {
         templateEngine = new TemplateEngine();
+        templateEngine.addDialect(new Java8TimeDialect());
 
         for (Path r : CowherdConfiguration.getContextRoots()) {
             if (r.getName(r.getNameCount() - 1).toString().equals("$")) {

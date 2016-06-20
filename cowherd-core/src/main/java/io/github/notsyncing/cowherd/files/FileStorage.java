@@ -198,4 +198,15 @@ public class FileStorage
     {
         return storagePaths.get(tag).resolve(file);
     }
+
+    /**
+     * 获取文件中某一存储类别中的相对路径
+     * @param tag 存储类别标识枚举
+     * @param file 要获取相对路径的文件
+     * @return 该文件的相对路径
+     */
+    public Path relativize(Enum tag, Path file)
+    {
+        return getStoragePath(tag).relativize(file);
+    }
 }
