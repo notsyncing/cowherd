@@ -8,6 +8,7 @@ import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.service.CowherdService;
+import io.github.notsyncing.cowherd.tests.CowherdTest;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
@@ -49,6 +50,14 @@ public class TestService extends CowherdService
     public CompletableFuture<String> simpleRequest()
     {
         return CompletableFuture.completedFuture("Hello, world!");
+    }
+
+    @Exported
+    @HttpPost
+    public CompletableFuture<String> simplePostRequest(String __body__)
+    {
+        CowherdTest.testSimplePostBody = __body__;
+        return CompletableFuture.completedFuture("Hello, world, post!");
     }
 
     @Exported

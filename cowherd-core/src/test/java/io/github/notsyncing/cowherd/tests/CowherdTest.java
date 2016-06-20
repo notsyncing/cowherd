@@ -64,6 +64,8 @@ public class CowherdTest
     public static boolean testAuthenticatorTriggered = false;
     public static int testAuthenticatorTriggerCount = 0;
 
+    public static String testSimplePostBody = null;
+
     private HttpClientRequest get(String uri)
     {
         HttpClient client = vertx.createHttpClient();
@@ -89,6 +91,7 @@ public class CowherdTest
         testFilterRequestResult = null;
         testAuthenticatorTriggered = false;
         testAuthenticatorTriggerCount = 0;
+        testSimplePostBody = null;
     }
 
     @Before
@@ -176,6 +179,28 @@ public class CowherdTest
 
         checkIfSuccessAndString(context, async, req, "Hello, world!");
 
+        req.end();
+    }
+
+    @Test
+    public void testSimplePostRequest(TestContext context)
+    {
+        Async async = context.async();
+        HttpClientRequest req = post("/TestService/simplePostRequest");
+
+        req.handler(r -> {
+            r.bodyHandler(b -> {
+                assertEquals("Hello, world, post!", b.toString());
+            });
+
+            r.endHandler(v -> {
+                assertEquals("Test body!", testSimplePostBody);
+                async.complete();
+            });
+        });
+
+        req.putHeader("Content-Length", "10");
+        req.write("Test body!");
         req.end();
     }
 

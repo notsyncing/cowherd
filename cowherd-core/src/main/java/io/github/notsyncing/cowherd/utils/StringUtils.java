@@ -96,6 +96,11 @@ public class StringUtils
         try {
             for (String p : pairs) {
                 int i = p.indexOf("=");
+
+                if (i < 0) {
+                    continue;
+                }
+
                 String key = URLDecoder.decode(p.substring(0, i), "utf-8");
                 String value = URLDecoder.decode(p.substring(i + 1), "utf-8");
 

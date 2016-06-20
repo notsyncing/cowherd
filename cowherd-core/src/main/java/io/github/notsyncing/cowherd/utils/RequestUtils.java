@@ -98,7 +98,10 @@ public class RequestUtils
         } else {
             if (checkIfRequestHasBody(req)) {
                 req.bodyHandler(body -> {
-                    params.addAll(StringUtils.parseQueryString(body.toString()));
+                    String bodyStr = body.toString();
+
+                    params.addAll(StringUtils.parseQueryString(bodyStr));
+                    params.add(new Pair<>("__body__", bodyStr));
 
                     future.complete(params);
                 });
@@ -166,11 +169,14 @@ public class RequestUtils
         Map<String, Parameter> methodParamMap = methodParams.stream()
                 .collect(Collectors.toMap(Parameter::getName, p -> p));
         JSONObject jsonParams = null;
+        String bodyParam = null;
         List<Pair<String, String>> complexParamPairs = new ArrayList<>();
 
         for (Pair<String, String> reqParam : params) {
             if (reqParam.getKey().equals("__json__")) {
                 jsonParams = JSON.parseObject(reqParam.getValue());
+            } else if (reqParam.getKey().equals("__body__")) {
+                bodyParam = reqParam.getValue();
             }
 
             if ((reqParam.getKey().contains(".")) || (reqParam.getKey().contains("["))) {
@@ -214,6 +220,8 @@ public class RequestUtils
                 targetParams[i] = uploads;
             } else if (methodParam.getName().equals("__cookies__")) {
                 targetParams[i] = cookies;
+            } else if (methodParam.getName().equals("__body__")) {
+                targetParams[i] = bodyParam;
             } else if (methodParam.getType() == UploadFileInfo.class) {
                 if (uploads != null) {
                     Optional<UploadFileInfo> ufi = uploads.stream()
