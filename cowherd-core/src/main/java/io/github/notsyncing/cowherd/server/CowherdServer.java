@@ -204,6 +204,7 @@ public class CowherdServer
         for (Path r : CowherdConfiguration.getContextRoots()) {
             if (r.getName(r.getNameCount() - 1).toString().equals("$")) {
                 ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
+                clr.setCharacterEncoding("utf-8");
                 clr.setPrefix("APP_ROOT/");
                 clr.setSuffix(".html");
                 clr.setTemplateMode(TemplateMode.HTML);
@@ -213,6 +214,7 @@ public class CowherdServer
             }
 
             FileTemplateResolver fr = new FileTemplateResolver();
+            fr.setCharacterEncoding("utf-8");
             fr.setPrefix(r.toString() + "/");
             fr.setSuffix(".html");
             fr.setTemplateMode(TemplateMode.HTML);
