@@ -56,6 +56,9 @@ public class CowherdConfiguration
     @ConfigField
     private static AlternativeCookieHeaderConfig alternativeCookieHeaders;
 
+    @ConfigField
+    private static int workers = 0;
+
     private static JsonObject userConfiguration;
 
     /**
@@ -102,11 +105,19 @@ public class CowherdConfiguration
         CowherdConfiguration.contextRoots = contextRoots;
     }
 
+    /**
+     * 获取是否启用了 HTTP 压缩
+     * @return 是否启用了 HTTP 压缩
+     */
     public static boolean isEnableCompression()
     {
         return enableCompression;
     }
 
+    /**
+     * 设置是否启用 HTTP 压缩
+     * @param enableCompression 是否启用 HTTP 压缩
+     */
     public static void setEnableCompression(boolean enableCompression)
     {
         CowherdConfiguration.enableCompression = enableCompression;
@@ -276,6 +287,24 @@ public class CowherdConfiguration
     public static void setAlternativeCookieHeaders(AlternativeCookieHeaderConfig alternativeCookieHeaders)
     {
         CowherdConfiguration.alternativeCookieHeaders = alternativeCookieHeaders;
+    }
+
+    /**
+     * 获取并行的 HTTP 服务个数
+     * @return 并行的 HTTP 服务个数
+     */
+    public static int getWorkers()
+    {
+        return workers;
+    }
+
+    /**
+     * 设置并行的 HTTP 服务个数
+     * @param workers 并行的 HTTP 服务个数，0 表示自动
+     */
+    public static void setWorkers(int workers)
+    {
+        CowherdConfiguration.workers = workers;
     }
 
     public static void setUserConfiguration(JsonObject userConfiguration)

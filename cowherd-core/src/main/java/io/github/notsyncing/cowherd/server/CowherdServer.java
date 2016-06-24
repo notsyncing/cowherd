@@ -18,7 +18,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.impl.VertxImpl;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
 import org.thymeleaf.templatemode.TemplateMode;
@@ -28,12 +27,14 @@ import org.thymeleaf.templateresolver.FileTemplateResolver;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class CowherdServer
 {
     private Vertx vertx;
-    private HttpServer server;
+    private List<HttpServer> servers = new ArrayList<>();
     private TemplateEngine templateEngine;
     private FileStorage fileStorage;
     private CowherdLogger log = CowherdLogger.getInstance(this);
@@ -191,9 +192,25 @@ public class CowherdServer
         HttpServerOptions options = new HttpServerOptions()
                 .setCompressionSupported(CowherdConfiguration.isEnableCompression());
 
-        server = vertx.createHttpServer(options);
-        server.requestHandler(this::processRequest);
-        server.listen(CowherdConfiguration.getListenPort());
+        int count = CowherdConfiguration.getWorkers();
+
+        if (count <= 0) {
+            count = Runtime.getRuntime().availableProcessors() - 1;
+
+            if (count <= 0) {
+                count = 1;
+            }
+        }
+
+        log.i("Starting " + count + " http servers...");
+
+        for (int i = 0; i < count; i++) {
+            HttpServer server = vertx.createHttpServer(options)
+                    .requestHandler(this::processRequest)
+                    .listen(CowherdConfiguration.getListenPort());
+
+            servers.add(server);
+        }
 
         log.i("Listening at port " + CowherdConfiguration.getListenPort());
 
@@ -235,8 +252,17 @@ public class CowherdServer
     public CompletableFuture stop()
     {
         CompletableFuture f = new CompletableFuture();
+        final int[] count = {0};
 
-        server.close(f::complete);
+        for (HttpServer server : servers) {
+            server.close(r -> {
+                count[0]++;
+
+                if (count[0] >= servers.size()) {
+                    f.complete(null);
+                }
+            });
+        }
 
         return f;
     }
