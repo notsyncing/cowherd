@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
@@ -178,7 +179,7 @@ public class CowherdTest
         assertNotNull(CowherdConfiguration.getWebsocketConfig());
         assertTrue(CowherdConfiguration.getWebsocketConfig().isEnabled());
         assertEquals("/websocket", CowherdConfiguration.getWebsocketConfig().getPath());
-        assertEquals("/tmp/cowherd_logs", CowherdConfiguration.getLogDir().toString());
+        assertEquals(File.separator + "tmp" + File.separator + "cowherd_logs", CowherdConfiguration.getLogDir().toString());
         assertNotNull(CowherdConfiguration.getUserConfiguration());
         assertEquals(o.getJsonObject("user").getInteger("a"), CowherdConfiguration.getUserConfiguration().getInteger("a"));
         assertEquals(o.getJsonObject("user").getString("b"), CowherdConfiguration.getUserConfiguration().getString("b"));
