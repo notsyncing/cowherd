@@ -15,6 +15,7 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxImpl;
@@ -187,7 +188,10 @@ public class CowherdServer
             DependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
-        server = vertx.createHttpServer();
+        HttpServerOptions options = new HttpServerOptions()
+                .setCompressionSupported(CowherdConfiguration.isEnableCompression());
+
+        server = vertx.createHttpServer(options);
         server.requestHandler(this::processRequest);
         server.listen(CowherdConfiguration.getListenPort());
 

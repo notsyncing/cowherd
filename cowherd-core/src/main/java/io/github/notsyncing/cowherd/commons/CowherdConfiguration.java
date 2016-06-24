@@ -27,6 +27,9 @@ public class CowherdConfiguration
     private static Path[] contextRoots;
 
     @ConfigField
+    private static boolean enableCompression = false;
+
+    @ConfigField
     private static long maxUploadFileSize = 2 * 1024 * 1024;
 
     @ConfigField
@@ -97,6 +100,16 @@ public class CowherdConfiguration
     public static void setContextRoots(Path[] contextRoots)
     {
         CowherdConfiguration.contextRoots = contextRoots;
+    }
+
+    public static boolean isEnableCompression()
+    {
+        return enableCompression;
+    }
+
+    public static void setEnableCompression(boolean enableCompression)
+    {
+        CowherdConfiguration.enableCompression = enableCompression;
     }
 
     /**
