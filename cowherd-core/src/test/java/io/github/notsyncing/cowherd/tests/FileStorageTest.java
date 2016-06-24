@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.tests;
 
 import io.github.notsyncing.cowherd.files.FileStorage;
+import io.github.notsyncing.cowherd.tests.services.TestStorageEnum;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -17,11 +18,6 @@ import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-enum TestStorageEnum
-{
-    TestStorage
-}
 
 @RunWith(VertxUnitRunner.class)
 public class FileStorageTest

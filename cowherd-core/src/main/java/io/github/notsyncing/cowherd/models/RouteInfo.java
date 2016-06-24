@@ -14,6 +14,7 @@ public class RouteInfo implements Comparable<RouteInfo>
     private boolean entry;
     private RouteType type = RouteType.Http;
     private String viewPath;
+    private Object[] otherParameters;
 
     public String getDomain()
     {
@@ -89,6 +90,16 @@ public class RouteInfo implements Comparable<RouteInfo>
     public void setViewPath(String viewPath)
     {
         this.viewPath = viewPath;
+    }
+
+    public Object[] getOtherParameters()
+    {
+        return otherParameters;
+    }
+
+    public void setOtherParameters(Object[] otherParameters)
+    {
+        this.otherParameters = otherParameters;
     }
 
     @Override

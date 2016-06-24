@@ -1,12 +1,16 @@
 package io.github.notsyncing.cowherd.files;
 
+import io.github.notsyncing.cowherd.commons.RouteType;
+import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
+import io.github.notsyncing.cowherd.server.RouteManager;
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -208,5 +212,29 @@ public class FileStorage
     public Path relativize(Enum tag, Path file)
     {
         return getStoragePath(tag).relativize(file);
+    }
+
+    /**
+     * 注册一条直接访问指定文件存储的路由
+     * @param tag 存储类别标识枚举
+     * @param routeRegex 路由规则，必须包含一个名为 path 的命名匹配组，用于匹配要访问的文件的相对路径
+     */
+    public void registerServerRoute(Enum tag, String routeRegex)
+    {
+        RouteInfo info = new RouteInfo();
+        info.setPath(routeRegex);
+        info.setType(RouteType.Http);
+        info.setOtherParameters(new Object[] { tag });
+
+        Method m;
+
+        try {
+            m = CowherdFileStorageService.class.getMethod("getFile", Enum.class, String.class);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        RouteManager.addRoute(info, m);
     }
 }

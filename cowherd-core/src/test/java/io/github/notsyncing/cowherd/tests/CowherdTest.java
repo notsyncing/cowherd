@@ -3,10 +3,12 @@ package io.github.notsyncing.cowherd.tests;
 import com.alibaba.fastjson.JSON;
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
+import io.github.notsyncing.cowherd.service.DependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.tests.services.*;
 import io.github.notsyncing.cowherd.utils.FileUtils;
@@ -28,6 +30,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,10 +39,12 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.HttpCookie;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +57,7 @@ public class CowherdTest
 {
     private Cowherd cowherd;
     private Vertx vertx = Vertx.vertx();
+    private TestService service;
 
     public static int testFilterEarlyTriggerCount = 0;
     public static int testGlobalFilterEarlyTriggerCount = 0;
@@ -110,20 +116,23 @@ public class CowherdTest
     }
 
     @Before
-    public void before()
+    public void before() throws IllegalAccessException, InvocationTargetException, InstantiationException
     {
         resetValues();
 
         cowherd = new Cowherd();
         cowherd.start();
+
+        service = DependencyInjector.getComponent(TestService.class);
     }
 
     @After
-    public void after() throws ExecutionException, InterruptedException
+    public void after() throws ExecutionException, InterruptedException, IOException
     {
         resetValues();
 
         cowherd.stop().get();
+        service.clear();
     }
 
     @Test
@@ -762,5 +771,32 @@ public class CowherdTest
                 assertEquals(0, cookieHeaders.length);
             }
         }
+    }
+
+    @Test
+    public void testDirectFileStorageRoute(TestContext context) throws IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ExecutionException, InterruptedException
+    {
+        String route = "^/test/images/(?<path>.*?)$";
+        FileStorage storage = DependencyInjector.getComponent(FileStorage.class);
+        storage.registerServerRoute(TestStorageEnum.TestStorage, route);
+
+        Path tempFile = Files.createTempFile("test", null);
+        Files.write(tempFile, "hello".getBytes("utf-8"));
+        Path newFile = storage.storeFile(tempFile, TestStorageEnum.TestStorage, null, false).get();
+
+        Async async = context.async();
+        HttpClientRequest req = get("/test/images/" + newFile.getFileName());
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("hello", b.toString());
+                async.complete();
+            });
+        });
+
+        req.end();
     }
 }

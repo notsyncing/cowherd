@@ -231,10 +231,10 @@ public class RouteManager
 
         if (r.getType() == RouteType.Http) {
             return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
-                    RouteUtils.extractRouteParameters(uri, r), request);
+                    RouteUtils.extractRouteParameters(uri, r), request, r.getOtherParameters());
         } else if (r.getType() == RouteType.WebSocket) {
             return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
-                    RouteUtils.extractRouteParameters(uri, r), request);
+                    RouteUtils.extractRouteParameters(uri, r), request, r.getOtherParameters());
         }
 
         return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() + " in route " + r));

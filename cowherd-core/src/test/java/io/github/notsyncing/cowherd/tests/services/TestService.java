@@ -16,6 +16,7 @@ import io.github.notsyncing.cowherd.validators.annotations.Length;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
+import org.apache.commons.io.FileUtils;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -45,6 +46,28 @@ class TestModel
 public class TestService extends CowherdService
 {
     private CowherdLogger log = getLogger();
+    private Path testStoragePath;
+
+    public TestService() throws IOException
+    {
+        testStoragePath = Files.createTempDirectory("cowherd-test");
+
+        getFileStorage().registerStoragePath(TestStorageEnum.TestStorage, testStoragePath);
+    }
+
+    public Path getTestStoragePath()
+    {
+        return testStoragePath;
+    }
+
+    public void clear()
+    {
+        try {
+            FileUtils.deleteDirectory(testStoragePath.toFile());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     @Exported
     @HttpGet

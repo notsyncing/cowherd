@@ -33,7 +33,8 @@ public class RequestExecutor
     public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
                                                                          List<Pair<String, String>> parameters,
                                                                          List<HttpCookie> cookies,
-                                                                         List<UploadFileInfo> uploads)
+                                                                         List<UploadFileInfo> uploads,
+                                                                         Object... otherParams)
     {
         try {
             if (requestedMethod.isAnnotationPresent(ContentType.class)) {
@@ -48,7 +49,7 @@ public class RequestExecutor
 
             try {
                 targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                        parameters, cookies, uploads);
+                        parameters, cookies, uploads, otherParams);
             } catch (ValidationFailedException e) {
                 return FutureUtils.failed(e);
             }
@@ -72,7 +73,8 @@ public class RequestExecutor
 
     public static CompletableFuture<ActionResult> executeRequestedWebSocketAction(Method requestedMethod, HttpServerRequest request,
                                                                                   List<Pair<String, String>> parameters,
-                                                                                  List<HttpCookie> cookies)
+                                                                                  List<HttpCookie> cookies,
+                                                                                  Object... otherParams)
     {
         ServerWebSocket ws = request.upgrade();
 
@@ -81,7 +83,7 @@ public class RequestExecutor
 
             try {
                 targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                        parameters, cookies, null, ws);
+                        parameters, cookies, null, ws, otherParams);
             } catch (ValidationFailedException e) {
                 return FutureUtils.failed(e);
             }
@@ -208,7 +210,8 @@ public class RequestExecutor
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
                                                                         List<FilterExecutionInfo> matchedFilters,
                                                                         List<Pair<String, String>> additionalParams,
-                                                                        HttpServerRequest req)
+                                                                        HttpServerRequest req,
+                                                                        Object... otherParams)
     {
         if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.method())) {
             req.response()
@@ -252,7 +255,8 @@ public class RequestExecutor
                 c.setRequestUploads(uploadsRef[0]);
                 c.setRequestCookies(cookies);
                 return f.before(c);
-            })).thenCompose(c -> executeRequestedAction(requestedAction, req, paramsRef[0], cookies, uploadsRef[0])
+            })).thenCompose(c -> executeRequestedAction(requestedAction, req, paramsRef[0], cookies, uploadsRef[0],
+                    otherParams)
             ).thenCompose(r -> {
                 result[0] = r;
 
@@ -268,7 +272,8 @@ public class RequestExecutor
     public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(Method requestedAction,
                                                                                  List<FilterExecutionInfo> matchedFilters,
                                                                                  List<Pair<String, String>> additionalParams,
-                                                                                 HttpServerRequest req)
+                                                                                 HttpServerRequest req,
+                                                                                 Object... otherParams)
     {
         prepareFilters(matchedFilters);
 
@@ -295,7 +300,8 @@ public class RequestExecutor
                 c.setRequestParameters(paramsRef[0]);
                 c.setRequestCookies(cookies);
                 return f.before(c);
-            })).thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req, paramsRef[0], cookies));
+            })).thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req, paramsRef[0], cookies,
+                    otherParams));
         });
     }
 }

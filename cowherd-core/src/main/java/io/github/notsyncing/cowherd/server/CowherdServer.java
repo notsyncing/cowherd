@@ -189,6 +189,9 @@ public class CowherdServer
             DependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
+        fileStorage = new FileStorage(vertx);
+        DependencyInjector.registerComponent(fileStorage);
+
         HttpServerOptions options = new HttpServerOptions()
                 .setCompressionSupported(CowherdConfiguration.isEnableCompression());
 
@@ -213,8 +216,6 @@ public class CowherdServer
         }
 
         log.i("Listening at port " + CowherdConfiguration.getListenPort());
-
-        fileStorage = new FileStorage(vertx);
     }
 
     private void initTemplateEngine()
