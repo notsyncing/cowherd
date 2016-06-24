@@ -81,7 +81,7 @@ public class CowherdLogger
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            LoggerComponentBuilder lcb = builder.newLogger("AccessLogger", level)
+            LoggerComponentBuilder lcb = builder.newAsyncLogger("AccessLogger", level)
                     .add(builder.newAppenderRef("rollingAccess"));
 
             builder.add(lcb);
