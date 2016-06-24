@@ -256,9 +256,9 @@ public class RequestUtils
                 }
             } else if ((jsonParams != null) && (jsonParams.containsKey(methodParam.getName()))) {
                 targetParams[i] = jsonParams.getObject(methodParam.getName(), pl[i].getType());
-            } else {
+            } else if (otherParameters != null) {
                 Object o = Stream.of(otherParameters)
-                        .filter(op -> methodParam.getType().isAssignableFrom(op.getClass()))
+                        .filter(op -> (op != null) && (methodParam.getType().isAssignableFrom(op.getClass())))
                         .findFirst()
                         .orElse(null);
 
