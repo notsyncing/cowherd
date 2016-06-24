@@ -4,7 +4,9 @@ import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpPost;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
+import io.github.notsyncing.cowherd.responses.RedirectResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.service.CowherdService;
@@ -220,5 +222,12 @@ public class TestService extends CowherdService
         putCookie(req, new HttpCookie("c", c));
 
         return "done";
+    }
+
+    @Exported
+    @HttpGet
+    public ActionResponse redirectRequest()
+    {
+        return new RedirectResponse("aaa");
     }
 }

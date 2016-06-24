@@ -799,4 +799,24 @@ public class CowherdTest
 
         req.end();
     }
+
+    @Test
+    public void testRedirectRequest(TestContext context)
+    {
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/redirectRequest");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(302, resp.statusCode());
+            context.assertEquals("aaa", resp.getHeader("Location"));
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("", b.toString());
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
 }
