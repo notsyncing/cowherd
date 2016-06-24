@@ -46,6 +46,8 @@ public class CowherdLogger
 
     public static void loggerConfigChanged()
     {
+        Level level = CowherdConfiguration.isVerbose() ? Level.DEBUG : Level.INFO;
+
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("RollingBuilder");
 
@@ -56,7 +58,7 @@ public class CowherdLogger
         appenderBuilder.add(layoutBuilder);
         builder.add(appenderBuilder);
 
-        RootLoggerComponentBuilder rlb = builder.newRootLogger(Level.DEBUG)
+        RootLoggerComponentBuilder rlb = builder.newRootLogger(level)
                 .add(builder.newAppenderRef("stdout"));
 
         if (CowherdConfiguration.getLogDir() != null) {
@@ -79,7 +81,7 @@ public class CowherdLogger
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            LoggerComponentBuilder lcb = builder.newLogger("AccessLogger", Level.DEBUG)
+            LoggerComponentBuilder lcb = builder.newLogger("AccessLogger", level)
                     .add(builder.newAppenderRef("rollingAccess"));
 
             builder.add(lcb);

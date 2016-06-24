@@ -48,6 +48,9 @@ public class CowherdConfiguration
     private static Path logDir;
 
     @ConfigField
+    private static boolean verbose = false;
+
+    @ConfigField
     private static boolean everyHtmlIsTemplate = false;
 
     @ConfigField
@@ -245,6 +248,24 @@ public class CowherdConfiguration
         }
 
         CowherdLogger.loggerConfigChanged();
+    }
+
+    /**
+     * 获取日志是否输出 DEBUG 级别信息
+     * @return 是否输出 DEBUG 级别信息
+     */
+    public static boolean isVerbose()
+    {
+        return verbose;
+    }
+
+    /**
+     * 设置日志是否输出 DEBUG 级别信息
+     * @param verbose 是否输出 DEBUG 级别信息
+     */
+    public static void setVerbose(boolean verbose)
+    {
+        CowherdConfiguration.verbose = verbose;
     }
 
     public static boolean isEveryHtmlIsTemplate()
