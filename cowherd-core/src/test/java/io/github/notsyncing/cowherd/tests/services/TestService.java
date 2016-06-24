@@ -11,6 +11,7 @@ import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.tests.CowherdTest;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
+import io.github.notsyncing.cowherd.validators.annotations.HTMLSanitize;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -142,6 +143,13 @@ public class TestService extends CowherdService
     @Exported
     @HttpGet
     public CompletableFuture<String> validatedParameterRequest(@Length(10) String data)
+    {
+        return CompletableFuture.completedFuture(data);
+    }
+
+    @Exported
+    @HttpGet
+    public CompletableFuture<String> filteredParameterRequest(@HTMLSanitize(textOnly = true) String data)
     {
         return CompletableFuture.completedFuture(data);
     }

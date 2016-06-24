@@ -301,7 +301,13 @@ public class RequestUtils
 
     private static void validateMethodParameters(Method method, Object[] targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
     {
-        for (Parameter p : method.getParameters()) {
+        if (method.getParameters() == null) {
+            return;
+        }
+
+        for (int i = 0; i < method.getParameters().length; i++) {
+            Parameter p = method.getParameters()[i];
+
             if ((p.getAnnotations() == null) || (p.getAnnotations().length <= 0)) {
                 continue;
             }
@@ -318,11 +324,13 @@ public class RequestUtils
                 }
 
                 ParameterValidator validator = parameterValidators.get(validatorAnno.value());
-                Object value = targetParams[targetParams.length - 1];
+                Object value = targetParams[i];
 
                 if (!validator.validate(p, a, value)) {
                     throw new ValidationFailedException(p, validator, a, value);
                 }
+
+                targetParams[i] = validator.filter(p, a, value);
             }
         }
     }

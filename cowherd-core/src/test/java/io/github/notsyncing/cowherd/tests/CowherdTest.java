@@ -23,6 +23,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -33,7 +34,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -65,6 +69,16 @@ public class CowherdTest
     public static int testAuthenticatorTriggerCount = 0;
 
     public static String testSimplePostBody = null;
+
+    private String encode(String data)
+    {
+        try {
+            return URLEncoder.encode(data, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     private HttpClientRequest get(String uri)
     {
@@ -138,13 +152,13 @@ public class CowherdTest
         assertFalse(FilterManager.isGlobalFilter(TestParameterFilter.class));
     }
 
-    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String data)
+    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String expected)
     {
         req.handler(resp -> {
             context.assertEquals(200, resp.statusCode());
 
             resp.bodyHandler(b -> {
-                context.assertEquals(data, b.toString());
+                context.assertEquals(expected, b.toString());
                 async.complete();
             });
         });
@@ -591,6 +605,20 @@ public class CowherdTest
         req.exceptionHandler(context::fail);
 
         checkIfSuccessAndString(context, async, req, data);
+
+        req.end();
+    }
+
+    @Test
+    public void testFilteredParameterRequest(TestContext context)
+    {
+        String data = "<div>Hello</div>";
+
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/filteredParameterRequest?data=" + encode(data));
+        req.exceptionHandler(context::fail);
+
+        checkIfSuccessAndString(context, async, req, "Hello");
 
         req.end();
     }
