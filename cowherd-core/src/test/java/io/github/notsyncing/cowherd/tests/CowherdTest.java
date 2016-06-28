@@ -801,6 +801,33 @@ public class CowherdTest
     }
 
     @Test
+    public void testDirectFileStorageRouteWithMultipleSeparators(TestContext context) throws IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ExecutionException, InterruptedException
+    {
+        String route = "^/test/images/(?<path>.*?)$";
+        FileStorage storage = DependencyInjector.getComponent(FileStorage.class);
+        storage.registerServerRoute(TestStorageEnum.TestStorage, route);
+
+        Path tempFile = Files.createTempFile("test", null);
+        Files.write(tempFile, "hello".getBytes("utf-8"));
+        Path newFile = storage.storeFile(tempFile, TestStorageEnum.TestStorage, null, false).get();
+
+        Async async = context.async();
+        HttpClientRequest req = get("//test/images/" + newFile.getFileName());
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(200, resp.statusCode());
+
+            resp.bodyHandler(b -> {
+                context.assertEquals("hello", b.toString());
+                async.complete();
+            });
+        });
+
+        req.end();
+    }
+
+    @Test
     public void testRedirectRequest(TestContext context)
     {
         Async async = context.async();

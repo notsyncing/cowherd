@@ -29,7 +29,7 @@ public class RouteUtils
             return false;
         }
 
-        return (info.getPathPattern().matcher(uri.getPath()).find());
+        return (info.getPathPattern().matcher(StringUtils.stripSameCharAtStringHeader(uri.getPath(), '/')).find());
     }
 
     public static List<Pair<String, String>> extractRouteParameters(URI uri, RouteInfo route)
@@ -41,7 +41,8 @@ public class RouteUtils
         }
 
         if (route.getPathPattern() != null) {
-            RegexUtils.addMatchedGroupsToPairList(uri.getPath(), route.getPathPattern(), params);
+            RegexUtils.addMatchedGroupsToPairList(StringUtils.stripSameCharAtStringHeader(uri.getPath(), '/'),
+                    route.getPathPattern(), params);
         }
 
         return params;
@@ -70,7 +71,7 @@ public class RouteUtils
 
     public static URI resolveUriFromRequest(HttpServerRequest request)
     {
-        String reqPath = request.path();
+        String reqPath = StringUtils.stripSameCharAtStringHeader(request.path(), '/');
         int homeCharPos = reqPath.lastIndexOf("~");
 
         if (homeCharPos >= 0) {

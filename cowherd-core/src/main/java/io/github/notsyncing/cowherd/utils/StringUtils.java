@@ -112,4 +112,22 @@ public class StringUtils
 
         return l;
     }
+
+    public static String stripSameCharAtStringHeader(String s, char ch)
+    {
+        if (s.length() > 1) {
+            int start = 0;
+
+            for (int i = 1; i < s.length(); i++) {
+                if (s.charAt(i) != ch) {
+                    start = i - 1;
+                    break;
+                }
+            }
+
+            s = s.substring(start);
+        }
+
+        return s;
+    }
 }

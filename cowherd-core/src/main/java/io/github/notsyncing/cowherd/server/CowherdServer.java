@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
+import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
@@ -11,6 +12,7 @@ import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.service.DependencyInjector;
+import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -26,6 +28,7 @@ import org.thymeleaf.templateresolver.FileTemplateResolver;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -191,6 +194,13 @@ public class CowherdServer
 
         fileStorage = new FileStorage(vertx);
         DependencyInjector.registerComponent(fileStorage);
+
+        try {
+            ServiceManager.instantiateSingletonServices();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.e("Failed to instantiate services!");
+        }
 
         HttpServerOptions options = new HttpServerOptions()
                 .setCompressionSupported(CowherdConfiguration.isEnableCompression());

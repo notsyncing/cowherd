@@ -27,6 +27,16 @@ public class RouteUtilsTest
     }
 
     @Test
+    public void testMatchRouteWithMultipleSeparators() throws URISyntaxException
+    {
+        URI uri = new URI("http://www.test.com///a/bc/def");
+        RouteInfo info = new RouteInfo();
+        info.setPath("/a/bc/def");
+
+        assertTrue(RouteUtils.matchRoute(uri, info));
+    }
+
+    @Test
     public void testMatchRouteWithNotMatch() throws URISyntaxException
     {
         URI uri = new URI("http://www.test.com/a/bc/def");

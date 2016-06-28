@@ -244,7 +244,7 @@ public class RouteManager
     {
         boolean needSend = true;
 
-        String reqPath = request.path();
+        String reqPath = StringUtils.stripSameCharAtStringHeader(request.path(), '/');
 
         if ("/".equals(reqPath)) {
             reqPath = "index.html";

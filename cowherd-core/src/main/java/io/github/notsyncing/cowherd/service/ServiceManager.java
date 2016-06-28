@@ -131,4 +131,15 @@ public class ServiceManager
     {
         return services.values();
     }
+
+    public static void instantiateSingletonServices() throws IllegalAccessException, InvocationTargetException, InstantiationException
+    {
+        for (CowherdServiceInfo info : services.values()) {
+            if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
+                if (getServiceInstance(info.getServiceClass()) == null) {
+                    log.e("Failed to instantiate service: " + info.getServiceClass());
+                }
+            }
+        }
+    }
 }
