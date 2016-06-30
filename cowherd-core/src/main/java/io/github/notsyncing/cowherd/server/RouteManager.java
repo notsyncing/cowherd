@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +33,7 @@ public class RouteManager
     //private static Map<RouteInfo, Method> routes = new ConcurrentHashMap<>();
 
     private static CowherdLogger log = CowherdLogger.getInstance(RouteManager.class);
+    private static Path classpathContextRoot;
 
     public static Map<RouteInfo, Method> getRoutes()
     {
@@ -254,7 +253,19 @@ public class RouteManager
 
         for (Path contextRoot : CowherdConfiguration.getContextRoots()) {
             if (contextRoot.getName(contextRoot.getNameCount() - 1).toString().equals("$")) {
-                contextRoot = Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI());
+                if (classpathContextRoot == null) {
+                    URI uri = CowherdConfiguration.class.getResource("/APP_ROOT").toURI();
+
+                    if (uri.getScheme().equals("jar")) {
+                        String[] parts = uri.toString().split("!");
+                        classpathContextRoot = FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>())
+                                .getPath(parts[1]);
+                    } else {
+                        classpathContextRoot = Paths.get(uri);
+                    }
+                } else {
+                    contextRoot = classpathContextRoot;
+                }
             }
 
             Path file = contextRoot.resolve(reqPath);

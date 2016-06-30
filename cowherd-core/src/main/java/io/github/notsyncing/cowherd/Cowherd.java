@@ -91,22 +91,22 @@ public class Cowherd
             log.i("Loaded configuration file.");
 
             for (Path p : CowherdConfiguration.getContextRoots()) {
+                String cr;
+
                 if (p.getName(p.getNameCount() - 1).toString().equals("$")) {
-                    try {
-                        URL url = CowherdConfiguration.class.getResource("/APP_ROOT");
+                    URL url = CowherdConfiguration.class.getResource("/APP_ROOT");
 
-                        if (url == null) {
-                            log.w("No APP_ROOT found in classpath!");
-                            continue;
-                        }
-
-                        p = Paths.get(url.toURI());
-                    } catch (URISyntaxException e) {
-                        e.printStackTrace();
+                    if (url == null) {
+                        log.w("No APP_ROOT found in classpath!");
+                        continue;
                     }
+
+                    cr = url.toString();
+                } else {
+                    cr = p.toAbsolutePath().toString();
                 }
 
-                log.i("Context root: " + p);
+                log.i("Context root: " + cr);
             }
 
             if (CowherdConfiguration.isEveryHtmlIsTemplate()) {
