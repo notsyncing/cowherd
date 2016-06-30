@@ -266,6 +266,8 @@ public class CowherdConfiguration
     public static void setVerbose(boolean verbose)
     {
         CowherdConfiguration.verbose = verbose;
+
+        CowherdLogger.loggerConfigChanged();
     }
 
     public static boolean isEveryHtmlIsTemplate()
