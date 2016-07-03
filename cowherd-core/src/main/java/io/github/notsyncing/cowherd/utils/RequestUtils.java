@@ -308,6 +308,11 @@ public class RequestUtils
         for (int i = 0; i < method.getParameters().length; i++) {
             Parameter p = method.getParameters()[i];
 
+            if ((p.getType().isPrimitive()) && (targetParams[i] == null)) {
+                throw new IllegalAccessException("Parameter #" + i + " '" + p.getName() + "' <" + p.getType() +
+                        "> of method " + method.toString() + " is primitive, but received an null value!");
+            }
+
             if ((p.getAnnotations() == null) || (p.getAnnotations().length <= 0)) {
                 continue;
             }
