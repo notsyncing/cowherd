@@ -78,6 +78,10 @@ public class TypeUtils
     @SuppressWarnings("unchecked")
     public static <T> T stringToType(Class<T> c, String s)
     {
+        if (s == null) {
+            return null;
+        }
+
         if (c == String.class) {
             return (T)s;
         } else if ((c == boolean.class) || (c == Boolean.class)) {
@@ -97,6 +101,10 @@ public class TypeUtils
         } else if ((c == double.class) || (c == Double.class)) {
             return (T)stringToDouble(s);
         } else if (c == BigDecimal.class) {
+            if (StringUtils.isEmpty(s)) {
+                return null;
+            }
+
             return (T)new BigDecimal(s);
         } else if (c == Instant.class) {
             return (T)stringToInstant(s);
