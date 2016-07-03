@@ -308,34 +308,32 @@ public class RequestUtils
         for (int i = 0; i < method.getParameters().length; i++) {
             Parameter p = method.getParameters()[i];
 
+            if ((p.getAnnotations() != null) && (p.getAnnotations().length > 0)) {
+                for (Annotation a : p.getAnnotations()) {
+                    if (!a.annotationType().isAnnotationPresent(ServiceActionParameterValidator.class)) {
+                        continue;
+                    }
+
+                    ServiceActionParameterValidator validatorAnno = a.annotationType().getAnnotation(ServiceActionParameterValidator.class);
+
+                    if (!parameterValidators.containsKey(validatorAnno.value())) {
+                        parameterValidators.put(validatorAnno.value(), validatorAnno.value().newInstance());
+                    }
+
+                    ParameterValidator validator = parameterValidators.get(validatorAnno.value());
+                    Object value = targetParams[i];
+
+                    if (!validator.validate(p, a, value)) {
+                        throw new ValidationFailedException(p, validator, a, value);
+                    }
+
+                    targetParams[i] = validator.filter(p, a, value);
+                }
+            }
+
             if ((p.getType().isPrimitive()) && (targetParams[i] == null)) {
                 throw new IllegalAccessException("Parameter #" + i + " '" + p.getName() + "' <" + p.getType() +
                         "> of method " + method.toString() + " is primitive, but received an null value!");
-            }
-
-            if ((p.getAnnotations() == null) || (p.getAnnotations().length <= 0)) {
-                continue;
-            }
-
-            for (Annotation a : p.getAnnotations()) {
-                if (!a.annotationType().isAnnotationPresent(ServiceActionParameterValidator.class)) {
-                    continue;
-                }
-
-                ServiceActionParameterValidator validatorAnno = a.annotationType().getAnnotation(ServiceActionParameterValidator.class);
-
-                if (!parameterValidators.containsKey(validatorAnno.value())) {
-                    parameterValidators.put(validatorAnno.value(), validatorAnno.value().newInstance());
-                }
-
-                ParameterValidator validator = parameterValidators.get(validatorAnno.value());
-                Object value = targetParams[i];
-
-                if (!validator.validate(p, a, value)) {
-                    throw new ValidationFailedException(p, validator, a, value);
-                }
-
-                targetParams[i] = validator.filter(p, a, value);
             }
         }
     }
