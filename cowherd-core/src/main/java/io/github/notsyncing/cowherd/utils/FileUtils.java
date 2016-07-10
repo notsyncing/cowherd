@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.utils;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.spi.BufferFactory;
 import io.vertx.core.streams.WriteStream;
 
 import java.io.IOException;
@@ -21,10 +22,12 @@ public class FileUtils
     public static int pumpInputStreamToWriteStream(InputStream input, WriteStream<Buffer> output) throws IOException
     {
         byte[] buf = new byte[10240];
-        int length;
+        int length = 0;
+        int l;
 
-        for (length = 0; (length = input.read(buf)) > 0;) {
-            output.write(Buffer.buffer(buf));
+        while ((l = input.read(buf)) != -1) {
+            length += l;
+            output.write(Buffer.buffer().appendBytes(buf, 0, l));
         }
 
         return length;
