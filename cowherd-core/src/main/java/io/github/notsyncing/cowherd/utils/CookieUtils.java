@@ -57,6 +57,11 @@ public class CookieUtils
 
         for (String cp : cookiePairs) {
             String[] nv = cp.split("=");
+
+            if (nv.length <= 1) {
+                continue;
+            }
+
             HttpCookie cookie = new HttpCookie(nv[0].trim(), nv[1].trim());
             list.add(cookie);
         }
