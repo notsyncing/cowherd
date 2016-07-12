@@ -83,7 +83,13 @@ public class CowherdServer
             String s = req.getHeader("X-Forwarded-For");
 
             if (s != null) {
-                remoteAddr = s.substring(0, s.indexOf(","));
+                int i = s.indexOf(",");
+
+                if (i > 0) {
+                    remoteAddr = s.substring(0, i);
+                } else {
+                    remoteAddr = s;
+                }
             }
         } else if (req.headers().contains("X-Real-Ip")) {
             remoteAddr = req.getHeader("X-Real-Ip");
