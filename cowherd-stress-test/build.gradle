@@ -17,4 +17,5 @@ dependencies {
     testCompile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.4'
     testCompile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
+    testCompile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
 }

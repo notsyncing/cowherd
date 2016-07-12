@@ -103,7 +103,7 @@ public abstract class CowherdService
         try {
             return DependencyInjector.getComponent(CowherdServer.class).getFileStorage();
         } catch (Exception e) {
-            e.printStackTrace();
+            getLogger().e("Failed to get file storage", e);
         }
 
         return null;

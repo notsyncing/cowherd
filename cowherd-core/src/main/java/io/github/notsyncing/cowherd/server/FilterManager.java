@@ -6,6 +6,7 @@ import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
+import io.github.notsyncing.cowherd.service.ServiceManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,8 @@ public class FilterManager
     static List<FilterInfo> globalFilters = new ArrayList<>();
     static Map<RouteInfo, FilterInfo> routedFilters = new ConcurrentHashMap<>();
     static Map<Class<? extends ServiceActionFilter>, FilterInfo> normalFilters = new ConcurrentHashMap<>();
+
+    private static CowherdLogger log = CowherdLogger.getInstance(FilterManager.class);
 
     public static List<FilterInfo> getGlobalFilters()
     {
@@ -45,7 +48,7 @@ public class FilterManager
             try {
                 info.setFilterInstance(filterClass.newInstance());
             } catch (Exception e) {
-                e.printStackTrace();
+                log.e("Failed to create filter " + filterClass, e);
             }
         }
         return info;

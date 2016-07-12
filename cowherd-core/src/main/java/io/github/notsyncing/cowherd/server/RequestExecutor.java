@@ -29,6 +29,8 @@ import java.util.stream.Stream;
 
 public class RequestExecutor
 {
+    private static CowherdLogger log = CowherdLogger.getInstance(RequestExecutor.class);
+
     @SuppressWarnings("unchecked")
     public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
                                                                          List<Pair<String, String>> parameters,
@@ -109,7 +111,7 @@ public class RequestExecutor
                     try {
                         filterInfo.getFilter().setFilterInstance(filterInfo.getFilter().getFilterClass().newInstance());
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.e("Failed to create an instance of filter " + filterInfo.getFilter().getFilterClass(), e);
                         continue;
                     }
                 }
@@ -180,7 +182,7 @@ public class RequestExecutor
             try {
                 authenticator = DependencyInjector.getComponent(c);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.e("Failed to get an instance of authenticator " + c, e);
                 return FutureUtils.failed(e);
             }
 

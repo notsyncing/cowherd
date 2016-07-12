@@ -72,7 +72,7 @@ public class ServiceManager
                 log.d("Added service " + serviceClass);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e("Failed to add service class " + serviceClass, e);
         }
     }
 

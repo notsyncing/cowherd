@@ -231,7 +231,7 @@ public class FileStorage
         try {
             m = CowherdFileStorageService.class.getMethod("getFile", Enum.class, String.class);
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            log.e("No action for file storage!", e);
             return;
         }
 

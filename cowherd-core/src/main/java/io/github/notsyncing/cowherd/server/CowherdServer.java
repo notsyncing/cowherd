@@ -126,7 +126,7 @@ public class CowherdServer
             }
 
             Throwable e = (Throwable)ex;
-            e.printStackTrace();
+            log.e("An exception was thrown when processing an action: ", e);
 
             String data = e.getMessage() + "\n" + StringUtils.exceptionStackToString(e);
 
@@ -157,7 +157,7 @@ public class CowherdServer
             try {
                 ((ActionResponse)o.getResult()).writeToResponse(context);
             } catch (IOException e) {
-                e.printStackTrace();
+                log.e("An exception was thrown when writing response to client: ", e);
                 req.response().setStatusCode(500);
                 req.response().setStatusMessage(e.getMessage());
             }
@@ -210,8 +210,7 @@ public class CowherdServer
         try {
             ServiceManager.instantiateSingletonServices();
         } catch (Exception e) {
-            e.printStackTrace();
-            log.e("Failed to instantiate services!");
+            log.e("Failed to instantiate services!", e);
         }
 
         HttpServerOptions options = new HttpServerOptions()

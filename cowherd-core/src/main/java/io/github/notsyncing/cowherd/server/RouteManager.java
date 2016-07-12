@@ -168,7 +168,7 @@ public class RouteManager
                 try {
                     resp = handleFileRequest(request);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.e("An exception was thrown when processing file request " + uri, e);
 
                     CompletableFuture<ActionResult> f = new CompletableFuture<>();
                     f.completeExceptionally(e);

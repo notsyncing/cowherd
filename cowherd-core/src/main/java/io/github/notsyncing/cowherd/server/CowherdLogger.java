@@ -65,14 +65,14 @@ public class CowherdLogger
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
                     .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"));
 
-            appenderBuilder = builder.newAppender("rolling", "RollingFile")
+            appenderBuilder = builder.newAppender("rollingCowherd", "RollingFile")
                     .addAttribute("fileName", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd.log"))
                     .addAttribute("filePattern", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd-{yyyy-MM-dd}.log.gz"))
                     .add(layoutBuilder)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            rlb.add(builder.newAppenderRef("rolling"));
+            rlb.add(builder.newAppenderRef("rollingCowherd"));
 
             appenderBuilder = builder.newAppender("rollingAccess", "RollingFile")
                     .addAttribute("fileName", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log"))
