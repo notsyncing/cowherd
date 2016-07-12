@@ -77,7 +77,19 @@ public class CowherdServer
 
     private void processRequest(HttpServerRequest req)
     {
-        String accessLog = req.remoteAddress().host() + ":" + req.remoteAddress().port() + " -> " +
+        String remoteAddr = req.remoteAddress().host();
+
+        if (req.headers().contains("X-Forwarded-For")) {
+            String s = req.getHeader("X-Forwarded-For");
+
+            if (s != null) {
+                remoteAddr = s.substring(0, s.indexOf(","));
+            }
+        } else if (req.headers().contains("X-Real-Ip")) {
+            remoteAddr = req.getHeader("X-Real-Ip");
+        }
+
+        String accessLog = remoteAddr + ":" + req.remoteAddress().port() + " -> " +
                 req.localAddress().host() + ":" + req.localAddress().port() + " (" + req.getHeader("User-Agent") +
                 ") " + req.version() + " " + req.method() + " " + (req.isSSL() ? "SECURE " : "") + req.uri();
 
