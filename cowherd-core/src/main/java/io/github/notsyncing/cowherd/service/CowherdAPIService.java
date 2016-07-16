@@ -14,6 +14,7 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
+import javax.swing.text.View;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -216,6 +217,16 @@ public class CowherdAPIService extends CowherdService
 
     private String generateMethodCall(String base, CowherdServiceInfo info, Method m)
     {
+        if (ViewResponse.class.isAssignableFrom(m.getReturnType())) {
+            return "";
+        }
+
+        String returnType = getGenericReturnTypeName(m);
+
+        if ((returnType != null) && (returnType.startsWith(ViewResponse.class.getName()))) {
+            return "";
+        }
+
         String js = "";
 
         if (!StringUtils.isEmpty(info.getNamespace())) {
