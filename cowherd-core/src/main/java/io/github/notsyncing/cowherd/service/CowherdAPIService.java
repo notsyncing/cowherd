@@ -7,6 +7,7 @@ import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
@@ -78,6 +79,12 @@ public class CowherdAPIService extends CowherdService
 
             for (Method m : info.getServiceClass().getMethods()) {
                 if (!m.isAnnotationPresent(Exported.class)) {
+                    continue;
+                }
+
+                Exported exportedInfo = m.getAnnotation(Exported.class);
+
+                if (!exportedInfo.api()) {
                     continue;
                 }
 
