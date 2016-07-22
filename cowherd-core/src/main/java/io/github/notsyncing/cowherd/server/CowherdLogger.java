@@ -51,14 +51,14 @@ public class CowherdLogger
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("RollingBuilder");
 
-        LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
+        LayoutComponentBuilder logStyle = builder.newLayout("PatternLayout")
                 .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable");
         AppenderComponentBuilder appenderBuilder = builder.newAppender("stdout", "CONSOLE")
                 .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
-        appenderBuilder.add(layoutBuilder);
+        appenderBuilder.add(logStyle);
         builder.add(appenderBuilder);
 
-        RootLoggerComponentBuilder rlb = builder.newRootLogger(level)
+        RootLoggerComponentBuilder rootLoggerBuilder = builder.newRootLogger(level)
                 .add(builder.newAppenderRef("stdout"));
 
         if (CowherdConfiguration.getLogDir() != null) {
@@ -66,28 +66,34 @@ public class CowherdLogger
                     .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"));
 
             appenderBuilder = builder.newAppender("rollingCowherd", "RollingFile")
-                    .addAttribute("fileName", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd.log"))
-                    .addAttribute("filePattern", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd-{yyyy-MM-dd}.log.gz"))
-                    .add(layoutBuilder)
+                    .addAttribute("fileName",
+                            CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd.log").toString())
+                    .addAttribute("filePattern",
+                            CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd-{yyyy-MM-dd}.log.gz").toString())
+                    .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            rlb.add(builder.newAppenderRef("rollingCowherd"));
+            rootLoggerBuilder.add(builder.newAppenderRef("rollingCowherd"));
 
             appenderBuilder = builder.newAppender("rollingAccess", "RollingFile")
-                    .addAttribute("fileName", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log"))
-                    .addAttribute("filePattern", CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access-{yyyy-MM-dd}.log.gz"))
-                    .add(layoutBuilder)
+                    .addAttribute("fileName",
+                            CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log").toString())
+                    .addAttribute("filePattern",
+                            CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access-{yyyy-MM-dd}.log.gz").toString())
+                    .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
-            LoggerComponentBuilder lcb = builder.newAsyncLogger("AccessLogger", level)
-                    .add(builder.newAppenderRef("rollingAccess"));
+            LoggerComponentBuilder accessLoggerBuilder = builder.newLogger("AccessLogger", level)
+                    .add(builder.newAppenderRef("rollingAccess"))
+                    .add(builder.newAppenderRef("stdout"))
+                    .addAttribute("additivity", false);
 
-            builder.add(lcb);
+            builder.add(accessLoggerBuilder);
         }
 
-        builder.add(rlb);
+        builder.add(rootLoggerBuilder);
 
         Configuration conf = builder.build();
 
