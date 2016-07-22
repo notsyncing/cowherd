@@ -5,6 +5,7 @@ import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.RouteManager;
+import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 
@@ -169,6 +170,10 @@ public class FileStorage
             return CompletableFuture.completedFuture(null);
         }
 
+        if ((StringUtils.isEmpty(file.getFilename())) && ((file.getFile() == null) || (file.getFile().length() <= 0))) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return storeFile(file.getFile(), tag, file.getFilename(), false);
     }
 
@@ -181,6 +186,10 @@ public class FileStorage
     public CompletableFuture<Path> storeFileWithRandomName(UploadFileInfo file, Enum tag)
     {
         if (file == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        if ((StringUtils.isEmpty(file.getFilename())) && ((file.getFile() == null) || (file.getFile().length() <= 0))) {
             return CompletableFuture.completedFuture(null);
         }
 
