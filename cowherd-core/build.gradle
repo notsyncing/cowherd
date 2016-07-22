@@ -22,9 +22,9 @@ repositories {
 dependencies {
     compile 'io.vertx:vertx-core:3.3.2'
     compile 'com.beust:jcommander:1.48'
-    compile 'io.github.lukehutch:fast-classpath-scanner:1.9.21'
-    compile 'com.alibaba:fastjson:1.2.13'
-    compile 'org.thymeleaf:thymeleaf:3.0.0.RELEASE'
+    compile group: 'io.github.lukehutch', name: 'fast-classpath-scanner', version: '1.10.4'
+    compile 'com.alibaba:fastjson:1.2.14'
+    compile 'org.thymeleaf:thymeleaf:3.0.1.RELEASE'
     compile group: 'org.thymeleaf.extras', name: 'thymeleaf-extras-java8time', version: '3.0.0.RELEASE'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.1'
     compile group: 'org.jsoup', name: 'jsoup', version: '1.9.2'
