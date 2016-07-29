@@ -5,7 +5,7 @@ plugins {
 }
 
 sourceCompatibility = 1.8
-def ver = '0.7.16'
+def ver = '0.7.17'
 
 compileJava {
     options.compilerArgs << "-parameters"
