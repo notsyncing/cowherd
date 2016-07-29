@@ -10,6 +10,8 @@ import org.thymeleaf.context.Context;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -18,7 +20,12 @@ import java.util.concurrent.CompletableFuture;
 public class ViewResponse<T> implements ActionResponse
 {
     private T model;
+    private Map<String, Object> addModels = new HashMap<>();
     private String viewName = null;
+
+    public ViewResponse()
+    {
+    }
 
     /**
      * 实例化视图响应对象
@@ -38,6 +45,17 @@ public class ViewResponse<T> implements ActionResponse
     public T getModel()
     {
         return model;
+    }
+
+    public void setModel(T model)
+    {
+        this.model = model;
+    }
+
+    public ViewResponse<T> addModel(String name, Object model)
+    {
+        addModels.put(name, model);
+        return this;
     }
 
     @Override
@@ -70,6 +88,8 @@ public class ViewResponse<T> implements ActionResponse
         Context c = new Context();
         c.setVariable("model", model);
         c.setVariable("request", context.getRequest());
+
+        addModels.forEach(c::setVariable);
 
         String s = eng.process(templateName, c);
         resp.putHeader("Content-Type", "text/html;charset=UTF-8");
