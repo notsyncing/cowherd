@@ -8,7 +8,7 @@ import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
-import io.github.notsyncing.cowherd.service.DependencyInjector;
+import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.tests.services.*;
 import io.github.notsyncing.cowherd.utils.FileUtils;
@@ -25,12 +25,10 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,11 +38,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.HttpCookie;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -123,7 +118,7 @@ public class CowherdTest
         cowherd = new Cowherd();
         cowherd.start();
 
-        service = DependencyInjector.getComponent(TestService.class);
+        service = Cowherd.dependencyInjector.getComponent(TestService.class);
     }
 
     @After
@@ -777,7 +772,7 @@ public class CowherdTest
     public void testDirectFileStorageRoute(TestContext context) throws IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ExecutionException, InterruptedException
     {
         String route = "^/test/images/(?<path>.*?)$";
-        FileStorage storage = DependencyInjector.getComponent(FileStorage.class);
+        FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
         Path tempFile = Files.createTempFile("test", null);
@@ -804,7 +799,7 @@ public class CowherdTest
     public void testDirectFileStorageRouteWithMultipleSeparators(TestContext context) throws IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ExecutionException, InterruptedException
     {
         String route = "^/test/images/(?<path>.*?)$";
-        FileStorage storage = DependencyInjector.getComponent(FileStorage.class);
+        FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
         Path tempFile = Files.createTempFile("test", null);

@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.service;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.InstantiateType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
@@ -31,7 +32,7 @@ public class ServiceManager
 
     private static void addServiceInfo(String name, CowherdServiceInfo info, RouteInfo customRoute) throws InvalidServiceActionException
     {
-        DependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType(), false);
+        Cowherd.dependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType(), false);
 
         processServiceAnnotations(info);
 
@@ -90,10 +91,10 @@ public class ServiceManager
         }
 
         if (info.getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
-            return DependencyInjector.makeObject(serviceClass);
+            return Cowherd.dependencyInjector.makeObject(serviceClass);
         } else if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
             if (!serviceInstances.containsKey(serviceClass.getName())) {
-                CowherdService s = DependencyInjector.makeObject(serviceClass);
+                CowherdService s = Cowherd.dependencyInjector.makeObject(serviceClass);
                 serviceInstances.put(serviceClass.getName(), s);
                 return s;
             } else {
@@ -141,5 +142,11 @@ public class ServiceManager
                 }
             }
         }
+    }
+
+    public static void clear()
+    {
+        services.clear();
+        serviceInstances.clear();
     }
 }

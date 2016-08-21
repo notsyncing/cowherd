@@ -1,18 +1,22 @@
 package io.github.notsyncing.cowherd.tests;
 
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.annotations.Component;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
+import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.DependencyInjector;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class DependencyInjectorTest
+public class CowherdDependencyInjectorTest
 {
     private static int counterA = 0;
     private static int counterD = 0;
     private static int counterE = 0;
+    
+    private static DependencyInjector dependencyInjector;
 
     @Component
     public static class A
@@ -82,33 +86,34 @@ public class DependencyInjectorTest
         counterD = 0;
         counterE = 0;
 
-        DependencyInjector.clear();
+        CowherdDependencyInjector.setScanner(new FastClasspathScanner());
+        dependencyInjector = new CowherdDependencyInjector();
     }
 
     @Test
     public void testGet()
     {
-        DependencyInjector.registerComponent(IC.class, C.class, ComponentInstantiateType.AlwaysNew, false);
-        DependencyInjector.registerComponent(A.class, ComponentInstantiateType.AlwaysNew, false);
-        DependencyInjector.registerComponent(B.class, ComponentInstantiateType.AlwaysNew, false);
-        DependencyInjector.registerComponent(D.class, ComponentInstantiateType.Singleton, false);
-        DependencyInjector.registerComponent(new E());
+        dependencyInjector.registerComponent(IC.class, C.class, ComponentInstantiateType.AlwaysNew, false);
+        dependencyInjector.registerComponent(A.class, ComponentInstantiateType.AlwaysNew, false);
+        dependencyInjector.registerComponent(B.class, ComponentInstantiateType.AlwaysNew, false);
+        dependencyInjector.registerComponent(D.class, ComponentInstantiateType.Singleton, false);
+        dependencyInjector.registerComponent(new E());
 
         try {
-            B b1 = DependencyInjector.getComponent(B.class);
+            B b1 = dependencyInjector.getComponent(B.class);
             assertNotNull(b1);
             assertNotNull(b1.getC());
             assertNotNull(b1.getD());
             assertEquals(C.class, b1.getC().getClass());
 
-            B b2 = DependencyInjector.getComponent(B.class);
+            B b2 = dependencyInjector.getComponent(B.class);
             assertNotNull(b2);
             assertNotNull(b2.getC());
             assertNotNull(b2.getD());
             assertEquals(C.class, b2.getC().getClass());
             assertNotEquals(b1, b2);
 
-            B b3 = (B)DependencyInjector.getComponent(getClass().getName() + "$B");
+            B b3 = (B) dependencyInjector.getComponent(getClass().getName() + "$B");
             assertNotNull(b3);
             assertNotNull(b3.getC());
             assertNotNull(b3.getD());
@@ -122,11 +127,11 @@ public class DependencyInjectorTest
             assertEquals(b1.getD(), b2.getD());
             assertEquals(b2.getD(), b3.getD());
 
-            E e1 = (E)DependencyInjector.getComponent(getClass().getName() + "$E");
+            E e1 = (E) dependencyInjector.getComponent(getClass().getName() + "$E");
             assertNotNull(e1);
             assertEquals(1, counterE);
 
-            E e2 = (E)DependencyInjector.getComponent(getClass().getName() + "$E");
+            E e2 = (E) dependencyInjector.getComponent(getClass().getName() + "$E");
             assertNotNull(e2);
             assertEquals(1, counterE);
 

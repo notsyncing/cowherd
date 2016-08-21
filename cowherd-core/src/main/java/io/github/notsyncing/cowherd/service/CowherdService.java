@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.service;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.files.FileStorage;
@@ -12,12 +13,10 @@ import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.github.notsyncing.cowherd.utils.CookieUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -101,7 +100,7 @@ public abstract class CowherdService
     protected FileStorage getFileStorage()
     {
         try {
-            return DependencyInjector.getComponent(CowherdServer.class).getFileStorage();
+            return Cowherd.dependencyInjector.getComponent(CowherdServer.class).getFileStorage();
         } catch (Exception e) {
             getLogger().e("Failed to get file storage", e);
         }

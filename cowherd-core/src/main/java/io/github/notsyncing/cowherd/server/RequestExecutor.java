@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.server;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.authentication.ActionAuthenticator;
 import io.github.notsyncing.cowherd.authentication.annotations.ServiceActionAuthenticator;
@@ -9,7 +10,7 @@ import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.CowherdService;
-import io.github.notsyncing.cowherd.service.DependencyInjector;
+import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -21,7 +22,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -180,7 +180,7 @@ public class RequestExecutor
             ActionAuthenticator authenticator;
 
             try {
-                authenticator = DependencyInjector.getComponent(c);
+                authenticator = Cowherd.dependencyInjector.getComponent(c);
             } catch (Exception e) {
                 log.e("Failed to get an instance of authenticator " + c, e);
                 return FutureUtils.failed(e);

@@ -1,7 +1,7 @@
 package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
-import io.github.notsyncing.cowherd.annotations.Exported;
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
@@ -11,7 +11,7 @@ import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
-import io.github.notsyncing.cowherd.service.DependencyInjector;
+import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -28,7 +28,6 @@ import org.thymeleaf.templateresolver.FileTemplateResolver;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -207,11 +206,11 @@ public class CowherdServer
         if (vertx == null) {
             vertx = Vertx.vertx();
 
-            DependencyInjector.registerComponent(Vertx.class, vertx);
+            Cowherd.dependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
         fileStorage = new FileStorage(vertx);
-        DependencyInjector.registerComponent(fileStorage);
+        Cowherd.dependencyInjector.registerComponent(fileStorage);
 
         try {
             ServiceManager.instantiateSingletonServices();
