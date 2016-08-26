@@ -53,12 +53,14 @@ public class Cowherd
         CowherdDependencyInjector.setScanner(classpathScanner);
 
         if (dependencyInjector == null) {
-            dependencyInjector = new CowherdDependencyInjector();
+            dependencyInjector = new CowherdDependencyInjector(false);
         }
 
         configure();
 
         addInternalServices();
+
+        dependencyInjector.init();
 
         scanClasses(classpathScanner);
 

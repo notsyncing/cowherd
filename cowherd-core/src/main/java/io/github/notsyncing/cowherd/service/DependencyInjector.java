@@ -7,6 +7,8 @@ import java.lang.reflect.InvocationTargetException;
 public interface DependencyInjector {
     void clear();
 
+    void init();
+
     void registerComponent(Class interfaceType, Class objectType, ComponentInstantiateType createType,
                            boolean createEarly);
 

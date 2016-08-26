@@ -30,8 +30,6 @@ public class CowherdDependencyInjector implements DependencyInjector {
         if (!noScan) {
             scanner.matchClassesWithAnnotation(Component.class, this::registerComponent)
                     .scan();
-
-            classScanCompleted();
         }
     }
 
@@ -58,6 +56,12 @@ public class CowherdDependencyInjector implements DependencyInjector {
     {
         components.clear();
         singletons.clear();
+    }
+
+    @Override
+    public void init()
+    {
+        classScanCompleted();
     }
 
     @SuppressWarnings("unchecked")
