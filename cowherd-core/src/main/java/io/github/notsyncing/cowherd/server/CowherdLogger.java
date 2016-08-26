@@ -63,7 +63,9 @@ public class CowherdLogger
 
         if (CowherdConfiguration.getLogDir() != null) {
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
-                    .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"));
+                    .addComponent(builder.newComponent("TimeBasedTriggerPolicy")
+                            .addAttribute("modulate", true)
+                            .addAttribute("interval", 24));
 
             appenderBuilder = builder.newAppender("rollingCowherd", "RollingFile")
                     .addAttribute("fileName",
