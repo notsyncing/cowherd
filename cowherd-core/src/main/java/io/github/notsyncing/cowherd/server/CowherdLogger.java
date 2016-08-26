@@ -63,7 +63,7 @@ public class CowherdLogger
 
         if (CowherdConfiguration.getLogDir() != null) {
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
-                    .addComponent(builder.newComponent("TimeBasedTriggerPolicy")
+                    .addComponent(builder.newComponent("TimeBasedTriggeringPolicy")
                             .addAttribute("modulate", true)
                             .addAttribute("interval", 24));
 
