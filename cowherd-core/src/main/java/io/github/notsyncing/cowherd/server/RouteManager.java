@@ -90,6 +90,7 @@ public class RouteManager
                 info.setType(RouteType.WebSocket);
             }
 
+            m.setAccessible(true);
             addRoute(info, m);
         }
     }
