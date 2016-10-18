@@ -292,6 +292,19 @@ public class CowherdServer
             });
         }
 
-        return f;
+        return f.thenCompose(r -> {
+            CompletableFuture f2 = new CompletableFuture();
+
+            vertx.close(h -> {
+                if (h.succeeded()) {
+                    vertx = null;
+                    f2.complete(null);
+                } else {
+                    f2.completeExceptionally(h.cause());
+                }
+            });
+
+            return f2;
+        });
     }
 }
