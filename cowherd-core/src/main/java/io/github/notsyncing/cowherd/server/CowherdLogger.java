@@ -65,7 +65,7 @@ public class CowherdLogger
             ComponentBuilder triggeringPolicy = builder.newComponent("Policies")
                     .addComponent(builder.newComponent("TimeBasedTriggeringPolicy")
                             .addAttribute("modulate", true)
-                            .addAttribute("interval", 24));
+                            .addAttribute("interval", 1));
 
             appenderBuilder = builder.newAppender("rollingCowherd", "RollingFile")
                     .addAttribute("fileName",
