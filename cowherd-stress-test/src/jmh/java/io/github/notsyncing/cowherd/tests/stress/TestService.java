@@ -1,4 +1,4 @@
-package io.github.notsyncing.cowherd.stress;
+package io.github.notsyncing.cowherd.tests.stress;
 
 import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
