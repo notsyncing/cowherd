@@ -11,7 +11,6 @@ import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
-import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -146,7 +145,9 @@ public class CowherdServer
 
     private void logAccess(HttpServerRequest req, String accessLog)
     {
-        accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten());
+        if (!CowherdConfiguration.isMakeAccessLoggerQuiet()) {
+            accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten());
+        }
     }
 
     private void writeObjectToResponse(HttpServerRequest req, ActionResult o)

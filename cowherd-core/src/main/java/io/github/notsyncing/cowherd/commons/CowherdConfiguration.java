@@ -51,6 +51,9 @@ public class CowherdConfiguration
     private static boolean verbose = false;
 
     @ConfigField
+    private static boolean makeAccessLoggerQuiet = false;
+
+    @ConfigField
     private static boolean everyHtmlIsTemplate = false;
 
     @ConfigField
@@ -268,6 +271,16 @@ public class CowherdConfiguration
         CowherdConfiguration.verbose = verbose;
 
         CowherdLogger.loggerConfigChanged();
+    }
+
+    public static boolean isMakeAccessLoggerQuiet()
+    {
+        return makeAccessLoggerQuiet;
+    }
+
+    public static void setMakeAccessLoggerQuiet(boolean makeAccessLoggerQuiet)
+    {
+        CowherdConfiguration.makeAccessLoggerQuiet = makeAccessLoggerQuiet;
     }
 
     public static boolean isEveryHtmlIsTemplate()
