@@ -9,6 +9,7 @@ import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.utils.FileUtils;
+import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
@@ -239,8 +240,8 @@ public class CowherdAPIService extends CowherdService
         Parameter[] params = stripMethodParameters(m);
 
         if (params.length > 0) {
-            for (Parameter p : params) {
-                js += p.getName() + ", ";
+            for (int i = 0; i < params.length; i++) {
+                js += RequestUtils.getParameterName(m, params[i], i) + ", ";
             }
 
             js = js.substring(0, js.length() - 2);

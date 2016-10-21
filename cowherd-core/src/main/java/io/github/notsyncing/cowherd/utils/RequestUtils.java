@@ -9,6 +9,7 @@ import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
 import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -152,6 +153,21 @@ public class RequestUtils
                 .thenApply(t -> uploads);
     }
 
+    public static String getParameterName(Method method, Parameter param, int index)
+    {
+        if (param.isAnnotationPresent(io.github.notsyncing.cowherd.annotations.Parameter.class)) {
+            return param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+        }
+
+        if (!param.isNamePresent()) {
+            CowherdLogger.getInstance(RequestUtils.class).e("Parameter #" + index + " <" +
+                    param.getType() + "> of method " + method.getName() +
+                    " has no name present, you must annotate it with @Parameter or compile your program with -parameters!");
+        }
+
+        return param.getName();
+    }
+
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
                                                                   List<Pair<String, String>> params,
                                                                   List<HttpCookie> cookies,
@@ -166,8 +182,13 @@ public class RequestUtils
 
         Object[] targetParams = new Object[pl.length];
         List<Parameter> methodParams = Arrays.asList(pl);
-        Map<String, Parameter> methodParamMap = methodParams.stream()
-                .collect(Collectors.toMap(Parameter::getName, p -> p));
+        Map<String, Parameter> methodParamMap = new HashMap<>();
+
+        for (int i = 0; i < methodParams.size(); i++) {
+            Parameter p = methodParams.get(i);
+            methodParamMap.put(RequestUtils.getParameterName(method, p, i), p);
+        }
+
         JSONObject jsonParams = null;
         String bodyParam = null;
         List<Pair<String, String>> complexParamPairs = new ArrayList<>();
@@ -190,12 +211,6 @@ public class RequestUtils
 
             Parameter methodParam = methodParamMap.get(reqParam.getKey());
             int methodParamIndex = methodParams.indexOf(methodParam);
-
-            if (!methodParam.isNamePresent()) {
-                throw new RuntimeException("Parameter #" + methodParamIndex + " <" +
-                        methodParam.getType() + "> of method " + method.getName() +
-                        " has no name present, you must compile your program with -parameters!");
-            }
 
             if (methodParam.getType().isEnum()) {
                 targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[Integer.parseInt(reqParam.getValue())];
