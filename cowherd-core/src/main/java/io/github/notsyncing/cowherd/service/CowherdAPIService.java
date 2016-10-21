@@ -258,8 +258,9 @@ public class CowherdAPIService extends CowherdService
         if (params.length > 0) {
             js += ",\n";
 
-            for (Parameter p : params) {
-                js += p.getName() + ": " + p.getName() + ",\n";
+            for (int i = 0; i < params.length; i++) {
+                String p = RequestUtils.getParameterName(m, params[i], i);
+                js += p + ": " + p + ",\n";
             }
 
             js = js.substring(0, js.length() - 2);
