@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.utils;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class TypeUtils
@@ -75,6 +76,14 @@ public class TypeUtils
         return Instant.parse(s);
     }
 
+    public static LocalDateTime stringToLocalDateTime(String s) {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+
+        return LocalDateTime.parse(s);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T stringToType(Class<T> c, String s)
     {
@@ -108,6 +117,8 @@ public class TypeUtils
             return (T)new BigDecimal(s);
         } else if (c == Instant.class) {
             return (T)stringToInstant(s);
+        } else if (c == LocalDateTime.class) {
+            return (T)stringToLocalDateTime(s);
         }
 
         return (T)s;
