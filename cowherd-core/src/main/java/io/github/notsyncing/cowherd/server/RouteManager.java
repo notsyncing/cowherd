@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +41,11 @@ public class RouteManager
     public static Map<RouteInfo, Method> getRoutes()
     {
         return routes;
+    }
+
+    public static void reset()
+    {
+        routes.clear();
     }
 
     public static void addRoute(RouteInfo route, Method target)

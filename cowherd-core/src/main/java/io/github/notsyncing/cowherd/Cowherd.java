@@ -5,10 +5,7 @@ import com.beust.jcommander.Parameter;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
-import io.github.notsyncing.cowherd.server.CowherdLogger;
-import io.github.notsyncing.cowherd.server.CowherdServer;
-import io.github.notsyncing.cowherd.server.FilterManager;
-import io.github.notsyncing.cowherd.server.ServiceActionFilter;
+import io.github.notsyncing.cowherd.server.*;
 import io.github.notsyncing.cowherd.service.*;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
@@ -33,6 +30,7 @@ public class Cowherd
     private Vertx vertx = Vertx.vertx();
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
+    private List<Class<? extends CowherdPart>> parts = new ArrayList<>();
 
     public static DependencyInjector dependencyInjector;
 
@@ -59,6 +57,14 @@ public class Cowherd
         configure();
 
         addInternalServices();
+
+        parts.forEach(c -> {
+            try {
+                c.newInstance().init();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
 
         dependencyInjector.init();
 
@@ -150,6 +156,7 @@ public class Cowherd
     {
         s.matchSubclassesOf(CowherdService.class, ServiceManager::addServiceClass)
                 .matchClassesImplementing(ServiceActionFilter.class, c -> FilterManager.addFilterClass(c))
+                .matchClassesImplementing(CowherdPart.class, c -> parts.add(c))
                 .scan();
     }
 
@@ -165,6 +172,7 @@ public class Cowherd
     public CompletableFuture stop()
     {
         ServiceManager.clear();
+        RouteManager.reset();
 
         return server.stop();
     }
