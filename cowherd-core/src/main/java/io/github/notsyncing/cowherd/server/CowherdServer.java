@@ -97,6 +97,8 @@ public class CowherdServer
                 req.localAddress().host() + ":" + req.localAddress().port() + " (" + req.getHeader("User-Agent") +
                 ") " + req.version() + " " + req.method() + " " + (req.isSSL() ? "SECURE " : "") + req.uri();
 
+        long reqTimeStart = System.currentTimeMillis();
+
         RouteManager.handleRequest(req).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
                 logAccess(req, accessLog);
@@ -113,19 +115,22 @@ public class CowherdServer
             }
 
             writeObjectToResponse(req, o);
-            logAccess(req, accessLog);
+            long reqTimeEnd = System.currentTimeMillis();
+            logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
         }).exceptionally(ex -> {
+            long reqTimeEnd = System.currentTimeMillis();
+
             if ((ex.getCause() instanceof AuthenticationFailedException) || (ex.getCause() instanceof FilterBreakException)) {
                 req.response().setStatusCode(403);
                 req.response().end();
 
-                logAccess(req, accessLog);
+                logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
                 return null;
             } else if (ex.getCause() instanceof ValidationFailedException) {
                 req.response().setStatusCode(400);
                 req.response().end();
 
-                logAccess(req, accessLog);
+                logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
                 return null;
             }
 
@@ -138,16 +143,21 @@ public class CowherdServer
             req.response().setStatusMessage(e.getMessage());
 
             writeResponse(req.response(), data);
-            logAccess(req, accessLog);
+            logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
             return null;
         });
     }
 
-    private void logAccess(HttpServerRequest req, String accessLog)
+    private void logAccess(HttpServerRequest req, String accessLog, long accessProcessTime)
     {
         if (!CowherdConfiguration.isMakeAccessLoggerQuiet()) {
-            accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten());
+            accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten()
+                    + (accessProcessTime > 0 ? " " + accessProcessTime + "ms" : ""));
         }
+    }
+
+    private void logAccess(HttpServerRequest req, String accessLog) {
+        logAccess(req, accessLog, 0);
     }
 
     private void writeObjectToResponse(HttpServerRequest req, ActionResult o)
