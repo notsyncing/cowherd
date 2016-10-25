@@ -10,6 +10,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -95,7 +96,13 @@ public class CowherdConfiguration
     {
         if (contextRoots == null) {
             try {
-                contextRoots = new Path[] { Paths.get(CowherdConfiguration.class.getResource("/APP_ROOT").toURI()) };
+                URL url = CowherdConfiguration.class.getResource("/APP_ROOT");
+
+                if (url == null) {
+                    return new Path[] {};
+                }
+
+                contextRoots = new Path[] { Paths.get(url.toURI()) };
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
