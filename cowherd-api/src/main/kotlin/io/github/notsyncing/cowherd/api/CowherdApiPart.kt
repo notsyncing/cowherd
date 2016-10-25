@@ -26,4 +26,8 @@ class CowherdApiPart : CowherdPart {
 
         ServiceManager.addServiceClass(CowherdApiGatewayService::class.java, apiRoute)
     }
+
+    override fun destroy() {
+        CowherdApiHub.reset()
+    }
 }
