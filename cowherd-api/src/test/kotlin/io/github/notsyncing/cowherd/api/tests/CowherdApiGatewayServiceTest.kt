@@ -19,6 +19,8 @@ class CowherdApiGatewayServiceTest {
 
     @Before
     fun setUp() {
+        CowherdApiHub.reset()
+
         server.start()
     }
 
@@ -89,5 +91,15 @@ class CowherdApiGatewayServiceTest {
                 Assert.assertTrue(e is IllegalArgumentException)
             }
         }
+    }
+
+    @Test
+    fun testSimpleRequestThroughNetwork() {
+        CowherdApiHub.publish(SimpleService::class.java)
+
+        val resp = Unirest.get("http://localhost:8080/service/gateway/${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}")
+                .asString()
+
+        Assert.assertEquals("Hello, world!", resp)
     }
 }
