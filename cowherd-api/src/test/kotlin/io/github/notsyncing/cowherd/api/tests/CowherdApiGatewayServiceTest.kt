@@ -57,4 +57,37 @@ class CowherdApiGatewayServiceTest {
             Assert.assertEquals("Hello, world!", r)
         }
     }
+
+    @Test
+    fun testServiceRevoked() {
+        CowherdApiHub.publish(SimpleService::class.java)
+        CowherdApiHub.revoke(SimpleService::class.java)
+
+        async<Unit> {
+            val service = getService()
+
+            try {
+                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", mock(),
+                        makeParamList(), null, null))
+                Assert.assertTrue(false)
+            } catch (e: Exception) {
+                Assert.assertTrue(e is IllegalArgumentException)
+            }
+        }
+    }
+
+    @Test
+    fun testServiceNotPublished() {
+        async<Unit> {
+            val service = getService()
+
+            try {
+                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", mock(),
+                        makeParamList(), null, null))
+                Assert.assertTrue(false)
+            } catch (e: Exception) {
+                Assert.assertTrue(e is IllegalArgumentException)
+            }
+        }
+    }
 }
