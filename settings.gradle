@@ -1,4 +1,5 @@
 rootProject.name = 'cowherd'
 include 'cowherd-stress-test'
 include 'cowherd-core'
+include 'cowherd-api'
 
