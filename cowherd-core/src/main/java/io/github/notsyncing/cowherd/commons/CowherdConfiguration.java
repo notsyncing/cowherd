@@ -67,6 +67,8 @@ public class CowherdConfiguration
 
     private static JsonObject userConfiguration;
 
+    private static JsonObject rawConfiguration;
+
     /**
      * 获取当前监听的端口号
      * @return 当前监听的端口号
@@ -357,8 +359,23 @@ public class CowherdConfiguration
         return userConfiguration;
     }
 
+    /**
+     * 获取原始的配置数据
+     * @return 原始配置数据
+     */
+    public static JsonObject getRawConfiguration()
+    {
+        if (rawConfiguration == null) {
+            return new JsonObject();
+        }
+
+        return rawConfiguration;
+    }
+
     public static void fromConfig(JsonObject config)
     {
+        rawConfiguration = config;
+
         for (Field f : CowherdConfiguration.class.getDeclaredFields()) {
             if (!f.isAnnotationPresent(ConfigField.class)) {
                 continue;
