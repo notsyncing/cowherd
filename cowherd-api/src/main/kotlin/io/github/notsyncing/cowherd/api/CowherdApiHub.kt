@@ -65,5 +65,7 @@ object CowherdApiHub {
 
     fun reset() {
         hub.clear()
+
+        CowherdApiGatewayService.reset()
     }
 }

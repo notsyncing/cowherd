@@ -23,6 +23,10 @@ class CowherdApiGatewayService : CowherdService() {
         private const val DEFAULT_SERVICE_METHOD = "__default_service_method__"
 
         private val methodCache = ConcurrentHashMap<String, MethodCallInfo>()
+
+        fun reset() {
+            methodCache.clear()
+        }
     }
 
     @HttpAnyMethod
