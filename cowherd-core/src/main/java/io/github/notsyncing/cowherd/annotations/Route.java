@@ -31,4 +31,9 @@ public @interface Route
      * 指向一个视图时，指定视图的路径
      */
     String viewPath() default "";
+
+    /**
+     * 是否子路径，即在上一级路径之后附加的路径
+     */
+    boolean subRoute() default false;
 }

@@ -88,7 +88,13 @@ public class RouteManager
                 info.setDomain(serviceRouteInfo.getDomain());
             } else {
                 Route route = m.getAnnotation(Route.class);
-                info.setPath(route.value());
+
+                if (route.subRoute()) {
+                    info.setPath(serviceRouteInfo.getPath() + route.value());
+                } else {
+                    info.setPath(route.value());
+                }
+
                 info.setDomain(route.domain());
                 info.setEntry(route.entry());
                 info.setViewPath(StringUtils.isEmpty(route.viewPath()) ? null : route.viewPath());
