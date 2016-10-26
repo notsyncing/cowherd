@@ -1,7 +1,8 @@
 package io.github.notsyncing.cowherd.utils;
 
-import com.alibaba.fastjson.*;
-import io.github.notsyncing.cowherd.Cowherd;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
@@ -12,7 +13,6 @@ import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
 import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
-import io.netty.handler.codec.http.QueryStringDecoder;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -168,6 +168,15 @@ public class RequestUtils
         return param.getName();
     }
 
+    public static String getParameterName(Parameter param)
+    {
+        if (param.isAnnotationPresent(io.github.notsyncing.cowherd.annotations.Parameter.class)) {
+            return param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+        }
+
+        return param.getName();
+    }
+
     public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
                                                                   List<Pair<String, String>> params,
                                                                   List<HttpCookie> cookies,
@@ -228,19 +237,20 @@ public class RequestUtils
 
         for (int i = 0; i < methodParams.size(); i++) {
             Parameter methodParam = methodParams.get(i);
+            String methodParamName = getParameterName(method, methodParam, i);
 
-            if (methodParam.getName().equals("__parameters__")) {
+            if (methodParamName.equals("__parameters__")) {
                 targetParams[i] = params;
-            } else if (methodParam.getName().equals("__uploads__")) {
+            } else if (methodParamName.equals("__uploads__")) {
                 targetParams[i] = uploads;
-            } else if (methodParam.getName().equals("__cookies__")) {
+            } else if (methodParamName.equals("__cookies__")) {
                 targetParams[i] = cookies;
-            } else if (methodParam.getName().equals("__body__")) {
+            } else if (methodParamName.equals("__body__")) {
                 targetParams[i] = bodyParam;
             } else if (methodParam.getType() == UploadFileInfo.class) {
                 if (uploads != null) {
                     Optional<UploadFileInfo> ufi = uploads.stream()
-                            .filter(u -> u.getParameterName().equals(methodParam.getName()))
+                            .filter(u -> u.getParameterName().equals(methodParamName))
                             .findFirst();
 
                     targetParams[i] = ufi.isPresent() ? ufi.get() : null;
@@ -259,9 +269,8 @@ public class RequestUtils
                 targetParams[i] = req.response();
             } else if (methodParam.getType() == HttpCookie.class) {
                 if (cookies != null) {
-                    String name = methodParam.getName();
                     HttpCookie cookie = cookies.stream()
-                            .filter(c -> c.getName().equals(name))
+                            .filter(c -> c.getName().equals(methodParamName))
                             .findFirst()
                             .orElse(null);
 
@@ -269,8 +278,8 @@ public class RequestUtils
                 } else {
                     targetParams[i] = null;
                 }
-            } else if ((jsonParams != null) && (jsonParams.containsKey(methodParam.getName()))) {
-                targetParams[i] = jsonParams.getObject(methodParam.getName(), pl[i].getType());
+            } else if ((jsonParams != null) && (jsonParams.containsKey(methodParamName))) {
+                targetParams[i] = jsonParams.getObject(methodParamName, pl[i].getType());
             } else if (otherParameters != null) {
                 Object o = Stream.of(otherParameters)
                         .filter(op -> (op != null) && (methodParam.getType().isAssignableFrom(op.getClass())))
@@ -294,12 +303,13 @@ public class RequestUtils
                 }
 
                 Parameter p = pl[i];
+                String pn = getParameterName(p);
 
-                if (!complexParams.containsKey(p.getName())) {
+                if (!complexParams.containsKey(pn)) {
                     continue;
                 }
 
-                Object o = complexParams.get(p.getName());
+                Object o = complexParams.get(pn);
 
                 if ((o instanceof JSONArray) || (o instanceof JSONObject)) {
                     targetParams[i] = JSON.parseObject(o.toString(), p.getParameterizedType());
