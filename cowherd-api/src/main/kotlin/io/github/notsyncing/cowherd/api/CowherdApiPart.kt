@@ -10,7 +10,7 @@ class CowherdApiPart : CowherdPart {
     private val defConfig = JsonObject()
 
     init {
-        defConfig.put("url", "service")
+        defConfig.put("urlPrefix", "service")
     }
 
     override fun init() {
@@ -21,7 +21,7 @@ class CowherdApiPart : CowherdPart {
         }
 
         val apiRoute = RouteInfo()
-        apiRoute.path = "^/${config.getString("urlPrefix")}/gateway/(?<path.*?)$"
+        apiRoute.path = "^/${config.getString("urlPrefix")}/gateway/(?<path>.*?)$"
         apiRoute.domain = config.getString("domain")
 
         ServiceManager.addServiceClass(CowherdApiGatewayService::class.java, apiRoute)

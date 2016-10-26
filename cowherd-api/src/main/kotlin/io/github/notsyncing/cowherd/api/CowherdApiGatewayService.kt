@@ -2,6 +2,8 @@ package io.github.notsyncing.cowherd.api
 
 import com.alibaba.fastjson.JSON
 import io.github.notsyncing.cowherd.annotations.Exported
+import io.github.notsyncing.cowherd.annotations.Parameter
+import io.github.notsyncing.cowherd.annotations.Route
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpAnyMethod
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.models.UploadFileInfo
@@ -21,8 +23,12 @@ class CowherdApiGatewayService : CowherdService() {
 
     @HttpAnyMethod
     @Exported
-    fun gateway(path: String, request: HttpServerRequest, __parameters__: List<Pair<String, String>>,
-                __cookies__: List<HttpCookie>?, __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
+    @Route("", subRoute = true)
+    fun gateway(@Parameter("path") path: String,
+                @Parameter("request") request: HttpServerRequest,
+                @Parameter("__parameters__") __parameters__: List<Pair<String, String>>,
+                @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
+                @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
         val actionPath = stripParameters(path)
         val parts = actionPath.split("/")
 
@@ -65,7 +71,13 @@ class CowherdApiGatewayService : CowherdService() {
             targetParams.add(v)
         }
 
-        return serviceMethodInfo.methodHandle.invokeWithArguments(targetParams) as CompletableFuture<Any?>
+        val o = serviceMethodInfo.methodHandle.invokeWithArguments(targetParams)
+
+        if (o is CompletableFuture<*>) {
+            return o as CompletableFuture<Any?>
+        } else {
+            return CompletableFuture.completedFuture(o)
+        }
     }
 
     private fun stripParameters(path: String): String {

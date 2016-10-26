@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.api.tests
 
+import com.mashape.unirest.http.Unirest
 import com.nhaarman.mockito_kotlin.mock
 import io.github.notsyncing.cowherd.Cowherd
 import io.github.notsyncing.cowherd.api.CowherdApiGatewayService
@@ -100,6 +101,6 @@ class CowherdApiGatewayServiceTest {
         val resp = Unirest.get("http://localhost:8080/service/gateway/${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}")
                 .asString()
 
-        Assert.assertEquals("Hello, world!", resp)
+        Assert.assertEquals("Hello, world!", resp.body)
     }
 }
