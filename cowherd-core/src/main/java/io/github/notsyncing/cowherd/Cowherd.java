@@ -42,6 +42,20 @@ public class Cowherd
         app.start();
     }
 
+    private void initParts(FastClasspathScanner classpathScanner)
+    {
+        classpathScanner.matchClassesImplementing(CowherdPart.class, c -> parts.add(c))
+                .scan();
+
+        parts.forEach(c -> {
+            try {
+                c.newInstance().init();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public void start(FastClasspathScanner classpathScanner)
     {
         if (classpathScanner == null) {
@@ -58,13 +72,7 @@ public class Cowherd
 
         addInternalServices();
 
-        parts.forEach(c -> {
-            try {
-                c.newInstance().init();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        initParts(classpathScanner);
 
         dependencyInjector.init();
 
@@ -156,7 +164,6 @@ public class Cowherd
     {
         s.matchSubclassesOf(CowherdService.class, ServiceManager::addServiceClass)
                 .matchClassesImplementing(ServiceActionFilter.class, c -> FilterManager.addFilterClass(c))
-                .matchClassesImplementing(CowherdPart.class, c -> parts.add(c))
                 .scan();
     }
 
