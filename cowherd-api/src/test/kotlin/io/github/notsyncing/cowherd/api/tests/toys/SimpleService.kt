@@ -4,4 +4,8 @@ class SimpleService {
     fun hello(): String {
         return "Hello, world!"
     }
+
+    fun helloTo(who: String): String {
+        return "Hello, $who!"
+    }
 }

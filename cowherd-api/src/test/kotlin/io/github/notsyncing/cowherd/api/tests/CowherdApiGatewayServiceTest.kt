@@ -103,4 +103,17 @@ class CowherdApiGatewayServiceTest {
 
         Assert.assertEquals("Hello, world!", resp.body)
     }
+
+    @Test
+    fun testActionWithParameter() {
+        CowherdApiHub.publish(SimpleService::class.java)
+
+        async<Unit> {
+            val service = getService()
+            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::helloTo.name}", mock(),
+                    makeParamList(arrayOf("who"), arrayOf("everyone")), null, null))
+
+            Assert.assertEquals("Hello, everyone!", r)
+        }
+    }
 }
