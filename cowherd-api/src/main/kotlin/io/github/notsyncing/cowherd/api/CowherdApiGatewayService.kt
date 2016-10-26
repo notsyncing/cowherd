@@ -10,14 +10,18 @@ import io.github.notsyncing.cowherd.models.UploadFileInfo
 import io.github.notsyncing.cowherd.service.CowherdService
 import io.github.notsyncing.cowherd.utils.FutureUtils
 import io.vertx.core.http.HttpServerRequest
-import java.lang.invoke.MethodHandles
 import java.net.HttpCookie
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+import kotlin.reflect.jvm.jvmErasure
 
 class CowherdApiGatewayService : CowherdService() {
     companion object {
+        private const val DEFAULT_SERVICE_METHOD = "__default_service_method__"
+
         private val methodCache = ConcurrentHashMap<String, MethodCallInfo>()
     }
 
@@ -25,53 +29,74 @@ class CowherdApiGatewayService : CowherdService() {
     @Exported
     @Route("", subRoute = true)
     fun gateway(@Parameter("path") path: String,
-                @Parameter("request") request: HttpServerRequest,
+                @Parameter("request") request: HttpServerRequest?,
                 @Parameter("__parameters__") __parameters__: List<Pair<String, String>>,
                 @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
                 @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
         val actionPath = stripParameters(path)
         val parts = actionPath.split("/")
 
-        if (parts.size != 2) {
+        if (parts.isEmpty()) {
             return FutureUtils.failed(IllegalArgumentException("This request to API gateway has invalid path: $actionPath"))
         }
 
         val (pt, paramStr) = getEncodedParameters(__parameters__)
 
         val serviceClassName = parts[0]
-        val serviceMethodName = parts[1]
+        val serviceMethodName = if (parts.size > 1) parts[1] else DEFAULT_SERVICE_METHOD
 
         val service = CowherdApiHub.getInstance(serviceClassName)
+
+        if (service == null) {
+            return FutureUtils.failed(IllegalArgumentException("Service class $serviceClassName not found, maybe not published or revoked?"))
+        }
+
         val actionId = "$serviceClassName.$serviceMethodName"
         var serviceMethodInfo = methodCache[actionId]
 
         if (serviceMethodInfo == null) {
-            val m = service.javaClass.methods.firstOrNull { it.name == serviceMethodName }
+            val m = if (serviceMethodName == DEFAULT_SERVICE_METHOD)
+                if (service is ApiExecutor)
+                    service.getDefaultMethod()
+                else
+                    service.javaClass.kotlin.members.firstOrNull { it.annotations.any { it.javaClass == DefaultApiMethod::class.java } }
+            else
+                service.javaClass.kotlin.members.firstOrNull { it.name == serviceMethodName }
 
             if (m == null) {
                 return FutureUtils.failed(IllegalArgumentException("Method $serviceMethodName of service class $serviceClassName not found!"))
             }
 
-            val mh = MethodHandles.lookup().unreflect(m)
-            val info = MethodCallInfo(mh, m.parameters)
+            val info = MethodCallInfo(m)
 
             serviceMethodInfo = info
             methodCache[actionId] = info
         }
 
         val jsonObject = JSON.parseObject(paramStr)
-        val targetParams = ArrayList<Any>()
+        val targetParams = ArrayList<Any?>()
 
         targetParams.add(service)
 
-        for (p in serviceMethodInfo.parameters) {
-            val sv = jsonObject[p.name].toString()
-            val v = JSON.parseObject(sv, p.type)
+        val params = serviceMethodInfo.method.parameters
 
-            targetParams.add(v)
+        if (!params.isEmpty()) {
+            for (p in params) {
+                if (p.kind != KParameter.Kind.VALUE) {
+                    continue
+                }
+
+                val sv = jsonObject[p.name].toString()
+                val v = sv.toType(p.type.jvmErasure)
+
+                targetParams.add(v)
+            }
         }
 
-        val o = serviceMethodInfo.methodHandle.invokeWithArguments(targetParams)
+        val o = if (service is ApiExecutor)
+            service.execute(serviceMethodInfo.method, targetParams.subList(1, targetParams.size))
+        else
+            serviceMethodInfo.method.call(*targetParams.toTypedArray())
 
         if (o is CompletableFuture<*>) {
             return o as CompletableFuture<Any?>
@@ -98,5 +123,29 @@ class CowherdApiGatewayService : CowherdService() {
         }
 
         return kotlin.Pair(ParameterEncodeType.Unknown, "")
+    }
+
+    private fun String.toType(type: KClass<*>): Any? {
+        if (type == Int::class) {
+            return this.toInt()
+        } else if (type == Long::class) {
+            return this.toLong()
+        } else if (type == String::class) {
+            return this
+        } else if (type == Boolean::class) {
+            return this.toBoolean()
+        } else if (type == Float::class) {
+            return this.toFloat()
+        } else if (type == Double::class) {
+            return this.toDouble()
+        } else if (type == Byte::class) {
+            return this.toByte()
+        } else if (type == Char::class) {
+            return this.toInt()
+        } else if (type == Short::class) {
+            return this.toShort()
+        } else {
+            return JSON.parseObject(this, type.java)
+        }
     }
 }

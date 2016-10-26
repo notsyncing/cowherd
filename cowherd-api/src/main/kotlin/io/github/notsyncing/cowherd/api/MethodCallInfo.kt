@@ -1,7 +1,6 @@
 package io.github.notsyncing.cowherd.api
 
-import java.lang.invoke.MethodHandle
-import java.lang.reflect.Parameter
+import kotlin.reflect.KCallable
 
-class MethodCallInfo(val methodHandle: MethodHandle, val parameters: Array<Parameter>) {
+class MethodCallInfo(val method: KCallable<*>) {
 }

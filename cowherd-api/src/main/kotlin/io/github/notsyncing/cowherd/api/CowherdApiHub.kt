@@ -22,6 +22,10 @@ object CowherdApiHub {
         hub[serviceInstance.javaClass.canonicalName] = serviceInstance
     }
 
+    fun publish(serviceClass: Class<*>, executor: ApiExecutor) {
+        hub[serviceClass.canonicalName] = executor
+    }
+
     fun revoke(serviceClassName: String) {
         hub.remove(serviceClassName)
         instanceWrappers.remove(serviceClassName)
@@ -45,7 +49,7 @@ object CowherdApiHub {
         }
     }
 
-    fun getInstance(serviceClassName: String): Any {
+    fun getInstance(serviceClassName: String): Any? {
         val s = hub[serviceClassName]
 
         if (s is Class<*>) {
@@ -55,7 +59,7 @@ object CowherdApiHub {
 
             return s.newInstance()
         } else {
-            return s!!
+            return s
         }
     }
 

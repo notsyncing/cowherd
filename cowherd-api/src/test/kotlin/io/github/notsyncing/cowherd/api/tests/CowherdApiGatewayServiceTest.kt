@@ -1,10 +1,11 @@
 package io.github.notsyncing.cowherd.api.tests
 
 import com.mashape.unirest.http.Unirest
-import com.nhaarman.mockito_kotlin.mock
 import io.github.notsyncing.cowherd.Cowherd
+import io.github.notsyncing.cowherd.api.ApiExecutor
 import io.github.notsyncing.cowherd.api.CowherdApiGatewayService
 import io.github.notsyncing.cowherd.api.CowherdApiHub
+import io.github.notsyncing.cowherd.api.tests.toys.SimpleConstructedService
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.service.ServiceManager
@@ -14,6 +15,8 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import kotlin.reflect.KCallable
 
 class CowherdApiGatewayServiceTest {
     private val server = Cowherd()
@@ -54,11 +57,11 @@ class CowherdApiGatewayServiceTest {
 
         async<Unit> {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", mock(),
+            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
                     makeParamList(), null, null))
 
             Assert.assertEquals("Hello, world!", r)
-        }
+        }.get()
     }
 
     @Test
@@ -70,13 +73,13 @@ class CowherdApiGatewayServiceTest {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", mock(),
+                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
                         makeParamList(), null, null))
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
             }
-        }
+        }.get()
     }
 
     @Test
@@ -85,13 +88,13 @@ class CowherdApiGatewayServiceTest {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", mock(),
+                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
                         makeParamList(), null, null))
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
             }
-        }
+        }.get()
     }
 
     @Test
@@ -110,10 +113,31 @@ class CowherdApiGatewayServiceTest {
 
         async<Unit> {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::helloTo.name}", mock(),
-                    makeParamList(arrayOf("who"), arrayOf("everyone")), null, null))
+            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::helloTo.name}", null,
+                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null))
 
             Assert.assertEquals("Hello, everyone!", r)
-        }
+        }.get()
+    }
+
+    @Test
+    fun testApiExecutor() {
+        CowherdApiHub.publish(SimpleConstructedService::class.java, object : ApiExecutor() {
+            override fun getDefaultMethod(): KCallable<*> {
+                return SimpleConstructedService::class.constructors.first()
+            }
+
+            override fun execute(method: KCallable<*>, args: MutableList<Any?>): CompletableFuture<Any?> {
+                return CompletableFuture.completedFuture((method.call(*args.toTypedArray()) as SimpleConstructedService).execute())
+            }
+        })
+
+        async<Unit> {
+            val service = getService()
+            val r = await(service.gateway(SimpleConstructedService::class.java.canonicalName, null,
+                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null))
+
+            Assert.assertEquals("Hello, new const!", r)
+        }.get()
     }
 }
