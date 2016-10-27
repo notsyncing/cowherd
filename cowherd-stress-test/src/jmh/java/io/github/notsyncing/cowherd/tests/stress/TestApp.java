@@ -54,7 +54,7 @@ public class TestApp
     @Measurement(iterations = 10)
     @Fork(1)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void simpleRequest(BenchmarkState state) throws IOException
+    public void simpleRequestThroughNetwork(BenchmarkState state) throws IOException
     {
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet get = new HttpGet("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/simpleRequest");

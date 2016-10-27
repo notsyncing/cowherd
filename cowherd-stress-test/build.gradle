@@ -19,6 +19,7 @@ dependencies {
     testCompile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
     testCompile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '1.10.19'
 
     jmh group: 'org.spf4j', name: 'spf4j-jmh', version: '8.1.6'
 }
