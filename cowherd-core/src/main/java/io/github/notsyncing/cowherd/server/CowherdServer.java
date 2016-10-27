@@ -73,7 +73,7 @@ public class CowherdServer
         }
     }
 
-    private void processRequest(HttpServerRequest req)
+    private CompletableFuture<Void> processRequest(HttpServerRequest req)
     {
         String remoteAddr = req.remoteAddress().host();
 
@@ -99,7 +99,7 @@ public class CowherdServer
 
         long reqTimeStart = System.currentTimeMillis();
 
-        RouteManager.handleRequest(req).thenAccept(o -> {
+        return RouteManager.handleRequest(req).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
                 logAccess(req, accessLog);
                 return;

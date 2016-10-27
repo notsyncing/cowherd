@@ -10,6 +10,7 @@ import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
+import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpMethod;
@@ -167,100 +168,99 @@ public class RouteManager
     {
         log.d("Request: " + request.path());
 
-        String contentType = request.getHeader("Content-Type");
+        return RequestUtils.toRequestContext(request).thenCompose(req -> {
+            URI uri = RouteUtils.resolveUriFromRequest(request);
+            Map.Entry<RouteInfo, Method> p = findMatchedAction(uri);
 
-        if ((contentType != null) && (contentType.toLowerCase().contains("multipart/form-data"))) {
-            request.setExpectMultipart(true);
-        }
+            if (p == null) {
+                ActionResponse resp = null;
 
-        URI uri = RouteUtils.resolveUriFromRequest(request);
-        Map.Entry<RouteInfo, Method> p = findMatchedAction(uri);
+                if (req.getMethod() == HttpMethod.GET) {
+                    try {
+                        resp = handleFileRequest(req);
+                    } catch (Exception e) {
+                        log.e("An exception was thrown when processing file request " + uri, e);
 
-        if (p == null) {
-            ActionResponse resp = null;
-
-            if (request.method() == HttpMethod.GET) {
-                try {
-                    resp = handleFileRequest(request);
-                } catch (Exception e) {
-                    log.e("An exception was thrown when processing file request " + uri, e);
-
-                    CompletableFuture<ActionResult> f = new CompletableFuture<>();
-                    f.completeExceptionally(e);
-                    return f;
-                }
-            }
-
-            if ((resp == null) && (!request.response().ended())) {
-                log.d(" ... no route");
-                request.response().setStatusCode(404).end();
-                return CompletableFuture.completedFuture(new ActionResult());
-            } else {
-                return CompletableFuture.completedFuture(new ActionResult(null, resp));
-            }
-        }
-
-        RouteInfo r = p.getKey();
-        Method m = p.getValue();
-        log.d(" ... action " + m);
-
-        if (!m.isAnnotationPresent(DisableCORS.class)) {
-            if (request.headers().contains("Origin")) {
-                String origin = request.getHeader("Origin");
-                String remoteAddr = request.remoteAddress().host();
-                boolean allow = true;
-
-                if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost"))
-                        && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))
-                        && (!origin.equals("file://"))) {
-                    if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
-                        origin = "NOT_ALLOWED";
-                        allow = false;
+                        CompletableFuture<ActionResult> f = new CompletableFuture<>();
+                        f.completeExceptionally(e);
+                        return f;
                     }
                 }
 
-                if (allow) {
-                    if (request.headers().contains("Access-Control-Request-Headers")) {
-                        request.response().putHeader("Access-Control-Allow-Headers", request.getHeader("Access-Control-Request-Headers"));
-                    }
-
-                    if (request.headers().contains("Access-Control-Request-Method")) {
-                        request.response().putHeader("Access-Control-Allow-Methods", request.getHeader("Access-Control-Request-Method"));
-                    }
-
-                    request.response().putHeader("Access-Control-Allow-Credentials", "true");
-                }
-
-                request.response().putHeader("Access-Control-Allow-Origin", origin);
-
-                if (request.method() == HttpMethod.OPTIONS) {
-                    request.response().end();
+                if ((resp == null) && (!req.getResponse().ended())) {
+                    log.d(" ... no route");
+                    req.getResponse().setStatusCode(404).end();
                     return CompletableFuture.completedFuture(new ActionResult());
-                }
-
-                if (!allow) {
-                    request.response().setStatusCode(403).end();
-                    return CompletableFuture.completedFuture(new ActionResult());
+                } else {
+                    return CompletableFuture.completedFuture(new ActionResult(null, resp));
                 }
             }
-        }
 
-        if (r.getType() == RouteType.Http) {
-            return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
-                    RouteUtils.extractRouteParameters(uri, r), request, r.getOtherParameters());
-        } else if (r.getType() == RouteType.WebSocket) {
-            return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
-                    RouteUtils.extractRouteParameters(uri, r), request, r.getOtherParameters());
-        }
+            RouteInfo r = p.getKey();
+            Method m = p.getValue();
+            log.d(" ... action " + m);
 
-        return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() + " in route " + r));
+            if (!m.isAnnotationPresent(DisableCORS.class)) {
+                if (req.getHeaders().contains("Origin")) {
+                    String origin = req.getHeaders().get("Origin");
+                    String remoteAddr = request.remoteAddress().host();
+                    boolean allow = true;
+
+                    if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost"))
+                            && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))
+                            && (!origin.equals("file://"))) {
+                        if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
+                            origin = "NOT_ALLOWED";
+                            allow = false;
+                        }
+                    }
+
+                    if (allow) {
+                        if (req.getHeaders().contains("Access-Control-Request-Headers")) {
+                            req.getResponse().putHeader("Access-Control-Allow-Headers",
+                                    req.getHeaders().get("Access-Control-Request-Headers"));
+                        }
+
+                        if (req.getHeaders().contains("Access-Control-Request-Method")) {
+                            req.getResponse().putHeader("Access-Control-Allow-Methods",
+                                    req.getHeaders().get("Access-Control-Request-Method"));
+                        }
+
+                        req.getResponse().putHeader("Access-Control-Allow-Credentials", "true");
+                    }
+
+                    req.getResponse().putHeader("Access-Control-Allow-Origin", origin);
+
+                    if (req.getMethod() == HttpMethod.OPTIONS) {
+                        req.getResponse().end();
+                        return CompletableFuture.completedFuture(new ActionResult());
+                    }
+
+                    if (!allow) {
+                        req.getResponse().setStatusCode(403).end();
+                        return CompletableFuture.completedFuture(new ActionResult());
+                    }
+                }
+            }
+
+            if (r.getType() == RouteType.Http) {
+                return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
+                        RouteUtils.extractRouteParameters(uri, r), req, r.getOtherParameters());
+            } else if (r.getType() == RouteType.WebSocket) {
+                return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
+                        RouteUtils.extractRouteParameters(uri, r), req, r.getOtherParameters());
+            }
+
+            return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() +
+                    " in route " + r));
+        });
     }
 
-    private static ActionResponse handleFileRequest(HttpServerRequest request) throws IOException, ParseException, URISyntaxException
+    private static ActionResponse handleFileRequest(RequestContext request) throws IOException, ParseException, URISyntaxException
     {
         boolean needSend = true;
 
-        String reqPath = StringUtils.stripSameCharAtStringHeader(request.path(), '/');
+        String reqPath = StringUtils.stripSameCharAtStringHeader(request.getPath(), '/');
 
         if ("/".equals(reqPath)) {
             reqPath = "index.html";
@@ -300,15 +300,15 @@ public class RouteManager
                     return new ViewResponse(null, fn);
                 }
 
-                String ifModifiedSince = request.getHeader("If-Modified-Since");
+                String ifModifiedSince = request.getHeaders().get("If-Modified-Since");
 
                 if (!StringUtils.isEmpty(ifModifiedSince)) {
                     long fileModifyTime = Files.getLastModifiedTime(file).toMillis() / 1000;
                     long reqQueryTime = StringUtils.parseHttpDateString(ifModifiedSince).getTime() / 1000;
 
                     if (fileModifyTime <= reqQueryTime) {
-                        request.response().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
-                        request.response().setStatusCode(304).end();
+                        request.getResponse().putHeader("Last-Modified", StringUtils.dateToHttpDateString(new Date(fileModifyTime)));
+                        request.getResponse().setStatusCode(304).end();
                         needSend = false;
                     }
                 }

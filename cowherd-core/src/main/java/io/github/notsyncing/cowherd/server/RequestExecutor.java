@@ -10,7 +10,6 @@ import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
 import io.github.notsyncing.cowherd.service.CowherdService;
-import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -212,13 +211,13 @@ public class RequestExecutor
     public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
                                                                         List<FilterExecutionInfo> matchedFilters,
                                                                         List<Pair<String, String>> additionalParams,
-                                                                        HttpServerRequest req,
+                                                                        RequestContext req,
                                                                         Object... otherParams)
     {
-        if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.method())) {
-            req.response()
+        if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.getMethod())) {
+            req.getResponse()
                     .setStatusCode(403)
-                    .setStatusMessage("Method " + req.method() + " is not allowed on " + requestedAction.getName())
+                    .setStatusMessage("Method " + req.getMethod() + " is not allowed on " + requestedAction.getName())
                     .end();
 
             return CompletableFuture.completedFuture(new ActionResult());
@@ -229,52 +228,42 @@ public class RequestExecutor
         CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
 
         return filterChain.thenCompose(b -> {
-            CompletableFuture<List<UploadFileInfo>> uploadFuture = RequestUtils.extractUploads(req);
-            CompletableFuture<List<Pair<String, String>>> paramFuture = RequestUtils.extractRequestParameters(req,
-                    additionalParams);
+            req.getParameters().addAll(additionalParams);
 
-            final List<UploadFileInfo>[] uploadsRef = new List[1];
-            final List<Pair<String, String>>[] paramsRef = new List[1];
-            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
+            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req.getRequest());
             final ActionResult[] result = new ActionResult[1];
 
-            return paramFuture.thenCompose(p -> {
-                paramsRef[0] = p;
-                return uploadFuture;
-            }).thenCompose(u -> {
-                uploadsRef[0] = u;
+            FilterContext context = new FilterContext();
+            context.setRequestCookies(cookies);
+            context.setRequest(req.getRequest());
+            context.setRequestUploads(req.getUploads());
+            context.setRequestParameters(req.getParameters());
 
-                FilterContext context = new FilterContext();
-                context.setRequestCookies(cookies);
-                context.setRequest(req);
-                context.setRequestUploads(uploadsRef[0]);
-                context.setRequestParameters(paramsRef[0]);
+            return executeAuthenticators(requestedAction, context)
+                    .thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
+                        c.setRequest(req.getRequest());
+                        c.setRequestParameters(req.getParameters());
+                        c.setRequestUploads(req.getUploads());
+                        c.setRequestCookies(cookies);
+                        return f.before(c);
+                    }))
+                    .thenCompose(c -> executeRequestedAction(requestedAction, req.getRequest(), req.getParameters(),
+                            cookies, req.getUploads(), otherParams))
+                    .thenCompose(r -> {
+                        result[0] = r;
 
-                return executeAuthenticators(requestedAction, context);
-            }).thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
-                c.setRequest(req);
-                c.setRequestParameters(paramsRef[0]);
-                c.setRequestUploads(uploadsRef[0]);
-                c.setRequestCookies(cookies);
-                return f.before(c);
-            })).thenCompose(c -> executeRequestedAction(requestedAction, req, paramsRef[0], cookies, uploadsRef[0],
-                    otherParams)
-            ).thenCompose(r -> {
-                result[0] = r;
-
-                return executeFilters(matchedFilters, (f, c) -> {
-                    c.setResult(r);
-                    return f.after(c);
-                });
-            })
-                    .thenApply(r -> r == null ? result[0] : r);
+                        return executeFilters(matchedFilters, (f, c) -> {
+                            c.setResult(r);
+                            return f.after(c);
+                        });
+                    }).thenApply(r -> r == null ? result[0] : r);
         });
     }
 
     public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(Method requestedAction,
                                                                                  List<FilterExecutionInfo> matchedFilters,
                                                                                  List<Pair<String, String>> additionalParams,
-                                                                                 HttpServerRequest req,
+                                                                                 RequestContext req,
                                                                                  Object... otherParams)
     {
         prepareFilters(matchedFilters);
@@ -282,28 +271,24 @@ public class RequestExecutor
         CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
 
         return filterChain.thenCompose(b -> {
-            CompletableFuture<List<Pair<String, String>>> paramFuture = RequestUtils.extractRequestParameters(req,
-                    additionalParams);
+            req.getParameters().addAll(additionalParams);
 
-            final List<Pair<String, String>>[] paramsRef = new List[1];
-            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req);
+            List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req.getRequest());
 
-            return paramFuture.thenCompose(p -> {
-                paramsRef[0] = p;
+            FilterContext context = new FilterContext();
+            context.setRequestCookies(cookies);
+            context.setRequest(req.getRequest());
+            context.setRequestParameters(req.getParameters());
 
-                FilterContext context = new FilterContext();
-                context.setRequestCookies(cookies);
-                context.setRequest(req);
-                context.setRequestParameters(paramsRef[0]);
-
-                return executeAuthenticators(requestedAction, context);
-            }).thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
-                c.setRequest(req);
-                c.setRequestParameters(paramsRef[0]);
-                c.setRequestCookies(cookies);
-                return f.before(c);
-            })).thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req, paramsRef[0], cookies,
-                    otherParams));
+            return executeAuthenticators(requestedAction, context)
+                    .thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
+                        c.setRequest(req.getRequest());
+                        c.setRequestParameters(req.getParameters());
+                        c.setRequestCookies(cookies);
+                        return f.before(c);
+                    }))
+                    .thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req.getRequest(),
+                            req.getParameters(), cookies, otherParams));
         });
     }
 }

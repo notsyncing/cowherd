@@ -9,10 +9,12 @@ import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.Pair;
+import io.github.notsyncing.cowherd.models.RequestContext;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
 import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -69,88 +71,6 @@ public class RequestUtils
 
         String cl = req.getHeader("Content-Length");
         return (req.getHeader("Transfer-Encoding") != null) || ((cl != null) && (Integer.parseInt(cl) > 0));
-    }
-
-    public static void mapFlatParametersToList(Map<String, List<String>> params, Map.Entry<String, String> e)
-    {
-        if (params.containsKey(e.getKey())) {
-            params.get(e.getKey()).add(e.getValue());
-        } else {
-            List<String> l = new ArrayList<>();
-            l.add(e.getValue());
-
-            params.put(e.getKey(), l);
-        }
-    }
-
-    public static CompletableFuture<List<Pair<String, String>>> extractRequestParameters(HttpServerRequest req,
-                                                                                         List<Pair<String, String>> additionalParams)
-    {
-        CompletableFuture<List<Pair<String, String>>> future = new CompletableFuture<>();
-        List<Pair<String, String>> params = new ArrayList<>(additionalParams);
-
-        req.params().forEach(e -> params.add(new Pair<>(e.getKey(), e.getValue())));
-
-        if (req.isExpectMultipart()) {
-            req.endHandler(r -> {
-                req.formAttributes().forEach(e -> params.add(new Pair<>(e.getKey(), e.getValue())));
-                future.complete(params);
-            });
-        } else {
-            if (checkIfRequestHasBody(req)) {
-                req.bodyHandler(body -> {
-                    String bodyStr = body.toString();
-
-                    params.addAll(StringUtils.parseQueryString(bodyStr));
-                    params.add(new Pair<>("__body__", bodyStr));
-
-                    future.complete(params);
-                });
-            } else {
-                future.complete(params);
-            }
-        }
-
-        return future;
-    }
-
-    public static CompletableFuture<List<UploadFileInfo>> extractUploads(HttpServerRequest req)
-    {
-        List<UploadFileInfo> uploads = new ArrayList<>();
-        List<CompletableFuture<Void>> uploadFutures = new ArrayList<>();
-
-        req.uploadHandler(upload -> {
-            CompletableFuture<Void> uf = new CompletableFuture<>();
-
-            if (upload.size() > CowherdConfiguration.getMaxUploadFileSize()) {
-                uf.completeExceptionally(new UploadOversizeException(upload.filename()));
-                return;
-            }
-
-            File f;
-
-            try {
-                f = new File(CowherdConfiguration.getUploadCacheDir().toFile(), UUID.randomUUID().toString());
-            } catch (Exception e) {
-                uf.completeExceptionally(e);
-                return;
-            }
-
-            upload.streamToFileSystem(f.getAbsolutePath())
-                .endHandler(uf::complete);
-
-            uploadFutures.add(uf);
-
-            UploadFileInfo info = new UploadFileInfo();
-            info.setFile(f);
-            info.setFilename(upload.filename());
-            info.setParameterName(upload.name());
-
-            uploads.add(info);
-        });
-
-        return CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[uploadFutures.size()]))
-                .thenApply(t -> uploads);
     }
 
     public static String getParameterName(Method method, Parameter param, int index)
@@ -562,5 +482,87 @@ public class RequestUtils
         }
 
         return cookies;
+    }
+
+    public static CompletableFuture<RequestContext> toRequestContext(HttpServerRequest request)
+    {
+        CompletableFuture<RequestContext> future = new CompletableFuture<>();
+        CompletableFuture<Void> bodyFuture = new CompletableFuture<>();
+        List<CompletableFuture<Void>> uploadFutures = new ArrayList<>();
+        Buffer bodyBuffer = Buffer.buffer();
+
+        RequestContext context = new RequestContext();
+        context.setRequest(request);
+        context.setResponse(request.response());
+        context.setMethod(request.method());
+        context.setPath(request.path());
+        context.setHeaders(request.headers());
+
+        request.params().forEach(e -> context.getParameters().add(new Pair<>(e.getKey(), e.getValue())));
+
+        request.setExpectMultipart(true);
+
+        if (checkIfRequestHasBody(request)) {
+            request.handler(b -> {
+                if (!request.isExpectMultipart()) {
+                    bodyBuffer.appendBuffer(b);
+                }
+            });
+        } else {
+            bodyFuture.complete(null);
+        }
+
+        request.uploadHandler(upload -> {
+            CompletableFuture<Void> uf = new CompletableFuture<>();
+            uploadFutures.add(uf);
+
+            if (upload.size() > CowherdConfiguration.getMaxUploadFileSize()) {
+                uf.completeExceptionally(new UploadOversizeException(upload.filename()));
+                return;
+            }
+
+            File f;
+
+            try {
+                f = new File(CowherdConfiguration.getUploadCacheDir().toFile(), UUID.randomUUID().toString());
+            } catch (Exception e) {
+                uf.completeExceptionally(e);
+                return;
+            }
+
+            upload.streamToFileSystem(f.getAbsolutePath())
+                    .endHandler(uf::complete);
+
+            UploadFileInfo info = new UploadFileInfo();
+            info.setFile(f);
+            info.setFilename(upload.filename());
+            info.setParameterName(upload.name());
+
+            context.getUploads().add(info);
+        });
+
+        request.exceptionHandler(future::completeExceptionally);
+
+        request.endHandler(r -> {
+            if (request.isExpectMultipart()) {
+                request.formAttributes()
+                        .forEach(e -> context.getParameters().add(new Pair<>(e.getKey(), e.getValue())));
+            }
+
+            if (!bodyFuture.isDone()) {
+                String bodyStr = bodyBuffer.toString();
+
+                context.getParameters().addAll(StringUtils.parseQueryString(bodyStr));
+                context.getParameters().add(new Pair<>("__body__", bodyStr));
+
+                bodyFuture.complete(null);
+            }
+
+            uploadFutures.add(bodyFuture);
+            CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[0]))
+                    .thenAccept(v -> future.complete(context));
+        });
+
+        return future;
     }
 }
