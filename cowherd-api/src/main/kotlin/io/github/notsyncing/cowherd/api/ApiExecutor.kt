@@ -6,5 +6,5 @@ import kotlin.reflect.KCallable
 abstract class ApiExecutor {
     abstract fun getDefaultMethod(): KCallable<*>
 
-    abstract fun execute(method: KCallable<*>, args: MutableList<Any?>): CompletableFuture<Any?>
+    abstract fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?): CompletableFuture<Any?>
 }

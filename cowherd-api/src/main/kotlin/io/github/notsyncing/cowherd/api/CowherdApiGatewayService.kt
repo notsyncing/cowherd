@@ -21,6 +21,7 @@ import kotlin.reflect.jvm.jvmErasure
 class CowherdApiGatewayService : CowherdService() {
     companion object {
         private const val DEFAULT_SERVICE_METHOD = "__default_service_method__"
+        private const val ACCESS_TOKEN_NAME = "access_token"
 
         private val methodCache = ConcurrentHashMap<String, MethodCallInfo>()
 
@@ -47,6 +48,23 @@ class CowherdApiGatewayService : CowherdService() {
         val (pt, paramStr) = getEncodedParameters(__parameters__)
 
         val serviceClassName = parts[0]
+
+        if (serviceClassName.compareTo("new_session", true) == 0) {
+            val session = newSession()
+
+            if (__parameters__.any { (it.key == "cookies") && (it.value == "true") }) {
+                val cookie = HttpCookie(ACCESS_TOKEN_NAME, session)
+
+                if (__parameters__.any { (it.key == "remember") && (it.value == "true") }) {
+                    cookie.maxAge = Long.MAX_VALUE
+                }
+
+                putCookie(request, cookie)
+            }
+
+            return CompletableFuture.completedFuture(session)
+        }
+
         val serviceMethodName = if (parts.size > 1) parts[1] else DEFAULT_SERVICE_METHOD
 
         val service = CowherdApiHub.getInstance(serviceClassName)
@@ -97,8 +115,19 @@ class CowherdApiGatewayService : CowherdService() {
             }
         }
 
+        var sessionIdentifier: String? = null
+
+        if (request?.headers()?.contains("Authorization") == true) {
+            val authHeader = request.getHeader("Authorization")
+            sessionIdentifier = authHeader.replace("Bearer ", "")
+        } else if (__parameters__.any { it.key == ACCESS_TOKEN_NAME }) {
+            sessionIdentifier = __parameters__.first { it.key == ACCESS_TOKEN_NAME }.value
+        } else if (__cookies__?.any { it.name == ACCESS_TOKEN_NAME } == true) {
+            sessionIdentifier = __cookies__.first { it.name == ACCESS_TOKEN_NAME }.value
+        }
+
         val o = if (service is ApiExecutor)
-            service.execute(serviceMethodInfo.method, targetParams.subList(1, targetParams.size))
+            service.execute(serviceMethodInfo.method, targetParams.subList(1, targetParams.size), sessionIdentifier)
         else
             serviceMethodInfo.method.call(*targetParams.toTypedArray())
 
@@ -151,5 +180,9 @@ class CowherdApiGatewayService : CowherdService() {
         } else {
             return JSON.parseObject(this, type.java)
         }
+    }
+
+    private fun newSession(): String {
+        return UUID.randomUUID().toString()
     }
 }

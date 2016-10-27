@@ -127,7 +127,7 @@ class CowherdApiGatewayServiceTest {
                 return SimpleConstructedService::class.constructors.first()
             }
 
-            override fun execute(method: KCallable<*>, args: MutableList<Any?>): CompletableFuture<Any?> {
+            override fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?): CompletableFuture<Any?> {
                 return CompletableFuture.completedFuture((method.call(*args.toTypedArray()) as SimpleConstructedService).execute())
             }
         })
@@ -139,5 +139,15 @@ class CowherdApiGatewayServiceTest {
 
             Assert.assertEquals("Hello, new const!", r)
         }.get()
+    }
+
+    @Test
+    fun testNewSessionThroughNetwork() {
+        CowherdApiHub.publish(SimpleService::class.java)
+
+        val resp = Unirest.get("http://localhost:8080/service/gateway/new_session")
+                .asString()
+
+        Assert.assertEquals(36, resp.body.length)
     }
 }
