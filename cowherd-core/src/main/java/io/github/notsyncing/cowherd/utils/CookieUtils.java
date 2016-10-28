@@ -7,7 +7,7 @@ import java.util.*;
 
 public class CookieUtils
 {
-    static final DateFormat cookiesDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z");
+    static final DateFormat cookiesDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH);
 
     public static String cookieToString(HttpCookie cookie)
     {
