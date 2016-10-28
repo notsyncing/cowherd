@@ -465,20 +465,26 @@ public class RequestUtils
 
     public static List<HttpCookie> parseHttpCookies(HttpServerRequest request)
     {
+        List<HttpCookie> cookies = new ArrayList<>();
         String cookieHeader = request.getHeader("Cookie");
+        String altCookieHeader = null;
 
         AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
 
-        if ((cookieHeader == null) && (ch != null) && ((!StringUtils.isEmpty(ch.getOnlyOn()))
+        if (((!StringUtils.isEmpty(ch.getOnlyOn()))
                 || ("true".equals(request.getHeader(ch.getOnlyOn()))))
                 && (!StringUtils.isEmpty(ch.getCookie()))) {
-            cookieHeader = request.getHeader(ch.getCookie());
+            altCookieHeader = request.getHeader(ch.getCookie());
         }
 
-        List<HttpCookie> cookies = null;
+        if (altCookieHeader != null) {
+            cookies.addAll(CookieUtils.parseServerCookies(altCookieHeader));
+        }
 
         if (cookieHeader != null) {
-            cookies = CookieUtils.parseServerCookies(cookieHeader);
+            CookieUtils.parseServerCookies(cookieHeader).stream()
+                    .filter(c -> cookies.stream().anyMatch(c2 -> c2.getName().equals(c.getName())))
+                    .forEach(cookies::add);
         }
 
         return cookies;

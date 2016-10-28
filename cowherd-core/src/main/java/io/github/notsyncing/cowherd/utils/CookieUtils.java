@@ -47,13 +47,12 @@ public class CookieUtils
 
     public static List<HttpCookie> parseServerCookies(String cookies)
     {
+        List<HttpCookie> list = new ArrayList<>();
         String[] cookiePairs = cookies.split(";");
 
         if (cookiePairs.length <= 0) {
-            return null;
+            return list;
         }
-
-        List<HttpCookie> list = new ArrayList<>();
 
         for (String cp : cookiePairs) {
             String[] nv = cp.split("=");
