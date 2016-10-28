@@ -1,21 +1,21 @@
 package io.github.notsyncing.cowherd.service;
 
+import io.github.notsyncing.cowherd.annotations.AsEnum;
 import io.github.notsyncing.cowherd.annotations.ContentType;
 import io.github.notsyncing.cowherd.annotations.Exported;
+import io.github.notsyncing.cowherd.annotations.ExposeAsEnum;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpAnyMethod;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.responses.ViewResponse;
-import io.github.notsyncing.cowherd.utils.FileUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
-import javax.swing.text.View;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -63,7 +63,7 @@ public class CowherdAPIService extends CowherdService
         }
 
         String js = "(function () {\n";
-        Set<Class<? extends Enum>> generatedEnumClasses = new HashSet<>();
+        Set<Class<?>> generatedEnumClasses = new HashSet<>();
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
             if ((!"ALL".equals(service)) && (!info.getName().equals(service))) {
@@ -113,13 +113,15 @@ public class CowherdAPIService extends CowherdService
 
     @SuppressWarnings("unchecked")
     private String generateMethodReturnEnum(CowherdServiceInfo info, Method m,
-                                            Set<Class<? extends Enum>> generatedEnumClasses) throws ClassNotFoundException
+                                            Set<Class<?>> generatedEnumClasses) throws ClassNotFoundException
     {
         String js = "";
-        Class<? extends Enum> e = null;
+        Class<?> e = null;
 
         if (Enum.class.isAssignableFrom(m.getReturnType())) {
-            e = (Class<? extends Enum>)m.getReturnType();
+            e = m.getReturnType();
+        } else if (m.getReturnType().isAnnotationPresent(ExposeAsEnum.class)) {
+            e = m.getReturnType();
         } else {
             String n = getGenericReturnTypeName(m);
 
@@ -128,7 +130,7 @@ public class CowherdAPIService extends CowherdService
             }
 
             if ((!n.equals(m.getReturnType().getName())) && (Enum.class.isAssignableFrom(Class.forName(n)))) {
-                e = (Class<? extends Enum>) Class.forName(getGenericReturnTypeName(m));
+                e = Class.forName(getGenericReturnTypeName(m));
             }
         }
 
@@ -145,9 +147,25 @@ public class CowherdAPIService extends CowherdService
 
             js += " = {\n";
 
-            js += Stream.of(e.getEnumConstants())
-                    .map(n -> n.name() + ": " + n.ordinal())
-                    .collect(Collectors.joining(",\n"));
+            if (Enum.class.isAssignableFrom(e)) {
+                js += Stream.of(e.getEnumConstants())
+                        .map(n -> (Enum)n)
+                        .map(n -> n.name() + ": " + n.ordinal())
+                        .collect(Collectors.joining(",\n"));
+            } else if (e.isAnnotationPresent(ExposeAsEnum.class)) {
+                js += Stream.of(e.getFields())
+                        .filter(f -> f.isAnnotationPresent(AsEnum.class))
+                        .map(f -> {
+                            try {
+                                return f.getName() + ": " + f.get(null).toString();
+                            } catch (IllegalAccessException e1) {
+                                e1.printStackTrace();
+                            }
+
+                            return "";
+                        })
+                        .collect(Collectors.joining(",\n"));
+            }
 
             js += "\n};\n";
         }
@@ -159,17 +177,17 @@ public class CowherdAPIService extends CowherdService
 
     @SuppressWarnings("unchecked")
     private String generateMethodParameterEnums(CowherdServiceInfo info, Method m,
-                                                Set<Class<? extends Enum>> generatedEnumClasses) throws ClassNotFoundException
+                                                Set<Class<?>> generatedEnumClasses) throws ClassNotFoundException
     {
         String js = "";
-        Class<? extends Enum> e;
+        Class<?> e;
 
         for (Parameter p : m.getParameters()) {
-            if (!p.getType().isEnum()) {
+            if ((!p.getType().isEnum()) && (!p.getType().isAnnotationPresent(ExposeAsEnum.class))) {
                 continue;
             }
 
-            e = (Class<? extends Enum>)p.getType();
+            e = p.getType();
 
             if (generatedEnumClasses.contains(e)) {
                 continue;
@@ -183,9 +201,25 @@ public class CowherdAPIService extends CowherdService
 
             js += " = {\n";
 
-            js += Stream.of(e.getEnumConstants())
-                    .map(n -> n.name() + ": " + n.ordinal())
-                    .collect(Collectors.joining(",\n"));
+            if (Enum.class.isAssignableFrom(e)) {
+                js += Stream.of(e.getEnumConstants())
+                        .map(n -> (Enum)n)
+                        .map(n -> n.name() + ": " + n.ordinal())
+                        .collect(Collectors.joining(",\n"));
+            } else if (e.isAnnotationPresent(ExposeAsEnum.class)) {
+                js += Stream.of(e.getDeclaredFields())
+                        .filter(f -> f.isAnnotationPresent(AsEnum.class))
+                        .map(f -> {
+                            try {
+                                return f.getName() + ": " + f.get(null).toString();
+                            } catch (IllegalAccessException e1) {
+                                e1.printStackTrace();
+                            }
+
+                            return "";
+                        })
+                        .collect(Collectors.joining(",\n"));
+            }
 
             js += "\n};\n";
 
