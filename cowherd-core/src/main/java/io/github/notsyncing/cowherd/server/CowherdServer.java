@@ -114,7 +114,10 @@ public class CowherdServer
                 return;
             }
 
-            writeObjectToResponse(req, o);
+            if (!req.response().ended()) {
+                writeObjectToResponse(req, o);
+            }
+
             long reqTimeEnd = System.currentTimeMillis();
             logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
         }).exceptionally(ex -> {
