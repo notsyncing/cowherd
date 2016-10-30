@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.github.notsyncing.cowherd.utils.CookieUtils.parseServerCookies;
+
 public class RequestUtils
 {
     private static Map<Class<? extends ParameterValidator>, ParameterValidator> parameterValidators = new ConcurrentHashMap<>();
@@ -478,12 +480,12 @@ public class RequestUtils
         }
 
         if (altCookieHeader != null) {
-            cookies.addAll(CookieUtils.parseServerCookies(altCookieHeader));
+            cookies.addAll(parseServerCookies(altCookieHeader));
         }
 
         if (cookieHeader != null) {
             CookieUtils.parseServerCookies(cookieHeader).stream()
-                    .filter(c -> cookies.stream().anyMatch(c2 -> c2.getName().equals(c.getName())))
+                    .filter(c -> !cookies.stream().anyMatch(c2 -> c2.getName().equals(c.getName())))
                     .forEach(cookies::add);
         }
 
