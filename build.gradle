@@ -10,5 +10,5 @@ repositories {
 
 project.ext {
     grp = "io.github.notsyncing.cowherd"
-    ver = '0.8.5'
+    ver = '0.8.6'
 }
