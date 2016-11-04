@@ -144,7 +144,13 @@ public class RequestUtils
             int methodParamIndex = methodParams.indexOf(methodParam);
 
             if (methodParam.getType().isEnum()) {
-                targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[Integer.parseInt(reqParam.getValue())];
+                int e = Integer.parseInt(reqParam.getValue());
+
+                if (e < 0) {
+                    targetParams[methodParamIndex] = null;
+                } else {
+                    targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[e];
+                }
             } else if (methodParam.getType().isArray()) {
                 List<String> values = params.stream()
                         .filter(p -> p.getKey().equals(reqParam.getKey()))
