@@ -1,7 +1,6 @@
 package io.github.notsyncing.cowherd;
 
 import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
@@ -14,19 +13,12 @@ import io.vertx.core.json.JsonObject;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Cowherd
 {
-    @Parameter(names = { "-p", "--port" })
-    int listenPort = 8080;
-
-    @Parameter(names = { "-r", "--context-root" })
-    List<String> contextRoots = new ArrayList<>();
-
     private Vertx vertx = Vertx.vertx();
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
@@ -89,12 +81,6 @@ public class Cowherd
     private void configure()
     {
         CowherdLogger.loggerConfigChanged();
-
-        CowherdConfiguration.setListenPort(listenPort);
-
-        if (contextRoots.size() > 0) {
-            CowherdConfiguration.setContextRoots(contextRoots.stream().map(s -> Paths.get(s)).toArray(Path[]::new));
-        }
 
         InputStream s = getClass().getResourceAsStream("/cowherd.config");
 
