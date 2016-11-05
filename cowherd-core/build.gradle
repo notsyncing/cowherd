@@ -22,7 +22,6 @@ repositories {
 
 dependencies {
     compile 'io.vertx:vertx-core:3.3.3'
-    compile 'com.beust:jcommander:1.48'
     compile group: 'io.github.lukehutch', name: 'fast-classpath-scanner', version: '2.0.3'
     compile 'com.alibaba:fastjson:1.2.17'
     compile 'org.thymeleaf:thymeleaf:3.0.2.RELEASE'

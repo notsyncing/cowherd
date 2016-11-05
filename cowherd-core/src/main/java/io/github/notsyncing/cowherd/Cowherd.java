@@ -1,6 +1,5 @@
 package io.github.notsyncing.cowherd;
 
-import com.beust.jcommander.JCommander;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
@@ -29,8 +28,6 @@ public class Cowherd
     public static void main(String[] args)
     {
         Cowherd app = new Cowherd();
-        new JCommander(app, args);
-
         app.start();
     }
 
