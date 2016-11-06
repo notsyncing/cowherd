@@ -280,9 +280,9 @@ public class RouteManager
                     } else {
                         classpathContextRoot = Paths.get(uri);
                     }
-                } else {
-                    contextRoot = classpathContextRoot;
                 }
+
+                contextRoot = classpathContextRoot;
             }
 
             Path file = contextRoot.resolve(reqPath);
