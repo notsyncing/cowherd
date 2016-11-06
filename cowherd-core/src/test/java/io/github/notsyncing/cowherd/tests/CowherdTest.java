@@ -735,6 +735,7 @@ public class CowherdTest
     {
         String route = "^/test/images/(?<path>.*?)$";
         FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
+        storage.registerStoragePath(TestStorageEnum.TestStorage, Files.createTempDirectory("test" + Math.random()));
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
         Path tempFile = Files.createTempFile("test", null);
@@ -762,6 +763,7 @@ public class CowherdTest
     {
         String route = "^/test/images/(?<path>.*?)$";
         FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
+        storage.registerStoragePath(TestStorageEnum.TestStorage, Files.createTempDirectory("test" + Math.random()));
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
         Path tempFile = Files.createTempFile("test", null);
