@@ -55,6 +55,7 @@ public class CowherdConfiguration
     private static boolean makeAccessLoggerQuiet = false;
 
     @ConfigField
+    @Deprecated
     private static boolean everyHtmlIsTemplate = false;
 
     @ConfigField
@@ -292,11 +293,13 @@ public class CowherdConfiguration
         CowherdConfiguration.makeAccessLoggerQuiet = makeAccessLoggerQuiet;
     }
 
+    @Deprecated
     public static boolean isEveryHtmlIsTemplate()
     {
         return everyHtmlIsTemplate;
     }
 
+    @Deprecated
     public static void setEveryHtmlIsTemplate(boolean everyHtmlIsTemplate)
     {
         CowherdConfiguration.everyHtmlIsTemplate = everyHtmlIsTemplate;
