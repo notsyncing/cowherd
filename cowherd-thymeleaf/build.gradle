@@ -21,12 +21,9 @@ repositories {
 }
 
 dependencies {
-    compile 'io.vertx:vertx-core:3.3.3'
-    compile group: 'io.github.lukehutch', name: 'fast-classpath-scanner', version: '2.0.3'
-    compile 'com.alibaba:fastjson:1.2.17'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.2'
-    compile group: 'org.jsoup', name: 'jsoup', version: '1.9.2'
-    compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
+    compile project(":cowherd-core")
+    compile 'org.thymeleaf:thymeleaf:3.0.2.RELEASE'
+    compile group: 'org.thymeleaf.extras', name: 'thymeleaf-extras-java8time', version: '3.0.0.RELEASE'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
@@ -51,7 +48,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId 'io.github.notsyncing.cowherd'
-            artifactId 'cowherd-core'
+            artifactId 'cowherd-thymeleaf'
             version ver
             from components.java
 
@@ -73,7 +70,7 @@ bintray {
 
     pkg {
         repo = 'maven'
-        name = 'cowherd-core'
+        name = 'cowherd-thymeleaf'
         licenses = [ 'GPL-3.0' ]
         vcsUrl = 'https://github.com/notsyncing/cowherd.git'
 

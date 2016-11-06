@@ -7,7 +7,6 @@ import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
-import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -292,14 +291,6 @@ public class RouteManager
             }
 
             if (Files.isRegularFile(file)) {
-                String fn = contextRoot.relativize(file).toString();
-
-                if ((fn.endsWith(".html")) && (CowherdConfiguration.isEveryHtmlIsTemplate())) {
-                    fn = fn.substring(0, fn.length() - 5);
-                    log.d(" ... view: " + file);
-                    return new ViewResponse(null, fn);
-                }
-
                 String ifModifiedSince = request.getHeaders().get("If-Modified-Since");
 
                 if (!StringUtils.isEmpty(ifModifiedSince)) {

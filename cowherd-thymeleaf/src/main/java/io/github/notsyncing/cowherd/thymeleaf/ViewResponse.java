@@ -1,9 +1,10 @@
-package io.github.notsyncing.cowherd.responses;
+package io.github.notsyncing.cowherd.thymeleaf;
 
 import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.InvalidViewResponseException;
 import io.github.notsyncing.cowherd.models.ActionContext;
+import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.vertx.core.http.HttpServerResponse;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -62,7 +63,7 @@ public class ViewResponse<T> implements ActionResponse
     public CompletableFuture writeToResponse(ActionContext context) throws IOException
     {
         CompletableFuture future = new CompletableFuture();
-        TemplateEngine eng = context.getServer().getTemplateEngine();
+        TemplateEngine eng = CowherdThymeleafPart.templateEngine;
         Method action = context.getActionMethod();
         HttpServerResponse resp = context.getRequest().response();
 

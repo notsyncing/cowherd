@@ -19,11 +19,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-import org.thymeleaf.templateresolver.FileTemplateResolver;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,7 +31,6 @@ public class CowherdServer
 {
     private Vertx vertx;
     private List<HttpServer> servers = new ArrayList<>();
-    private TemplateEngine templateEngine;
     private FileStorage fileStorage;
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private CowherdLogger accessLogger = CowherdLogger.getAccessLogger();
@@ -44,11 +38,6 @@ public class CowherdServer
     public CowherdServer(Vertx vertx)
     {
         this.vertx = vertx;
-    }
-
-    public TemplateEngine getTemplateEngine()
-    {
-        return templateEngine;
     }
 
     public FileStorage getFileStorage()
@@ -211,8 +200,6 @@ public class CowherdServer
     public void start()
     {
         initServer();
-
-        initTemplateEngine();
     }
 
     private void initServer()
@@ -256,33 +243,6 @@ public class CowherdServer
         }
 
         log.i("Listening at port " + CowherdConfiguration.getListenPort());
-    }
-
-    private void initTemplateEngine()
-    {
-        templateEngine = new TemplateEngine();
-        templateEngine.addDialect(new Java8TimeDialect());
-
-        for (Path r : CowherdConfiguration.getContextRoots()) {
-            if (r.getName(r.getNameCount() - 1).toString().equals("$")) {
-                ClassLoaderTemplateResolver clr = new ClassLoaderTemplateResolver();
-                clr.setCharacterEncoding("utf-8");
-                clr.setPrefix("APP_ROOT/");
-                clr.setSuffix(".html");
-                clr.setTemplateMode(TemplateMode.HTML);
-                clr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
-                templateEngine.addTemplateResolver(clr);
-                continue;
-            }
-
-            FileTemplateResolver fr = new FileTemplateResolver();
-            fr.setCharacterEncoding("utf-8");
-            fr.setPrefix(r.toString() + "/");
-            fr.setSuffix(".html");
-            fr.setTemplateMode(TemplateMode.HTML);
-            fr.setCacheable(!CowherdConfiguration.isEveryHtmlIsTemplate());
-            templateEngine.addTemplateResolver(fr);
-        }
     }
 
     /**

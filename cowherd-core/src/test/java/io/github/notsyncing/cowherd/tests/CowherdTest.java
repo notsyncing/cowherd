@@ -532,47 +532,9 @@ public class CowherdTest
     }
 
     @Test
-    public void testTemplateEngine(TestContext context)
-    {
-        String expected = "<!DOCTYPE html>\n" +
-                "\n" +
-                "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" +
-                "\n" +
-                "<head>\n" +
-                "    <title>Test page</title>\n" +
-                "</head>\n" +
-                "\n" +
-                "<body>\n" +
-                "    <p>Hello, world!</p>\n" +
-                "</body>\n" +
-                "\n" +
-                "</html>\n";
-
-        Async async = context.async();
-        HttpClientRequest req = get("/te.html");
-        req.exceptionHandler(context::fail);
-
-        checkIfSuccessAndString(context, async, req, expected);
-
-        req.end();
-    }
-
-    @Test
     public void testEntryRequest(TestContext context)
     {
-        String expected = "<!DOCTYPE html>\n" +
-                "\n" +
-                "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" +
-                "\n" +
-                "<head>\n" +
-                "    <title>Test page</title>\n" +
-                "</head>\n" +
-                "\n" +
-                "<body>\n" +
-                "    <p>Hello, world!</p>\n" +
-                "</body>\n" +
-                "\n" +
-                "</html>\n";
+        String expected = "I'm entry!";
 
         Async async = context.async();
         HttpClientRequest req = get("/");

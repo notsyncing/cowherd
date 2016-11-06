@@ -7,7 +7,6 @@ import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
 import io.github.notsyncing.cowherd.responses.RedirectResponse;
-import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.tests.CowherdTest;
@@ -28,21 +27,6 @@ import java.net.HttpCookie;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-
-class TestModel
-{
-    private String text;
-
-    public String getText()
-    {
-        return text;
-    }
-
-    public void setText(String text)
-    {
-        this.text = text;
-    }
-}
 
 @Route("/TestService")
 public class TestService extends CowherdService
@@ -156,13 +140,10 @@ public class TestService extends CowherdService
 
     @Exported
     @HttpGet
-    @Route(value = "^/te.html$", entry = true, viewPath = "/te.html")
-    public ViewResponse<TestModel> testTemplateEngine()
+    @Route(value = "^/te.html$", entry = true)
+    public String testEntry()
     {
-        TestModel m = new TestModel();
-        m.setText("Hello, world!");
-
-        return new ViewResponse<>(m);
+        return "I'm entry!";
     }
 
     @Exported

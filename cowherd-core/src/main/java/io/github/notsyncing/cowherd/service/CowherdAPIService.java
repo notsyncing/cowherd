@@ -9,7 +9,6 @@ import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
-import io.github.notsyncing.cowherd.responses.ViewResponse;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.github.notsyncing.cowherd.utils.RouteUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
@@ -252,16 +251,6 @@ public class CowherdAPIService extends CowherdService
 
     private String generateMethodCall(String base, CowherdServiceInfo info, Method m)
     {
-        if (ViewResponse.class.isAssignableFrom(m.getReturnType())) {
-            return "";
-        }
-
-        String returnType = getGenericReturnTypeName(m);
-
-        if ((returnType != null) && (returnType.startsWith(ViewResponse.class.getName()))) {
-            return "";
-        }
-
         String js = "";
 
         if (!StringUtils.isEmpty(info.getNamespace())) {
