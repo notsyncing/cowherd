@@ -8,7 +8,6 @@ import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.server.FilterManager;
 import io.github.notsyncing.cowherd.service.CowherdAPIService;
-import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.tests.services.*;
 import io.github.notsyncing.cowherd.utils.FileUtils;
@@ -176,6 +175,7 @@ public class CowherdTest
         JsonObject o = new JsonObject(s);
 
         assertEquals((int) o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
+        assertEquals(104857600, CowherdConfiguration.getMaxUploadFileSize());
 
         List<Path> contextRoots = JSON.parseArray(o.getJsonArray("contextRoots").toString(), Path.class);
         assertArrayEquals(contextRoots.toArray(new Path[0]), CowherdConfiguration.getContextRoots());
