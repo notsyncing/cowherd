@@ -3,15 +3,14 @@ package io.github.notsyncing.cowherd.utils;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RouteUtils
 {
@@ -48,10 +47,39 @@ public class RouteUtils
         return params;
     }
 
+    private static String httpMethodToString(HttpMethod m)
+    {
+        switch (m) {
+            case GET:
+                return "get";
+            case POST:
+                return "post";
+            case PUT:
+                return "put";
+            case DELETE:
+                return "delete";
+            case HEAD:
+                return "head";
+            case OPTIONS:
+                return "options";
+            case OTHER:
+                return "other";
+            case CONNECT:
+                return "connect";
+            case PATCH:
+                return "patch";
+            case TRACE:
+                return "trace";
+            default:
+                return "unknown";
+        }
+    }
+
     public static String getActionHttpMethodString(Method m)
     {
         if (m.isAnnotationPresent(HttpAnyMethod.class)) {
-            return "get";
+            HttpAnyMethod a = m.getAnnotation(HttpAnyMethod.class);
+            return httpMethodToString(a.prefer());
         } else if (m.isAnnotationPresent(HttpGet.class)) {
             return "get";
         } else if (m.isAnnotationPresent(HttpPost.class)) {
