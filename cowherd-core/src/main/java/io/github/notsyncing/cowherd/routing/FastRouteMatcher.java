@@ -27,9 +27,7 @@ public class FastRouteMatcher extends RouteMatcher
     @Override
     protected MatchedRoute match(RouteInfo route, boolean matchOnly)
     {
-        String[] currRouteParts = Stream.of(route.getPath().split("/"))
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
+        String[] currRouteParts = route.getDissolvedPath();
 
         int i = 0;
 

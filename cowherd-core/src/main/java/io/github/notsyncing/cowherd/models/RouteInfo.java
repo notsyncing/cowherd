@@ -4,11 +4,13 @@ import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class RouteInfo implements Comparable<RouteInfo>
 {
     private String domain;
     private String path;
+    private String[] dissolvedPath;
     private boolean fastRoute = false;
     private Pattern domainPattern;
     private Pattern pathPattern;
@@ -35,6 +37,17 @@ public class RouteInfo implements Comparable<RouteInfo>
     public void setPath(String path)
     {
         this.path = path;
+    }
+
+    public String[] getDissolvedPath()
+    {
+        if (dissolvedPath == null) {
+            dissolvedPath = Stream.of(getPath().split("/"))
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new);
+        }
+
+        return dissolvedPath;
     }
 
     public boolean isFastRoute()
