@@ -109,7 +109,7 @@ public class RouteManager
         }
     }
 
-    private static Map.Entry<RouteInfo, Method> findMatchedAction(URI uri)
+    public static Map.Entry<RouteInfo, Method> findMatchedAction(URI uri)
     {
         Optional<Map.Entry<RouteInfo, Method>> entry = routes.entrySet().stream()
                 .filter(e -> RouteUtils.matchRoute(uri, e.getKey()))
