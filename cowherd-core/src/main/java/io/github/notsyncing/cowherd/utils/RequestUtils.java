@@ -479,10 +479,12 @@ public class RequestUtils
 
         AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
 
-        if (((!StringUtils.isEmpty(ch.getOnlyOn()))
-                || ("true".equals(request.getHeader(ch.getOnlyOn()))))
-                && (!StringUtils.isEmpty(ch.getCookie()))) {
-            altCookieHeader = request.getHeader(ch.getCookie());
+        if (ch != null) {
+            if (((!StringUtils.isEmpty(ch.getOnlyOn()))
+                    || ("true".equals(request.getHeader(ch.getOnlyOn()))))
+                    && (!StringUtils.isEmpty(ch.getCookie()))) {
+                altCookieHeader = request.getHeader(ch.getCookie());
+            }
         }
 
         if (altCookieHeader != null) {
