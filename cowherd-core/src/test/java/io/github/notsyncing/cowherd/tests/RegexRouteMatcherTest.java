@@ -2,19 +2,17 @@ package io.github.notsyncing.cowherd.tests;
 
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
-import io.github.notsyncing.cowherd.utils.RouteUtils;
+import io.github.notsyncing.cowherd.routing.MatchedRoute;
+import io.github.notsyncing.cowherd.routing.RegexRouteMatcher;
 import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-public class RouteUtilsTest
+public class RegexRouteMatcherTest
 {
     @Test
     public void testMatchRoute() throws URISyntaxException
@@ -23,7 +21,7 @@ public class RouteUtilsTest
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/def");
 
-        assertTrue(RouteUtils.matchRoute(uri, info));
+        assertNotNull(new RegexRouteMatcher(uri).match(info));
     }
 
     @Test
@@ -33,7 +31,7 @@ public class RouteUtilsTest
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/def");
 
-        assertTrue(RouteUtils.matchRoute(uri, info));
+        assertNotNull(new RegexRouteMatcher(uri).match(info));
     }
 
     @Test
@@ -43,7 +41,7 @@ public class RouteUtilsTest
         RouteInfo info = new RouteInfo();
         info.setPath("/a/dd/aew");
 
-        assertFalse(RouteUtils.matchRoute(uri, info));
+        assertNull(new RegexRouteMatcher(uri).match(info));
     }
 
     @Test
@@ -54,7 +52,8 @@ public class RouteUtilsTest
         info.setDomain("(?<domain>(.*?)).test.com");
         info.setPath("/a/bc/(?<res>(.*?))$");
 
-        List<Pair<String, String>> params = RouteUtils.extractRouteParameters(uri, info);
+        MatchedRoute mr = new RegexRouteMatcher(uri).match(info);
+        List<Pair<String, String>> params = mr.getRouteParameters();
 
         assertEquals("domain", params.get(0).getKey());
         assertEquals("www", params.get(0).getValue());

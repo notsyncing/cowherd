@@ -5,8 +5,8 @@ import io.github.notsyncing.cowherd.annotations.InstantiateType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.routing.RouteManager;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
-import io.github.notsyncing.cowherd.server.RouteManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

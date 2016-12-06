@@ -1,4 +1,4 @@
-package io.github.notsyncing.cowherd.server;
+package io.github.notsyncing.cowherd.routing;
 
 import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
@@ -7,6 +7,9 @@ import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
+import io.github.notsyncing.cowherd.server.CowherdLogger;
+import io.github.notsyncing.cowherd.server.FilterManager;
+import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -91,6 +94,7 @@ public class RouteManager
 
                 if (route.subRoute()) {
                     info.setPath(serviceRouteInfo.getPath() + route.value());
+                    info.setFastRoute(serviceRouteInfo.isFastRoute());
                 } else {
                     info.setPath(route.value());
                 }
@@ -109,17 +113,29 @@ public class RouteManager
         }
     }
 
-    public static Map.Entry<RouteInfo, Method> findMatchedAction(URI uri)
+    public static MatchedRoute findMatchedAction(URI uri)
     {
-        Optional<Map.Entry<RouteInfo, Method>> entry = routes.entrySet().stream()
-                .filter(e -> RouteUtils.matchRoute(uri, e.getKey()))
-                .findFirst();
+        RouteMatcher fastRouteMatcher = new FastRouteMatcher(uri);
+        RouteMatcher regexRouteMatcher = new RegexRouteMatcher(uri);
 
-        if (!entry.isPresent()) {
-            return null;
+        for (Map.Entry<RouteInfo, Method> r : routes.entrySet()) {
+            RouteMatcher matcher;
+
+            if (r.getKey().isFastRoute()) {
+                matcher = fastRouteMatcher;
+            } else {
+                matcher = regexRouteMatcher;
+            }
+
+            MatchedRoute mr = matcher.match(r.getKey());
+
+            if (mr != null) {
+                mr.setActionMethod(r.getValue());
+                return mr;
+            }
         }
 
-        return entry.get();
+        return null;
     }
 
     private static List<FilterExecutionInfo> findMatchedFilters(URI uri, Method m)
@@ -152,8 +168,17 @@ public class RouteManager
                 .map(FilterExecutionInfo::new)
                 .collect(Collectors.toList()));
 
+        RouteMatcher fastRouteMatcher = new FastRouteMatcher(uri);
+        RouteMatcher regexRouteMatcher = new RegexRouteMatcher(uri);
+
         List<FilterExecutionInfo> routedFilters = FilterManager.getRoutedFilters().entrySet().stream()
-                .filter(e -> RouteUtils.matchRoute(uri, e.getKey()))
+                .filter(e -> {
+                    if (e.getKey().isFastRoute()) {
+                        return fastRouteMatcher.matchOnly(e.getKey());
+                    } else {
+                        return regexRouteMatcher.matchOnly(e.getKey());
+                    }
+                })
                 .map(Map.Entry::getValue)
                 .map(FilterExecutionInfo::new)
                 .collect(Collectors.toList());
@@ -169,7 +194,7 @@ public class RouteManager
 
         return RequestUtils.toRequestContext(request).thenCompose(req -> {
             URI uri = RouteUtils.resolveUriFromRequest(request);
-            Map.Entry<RouteInfo, Method> p = findMatchedAction(uri);
+            MatchedRoute p = findMatchedAction(uri);
 
             if (p == null) {
                 ActionResponse resp = null;
@@ -195,8 +220,8 @@ public class RouteManager
                 }
             }
 
-            RouteInfo r = p.getKey();
-            Method m = p.getValue();
+            RouteInfo r = p.getRoute();
+            Method m = p.getActionMethod();
             log.d(" ... action " + m);
 
             if (!m.isAnnotationPresent(DisableCORS.class)) {
@@ -244,10 +269,10 @@ public class RouteManager
 
             if (r.getType() == RouteType.Http) {
                 return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
-                        RouteUtils.extractRouteParameters(uri, r), req, r.getOtherParameters());
+                        p.getRouteParameters(), req, r.getOtherParameters());
             } else if (r.getType() == RouteType.WebSocket) {
                 return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
-                        RouteUtils.extractRouteParameters(uri, r), req, r.getOtherParameters());
+                        p.getRouteParameters(), req, r.getOtherParameters());
             }
 
             return FutureUtils.failed(new UnsupportedOperationException("Unknown route type " + r.getType() +

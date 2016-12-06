@@ -9,6 +9,7 @@ public class RouteInfo implements Comparable<RouteInfo>
 {
     private String domain;
     private String path;
+    private boolean fastRoute = false;
     private Pattern domainPattern;
     private Pattern pathPattern;
     private boolean entry;
@@ -34,6 +35,16 @@ public class RouteInfo implements Comparable<RouteInfo>
     public void setPath(String path)
     {
         this.path = path;
+    }
+
+    public boolean isFastRoute()
+    {
+        return fastRoute;
+    }
+
+    public void setFastRoute(boolean fastRoute)
+    {
+        this.fastRoute = fastRoute;
     }
 
     public Pattern getDomainPattern()
