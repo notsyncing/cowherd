@@ -22,6 +22,7 @@ class CowherdApiGatewayService : CowherdService() {
     companion object {
         private const val DEFAULT_SERVICE_METHOD = "__default_service_method__"
         private const val ACCESS_TOKEN_NAME = "access_token"
+        private const val ACCESS_TOKEN_NAME_2 = "token"
 
         private val methodCache = ConcurrentHashMap<String, MethodCallInfo>()
 
@@ -120,10 +121,10 @@ class CowherdApiGatewayService : CowherdService() {
         if (request?.headers()?.contains("Authorization") == true) {
             val authHeader = request.getHeader("Authorization")
             sessionIdentifier = authHeader.replace("Bearer ", "")
-        } else if (__parameters__.any { it.key == ACCESS_TOKEN_NAME }) {
-            sessionIdentifier = __parameters__.first { it.key == ACCESS_TOKEN_NAME }.value
+        } else if (__parameters__.any { (it.key == ACCESS_TOKEN_NAME) || (it.key == ACCESS_TOKEN_NAME_2) }) {
+            sessionIdentifier = __parameters__.first { (it.key == ACCESS_TOKEN_NAME) || (it.key == ACCESS_TOKEN_NAME_2) }.value
         } else if (__cookies__?.any { it.name == ACCESS_TOKEN_NAME } == true) {
-            sessionIdentifier = __cookies__.first { it.name == ACCESS_TOKEN_NAME }.value
+            sessionIdentifier = __cookies__.first { (it.name == ACCESS_TOKEN_NAME) || (it.name == ACCESS_TOKEN_NAME_2) }.value
         }
 
         val o = if (service is ApiExecutor)
