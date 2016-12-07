@@ -113,7 +113,7 @@ public class RouteManager
         }
     }
 
-    public static MatchedRoute findMatchedAction(URI uri)
+    public static MatchedRoute findMatchedAction(SimpleURI uri)
     {
         RouteMatcher fastRouteMatcher = new FastRouteMatcher(uri);
         RouteMatcher regexRouteMatcher = new RegexRouteMatcher(uri);
@@ -138,7 +138,7 @@ public class RouteManager
         return null;
     }
 
-    private static List<FilterExecutionInfo> findMatchedFilters(URI uri, Method m)
+    private static List<FilterExecutionInfo> findMatchedFilters(SimpleURI uri, Method m)
     {
         List<FilterExecutionInfo> filters = new ArrayList<>();
 
@@ -193,7 +193,7 @@ public class RouteManager
         log.d("Request: " + request.path());
 
         return RequestUtils.toRequestContext(request).thenCompose(req -> {
-            URI uri = RouteUtils.resolveUriFromRequest(request);
+            SimpleURI uri = RouteUtils.resolveUriFromRequest(request);
             MatchedRoute p = findMatchedAction(uri);
 
             if (p == null) {

@@ -2,24 +2,26 @@ package io.github.notsyncing.cowherd.routing;
 
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.models.SimpleURI;
 import io.github.notsyncing.cowherd.utils.RegexUtils;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RegexRouteMatcher extends RouteMatcher
 {
-    public RegexRouteMatcher(URI uri)
+    public RegexRouteMatcher(SimpleURI uri)
     {
         super(uri);
     }
 
-    private MatchedRoute matchRoute(URI uri, RouteInfo info, boolean matchOnly)
+    private MatchedRoute matchRoute(SimpleURI uri, RouteInfo info, boolean matchOnly)
     {
         if (("/".equals(uri.getPath())) && (info.isEntry())) {
-            return new MatchedRoute();
+            MatchedRoute mr = new MatchedRoute();
+            mr.setRoute(info);
+            return mr;
         }
 
         if ((info.getDomainPattern() != null) && (!info.getDomainPattern().matcher(uri.getHost()).find())) {
@@ -44,7 +46,7 @@ public class RegexRouteMatcher extends RouteMatcher
         return null;
     }
 
-    private List<Pair<String, String>> extractRouteParameters(URI uri, RouteInfo route)
+    private List<Pair<String, String>> extractRouteParameters(SimpleURI uri, RouteInfo route)
     {
         List<Pair<String, String>> params = new ArrayList<>();
 

@@ -1,14 +1,13 @@
 package io.github.notsyncing.cowherd.routing;
 
 import io.github.notsyncing.cowherd.models.RouteInfo;
-
-import java.net.URI;
+import io.github.notsyncing.cowherd.models.SimpleURI;
 
 public abstract class RouteMatcher
 {
-    protected URI uri;
+    protected SimpleURI uri;
 
-    public RouteMatcher(URI uri) {
+    public RouteMatcher(SimpleURI uri) {
         this.uri = uri;
     }
 

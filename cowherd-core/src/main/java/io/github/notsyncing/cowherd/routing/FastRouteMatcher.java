@@ -2,8 +2,8 @@ package io.github.notsyncing.cowherd.routing;
 
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.models.SimpleURI;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +14,7 @@ public class FastRouteMatcher extends RouteMatcher
 {
     private String[] currUriParts;
 
-    public FastRouteMatcher(URI uri)
+    public FastRouteMatcher(SimpleURI uri)
     {
         super(uri);
 
@@ -27,6 +27,12 @@ public class FastRouteMatcher extends RouteMatcher
     @Override
     protected MatchedRoute match(RouteInfo route, boolean matchOnly)
     {
+        if (("/".equals(uri.getPath())) && (route.isEntry())) {
+            MatchedRoute mr = new MatchedRoute();
+            mr.setRoute(route);
+            return mr;
+        }
+
         String[] currRouteParts = route.getDissolvedPath();
 
         int i = 0;

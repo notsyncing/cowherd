@@ -2,11 +2,11 @@ package io.github.notsyncing.cowherd.tests;
 
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
+import io.github.notsyncing.cowherd.models.SimpleURI;
 import io.github.notsyncing.cowherd.routing.FastRouteMatcher;
 import io.github.notsyncing.cowherd.routing.MatchedRoute;
 import org.junit.Test;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class FastRouteMatcherTest
     @Test
     public void testMatchRoute() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com/a/bc/def");
+        SimpleURI uri = new SimpleURI("http://www.test.com/a/bc/def");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/def");
 
@@ -27,7 +27,7 @@ public class FastRouteMatcherTest
     @Test
     public void testMatchRouteWithMultipleSeparators() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com///a/bc/def");
+        SimpleURI uri = new SimpleURI("http://www.test.com///a/bc/def");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/def");
 
@@ -37,7 +37,7 @@ public class FastRouteMatcherTest
     @Test
     public void testMatchRouteWithNotMatch() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com/a/bc/def");
+        SimpleURI uri = new SimpleURI("http://www.test.com/a/bc/def");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/dd/aew");
 
@@ -47,7 +47,7 @@ public class FastRouteMatcherTest
     @Test
     public void testExtractRouteParameters() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com/a/bc/def");
+        SimpleURI uri = new SimpleURI("http://www.test.com/a/bc/def");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/:res");
 
@@ -63,7 +63,7 @@ public class FastRouteMatcherTest
     @Test
     public void testExtractRoutePathParameters() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com/a/bc/def/ghi");
+        SimpleURI uri = new SimpleURI("http://www.test.com/a/bc/def/ghi");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/bc/*/:res");
 
@@ -79,7 +79,7 @@ public class FastRouteMatcherTest
     @Test
     public void testExtractRouteMultiplePathParameters() throws URISyntaxException
     {
-        URI uri = new URI("http://www.test.com/a/bc/def");
+        SimpleURI uri = new SimpleURI("http://www.test.com/a/bc/def");
         RouteInfo info = new RouteInfo();
         info.setPath("/a/**:path");
 

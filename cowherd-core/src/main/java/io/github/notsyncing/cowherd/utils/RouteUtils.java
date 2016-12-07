@@ -1,11 +1,11 @@
 package io.github.notsyncing.cowherd.utils;
 
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
+import io.github.notsyncing.cowherd.models.SimpleURI;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URISyntaxException;
 
 public class RouteUtils
@@ -60,31 +60,32 @@ public class RouteUtils
         }
     }
 
-    public static URI resolveUriFromRequest(HttpServerRequest request)
+    public static SimpleURI reduceUri(String path, String absoluteUri)
     {
-        String reqPath = StringUtils.stripSameCharAtStringHeader(request.path(), '/');
+        String reqPath = StringUtils.stripSameCharAtStringHeader(path, '/');
         int homeCharPos = reqPath.lastIndexOf("~");
 
         if (homeCharPos >= 0) {
             reqPath = reqPath.substring(homeCharPos + 1);
         }
 
-        URI reqUri;
-        URI uri = null;
+        SimpleURI uri = null;
 
         try {
-            reqUri = new URI(request.absoluteURI());
+            uri = new SimpleURI(absoluteUri);
 
             if (homeCharPos >= 0) {
-                uri = new URI(reqUri.getScheme(), reqUri.getUserInfo(), reqUri.getHost(), reqUri.getPort(), reqPath,
-                        reqUri.getQuery(), reqUri.getFragment());
-            } else {
-                uri = reqUri;
+                uri.setPath(reqPath);
             }
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
         return uri;
+    }
+
+    public static SimpleURI resolveUriFromRequest(HttpServerRequest request)
+    {
+        return reduceUri(request.path(), request.absoluteURI());
     }
 }
