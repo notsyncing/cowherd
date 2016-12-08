@@ -9,21 +9,23 @@ object CowherdApiHub {
     private val hub = ConcurrentHashMap<String, Any>()
     private val instanceWrappers = ConcurrentHashMap<String, InstanceWrapper>()
 
+    fun getPublishedServices() = hub
+
     fun publish(serviceClass: Class<*>) {
-        hub[serviceClass.canonicalName] = serviceClass
+        hub[serviceClass.name] = serviceClass
     }
 
     fun publish(serviceClass: Class<*>, instanceWrapper: InstanceWrapper) {
         publish(serviceClass)
-        instanceWrappers[serviceClass.canonicalName] = instanceWrapper
+        instanceWrappers[serviceClass.name] = instanceWrapper
     }
 
     fun publish(serviceInstance: Any) {
-        hub[serviceInstance.javaClass.canonicalName] = serviceInstance
+        hub[serviceInstance.javaClass.name] = serviceInstance
     }
 
     fun publish(serviceClass: Class<*>, executor: ApiExecutor) {
-        hub[serviceClass.canonicalName] = executor
+        hub[serviceClass.name] = executor
     }
 
     fun revoke(serviceClassName: String) {
@@ -32,11 +34,11 @@ object CowherdApiHub {
     }
 
     fun revoke(serviceClass: Class<*>) {
-        revoke(serviceClass.canonicalName)
+        revoke(serviceClass.name)
     }
 
     fun revoke(serviceInstance: Any) {
-        revoke(serviceInstance.javaClass.canonicalName)
+        revoke(serviceInstance.javaClass.name)
     }
 
     fun getClass(serviceClassName: String): Class<Any> {
@@ -53,8 +55,8 @@ object CowherdApiHub {
         val s = hub[serviceClassName]
 
         if (s is Class<*>) {
-            if (instanceWrappers.containsKey(s.canonicalName)) {
-                return instanceWrappers[s.canonicalName]!!.invoke(s)
+            if (instanceWrappers.containsKey(s.name)) {
+                return instanceWrappers[s.name]!!.invoke(s)
             }
 
             return s.newInstance()

@@ -57,7 +57,7 @@ class CowherdApiGatewayServiceTest {
 
         async<Unit> {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
+            val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
                     makeParamList(), null, null))
 
             Assert.assertEquals("Hello, world!", r)
@@ -73,7 +73,7 @@ class CowherdApiGatewayServiceTest {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
+                val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
                         makeParamList(), null, null))
                 Assert.assertTrue(false)
             } catch (e: Exception) {
@@ -88,7 +88,7 @@ class CowherdApiGatewayServiceTest {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}", null,
+                val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
                         makeParamList(), null, null))
                 Assert.assertTrue(false)
             } catch (e: Exception) {
@@ -101,7 +101,7 @@ class CowherdApiGatewayServiceTest {
     fun testSimpleRequestThroughNetwork() {
         CowherdApiHub.publish(SimpleService::class.java)
 
-        val resp = Unirest.get("http://localhost:8080/service/gateway/${SimpleService::class.java.canonicalName}/${SimpleService::hello.name}")
+        val resp = Unirest.get("http://localhost:8080/service/gateway/${SimpleService::class.java.name}/${SimpleService::hello.name}")
                 .asString()
 
         Assert.assertEquals("Hello, world!", resp.body)
@@ -113,7 +113,7 @@ class CowherdApiGatewayServiceTest {
 
         async<Unit> {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.canonicalName}/${SimpleService::helloTo.name}", null,
+            val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::helloTo.name}", null,
                     makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null))
 
             Assert.assertEquals("Hello, everyone!", r)
@@ -134,7 +134,7 @@ class CowherdApiGatewayServiceTest {
 
         async<Unit> {
             val service = getService()
-            val r = await(service.gateway(SimpleConstructedService::class.java.canonicalName, null,
+            val r = await(service.gateway(SimpleConstructedService::class.java.name, null,
                     makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null))
 
             Assert.assertEquals("Hello, new const!", r)
