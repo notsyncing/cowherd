@@ -8,18 +8,6 @@ sourceCompatibility = 1.8
 
 def ver = rootProject.ext.ver
 
-compileJava {
-    options.compilerArgs << "-parameters"
-}
-
-javadoc {
-    options.encoding = "UTF-8"
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compile 'io.vertx:vertx-core:3.3.3'
     compile group: 'io.github.lukehutch', name: 'fast-classpath-scanner', version: '2.0.3'
@@ -37,16 +25,6 @@ dependencies {
     testCompile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
 }
 
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier "sources"
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier "javadoc"
-    from javadoc.destinationDir
-}
-
 publishing {
     publications {
         maven(MavenPublication) {
@@ -58,12 +36,6 @@ publishing {
             artifact sourceJar
             artifact javadocJar
         }
-    }
-}
-
-uploadArchives {
-    repositories {
-        mavenLocal()
     }
 }
 
