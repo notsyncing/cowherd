@@ -10,6 +10,7 @@ import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.service.ServiceManager
 import kotlinx.coroutines.async
+import kotlinx.coroutines.await
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -55,10 +56,10 @@ class CowherdApiGatewayServiceTest {
     fun testSimpleRequest() {
         CowherdApiHub.publish(SimpleService::class.java)
 
-        async<Unit> {
+        async {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                    makeParamList(), null, null))
+            val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
+                    makeParamList(), null, null).await()
 
             Assert.assertEquals("Hello, world!", r)
         }.get()
@@ -69,12 +70,12 @@ class CowherdApiGatewayServiceTest {
         CowherdApiHub.publish(SimpleService::class.java)
         CowherdApiHub.revoke(SimpleService::class.java)
 
-        async<Unit> {
+        async {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                        makeParamList(), null, null))
+                val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
+                        makeParamList(), null, null).await()
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
@@ -84,12 +85,12 @@ class CowherdApiGatewayServiceTest {
 
     @Test
     fun testServiceNotPublished() {
-        async<Unit> {
+        async {
             val service = getService()
 
             try {
-                val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                        makeParamList(), null, null))
+                val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
+                        makeParamList(), null, null).await()
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
@@ -111,10 +112,10 @@ class CowherdApiGatewayServiceTest {
     fun testActionWithParameter() {
         CowherdApiHub.publish(SimpleService::class.java)
 
-        async<Unit> {
+        async {
             val service = getService()
-            val r = await(service.gateway("${SimpleService::class.java.name}/${SimpleService::helloTo.name}", null,
-                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null))
+            val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::helloTo.name}", null,
+                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null).await()
 
             Assert.assertEquals("Hello, everyone!", r)
         }.get()
@@ -132,10 +133,10 @@ class CowherdApiGatewayServiceTest {
             }
         })
 
-        async<Unit> {
+        async {
             val service = getService()
-            val r = await(service.gateway(SimpleConstructedService::class.java.name, null,
-                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null))
+            val r = service.gateway(SimpleConstructedService::class.java.name, null,
+                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null).await()
 
             Assert.assertEquals("Hello, new const!", r)
         }.get()

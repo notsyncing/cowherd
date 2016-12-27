@@ -1,11 +1,10 @@
 package io.github.notsyncing.cowherd.api
 
-import io.github.notsyncing.cowherd.api.CowherdApiHub.InstanceWrapper
 import java.util.concurrent.ConcurrentHashMap
 
-object CowherdApiHub {
-    typealias InstanceWrapper = (Class<*>) -> Any
+typealias InstanceWrapper = (Class<*>) -> Any
 
+object CowherdApiHub {
     private val hub = ConcurrentHashMap<String, Any>()
     private val instanceWrappers = ConcurrentHashMap<String, InstanceWrapper>()
 

@@ -10,7 +10,7 @@ version ver
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-async:0.1-alpha-2'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-async:0.2-beta'
     compile project(":cowherd-core")
 
     testCompile 'junit:junit:4.12'
