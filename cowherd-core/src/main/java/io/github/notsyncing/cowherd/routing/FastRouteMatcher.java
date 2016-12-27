@@ -35,6 +35,10 @@ public class FastRouteMatcher extends RouteMatcher
 
         String[] currRouteParts = route.getDissolvedPath();
 
+        if (currRouteParts.length > currUriParts.length) {
+            return null;
+        }
+
         int i = 0;
 
         List<Pair<String, String>> params = new ArrayList<>();
