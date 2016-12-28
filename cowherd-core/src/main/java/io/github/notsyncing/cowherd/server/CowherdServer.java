@@ -252,12 +252,16 @@ public class CowherdServer
     @SuppressWarnings("unchecked")
     public CompletableFuture stop()
     {
+        log.i("Stopping server...");
+
         CompletableFuture f = new CompletableFuture();
         final int[] count = {0};
 
         for (HttpServer server : servers) {
             server.close(r -> {
                 count[0]++;
+
+                log.i("HTTP Server " + count[0] + " stopped.");
 
                 if (count[0] >= servers.size()) {
                     f.complete(null);
@@ -270,6 +274,8 @@ public class CowherdServer
 
             vertx.close(h -> {
                 if (h.succeeded()) {
+                    log.i("Server fully stopped.");
+
                     vertx = null;
                     f2.complete(null);
                 } else {
