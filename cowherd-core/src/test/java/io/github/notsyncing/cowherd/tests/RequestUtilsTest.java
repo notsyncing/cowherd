@@ -10,7 +10,9 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,11 @@ class TestParamClass
 {
     public String e;
     public int f;
+}
+
+class TestParamClass2
+{
+    public LocalDateTime d;
 }
 
 enum TestEnum
@@ -31,6 +38,7 @@ public class RequestUtilsTest
 {
     private Method testMethod1;
     private Method testMethod2;
+    private Method testMethod3;
 
     public RequestUtilsTest()
     {
@@ -39,6 +47,8 @@ public class RequestUtilsTest
                 testMethod1 = m;
             } else if (m.getName().equals("testMethod2")) {
                 testMethod2 = m;
+            } else if (m.getName().equals("testMethod3")) {
+                testMethod3 = m;
             }
         }
     }
@@ -49,6 +59,10 @@ public class RequestUtilsTest
 
     private void testMethod2(String a, int b, String[] c, TestParamClass d, TestEnum g, TestEnum h, boolean i,
                              boolean j, Long[] k)
+    {
+    }
+
+    private void testMethod3(TestParamClass2 a)
     {
     }
 
@@ -274,6 +288,19 @@ public class RequestUtilsTest
         assertNotNull(hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth"));
         assertEquals(1, hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth").size());
         assertEquals(3, (int)hubObject.getJSONObject("data").getJSONArray("auth").getJSONObject(0).getJSONArray("auth").getInteger(0));
+    }
+
+    @Test
+    public void testEmptyStringToLocalDateTimeInJsonObject() throws IllegalAccessException, ValidationFailedException, InstantiationException
+    {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("a.d", ""));
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod3, null, params, null, null);
+        TestParamClass2 c = (TestParamClass2) results[0];
+
+        assertNotNull(c);
+        assertNull(c.d);
     }
 
     @Test

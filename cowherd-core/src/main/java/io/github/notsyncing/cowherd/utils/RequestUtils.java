@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.ParserConfig;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
@@ -12,6 +13,7 @@ import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RequestContext;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
+import io.github.notsyncing.cowherd.utils.deserializers.Jdk8NullableDateCodec;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
 import io.github.notsyncing.cowherd.validators.annotations.ServiceActionParameterValidator;
 import io.vertx.core.buffer.Buffer;
@@ -24,6 +26,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +39,11 @@ import static io.github.notsyncing.cowherd.utils.CookieUtils.parseServerCookies;
 public class RequestUtils
 {
     private static Map<Class<? extends ParameterValidator>, ParameterValidator> parameterValidators = new ConcurrentHashMap<>();
+
+    static {
+        ParserConfig.getGlobalInstance().putDeserializer(LocalDateTime.class, new Jdk8NullableDateCodec());
+        ParserConfig.getGlobalInstance().putDeserializer(LocalDate.class, new Jdk8NullableDateCodec());
+    }
 
     public static boolean checkIfHttpMethodIsAllowedOnAction(Method m, HttpMethod httpMethod)
     {
