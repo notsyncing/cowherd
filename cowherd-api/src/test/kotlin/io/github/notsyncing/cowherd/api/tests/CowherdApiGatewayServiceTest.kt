@@ -9,8 +9,8 @@ import io.github.notsyncing.cowherd.api.tests.toys.SimpleConstructedService
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.service.ServiceManager
-import kotlinx.coroutines.async
-import kotlinx.coroutines.await
+import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.future.future
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -56,7 +56,7 @@ class CowherdApiGatewayServiceTest {
     fun testSimpleRequest() {
         CowherdApiHub.publish(SimpleService::class.java)
 
-        async {
+        future {
             val service = getService()
             val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
                     makeParamList(), null, null).await()
@@ -70,7 +70,7 @@ class CowherdApiGatewayServiceTest {
         CowherdApiHub.publish(SimpleService::class.java)
         CowherdApiHub.revoke(SimpleService::class.java)
 
-        async {
+        future {
             val service = getService()
 
             try {
@@ -85,7 +85,7 @@ class CowherdApiGatewayServiceTest {
 
     @Test
     fun testServiceNotPublished() {
-        async {
+        future {
             val service = getService()
 
             try {
@@ -112,7 +112,7 @@ class CowherdApiGatewayServiceTest {
     fun testActionWithParameter() {
         CowherdApiHub.publish(SimpleService::class.java)
 
-        async {
+        future {
             val service = getService()
             val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::helloTo.name}", null,
                     makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null).await()
@@ -133,7 +133,7 @@ class CowherdApiGatewayServiceTest {
             }
         })
 
-        async {
+        future {
             val service = getService()
             val r = service.gateway(SimpleConstructedService::class.java.name, null,
                     makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null).await()
