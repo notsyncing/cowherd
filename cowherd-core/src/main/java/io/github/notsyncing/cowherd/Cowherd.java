@@ -26,6 +26,7 @@ public class Cowherd
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private List<Class<? extends CowherdPart>> parts = new ArrayList<>();
+    private List<CowherdPart> partInstances = new ArrayList<>();
 
     public static DependencyInjector dependencyInjector;
 
@@ -42,7 +43,12 @@ public class Cowherd
 
         parts.forEach(c -> {
             try {
-                c.newInstance().init();
+                CowherdPart p = c.newInstance();
+                p.init();
+
+                partInstances.add(p);
+
+                log.i("Loaded part: " + c.getName());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -165,6 +171,8 @@ public class Cowherd
 
     public CompletableFuture stop()
     {
+        partInstances.forEach(CowherdPart::destroy);
+
         ServiceManager.clear();
         RouteManager.reset();
 
