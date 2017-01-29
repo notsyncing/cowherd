@@ -42,6 +42,10 @@ subprojects {
         }
 
         jcenter()
+
+        maven {
+            url "https://jitpack.io"
+        }
     }
 
     compileJava {
