@@ -114,9 +114,16 @@ public class FileResponse implements ActionResponse
             }
 
             resp.putHeader("Content-Type", contentType);
-            resp.putHeader("Content-Length", String.valueOf(stream.available()));
-            FileUtils.pumpInputStreamToWriteStream(stream, resp);
-            future.complete(null);
+
+            try {
+                resp.putHeader("Content-Length", String.valueOf(stream.available()));
+                FileUtils.pumpInputStreamToWriteStream(stream, resp);
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            } finally {
+                stream.close();
+            }
         } else {
             future.completeExceptionally(new IOException("Invalid file response!"));
         }
