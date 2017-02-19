@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -295,7 +296,13 @@ public class RouteManager
         for (Path contextRoot : CowherdConfiguration.getContextRoots()) {
             if (contextRoot.getName(contextRoot.getNameCount() - 1).toString().equals("$")) {
                 if (classpathContextRoot == null) {
-                    URI uri = CowherdConfiguration.class.getResource("/APP_ROOT").toURI();
+                    URL url = CowherdConfiguration.class.getResource("/APP_ROOT");
+
+                    if (url == null) {
+                        continue;
+                    }
+
+                    URI uri = url.toURI();
 
                     if (uri.getScheme().equals("jar")) {
                         String[] parts = uri.toString().split("!");
