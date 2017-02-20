@@ -1,21 +1,9 @@
 package io.github.notsyncing.cowherd.tests.stress;
 
 import io.github.notsyncing.cowherd.Cowherd;
-import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.spf4j.stackmonitor.JmhFlightRecorderProfiler;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class TestApp
 {
@@ -37,7 +25,7 @@ public class TestApp
         }
     }
 
-    public static void main(String[] args) throws RunnerException
+    /*public static void main(String[] args) throws RunnerException
     {
         CowherdConfiguration.setWorkers(1);
 
@@ -59,5 +47,5 @@ public class TestApp
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet get = new HttpGet("http://localhost:" + CowherdConfiguration.getListenPort() + "/TestService/simpleRequest");
         CloseableHttpResponse resp = client.execute(get);
-    }
+    }*/
 }
