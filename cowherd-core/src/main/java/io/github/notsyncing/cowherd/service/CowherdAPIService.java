@@ -283,12 +283,13 @@ public class CowherdAPIService extends CowherdService
 
             for (int i = 0; i < params.length; i++) {
                 String p = RequestUtils.getParameterName(m, params[i], i);
+                String v = p;
 
                 if (List.class.isAssignableFrom(params[i].getType())) {
                     p += "[]";
                 }
 
-                js += p + ": " + p + ",\n";
+                js += "\"" + p + "\": " + v + ",\n";
             }
 
             js = js.substring(0, js.length() - 2);
