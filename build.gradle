@@ -22,7 +22,7 @@ repositories {
 
 project.ext {
     grp = "io.github.notsyncing.cowherd"
-    ver = '0.9.4'
+    ver = '0.9.5'
 }
 
 subprojects {
