@@ -52,7 +52,8 @@ public class CowherdLogger
         builder.setConfigurationName("RollingBuilder");
 
         LayoutComponentBuilder logStyle = builder.newLayout("PatternLayout")
-                .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable");
+                .addAttribute("pattern", "%d %t.%c %level %msg%n%throwable")
+                .addAttribute("charset", "UTF-8");
         AppenderComponentBuilder appenderBuilder = builder.newAppender("stdout", "CONSOLE")
                 .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
         appenderBuilder.add(logStyle);
@@ -72,6 +73,7 @@ public class CowherdLogger
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd.log").toString())
                     .addAttribute("filePattern",
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd-%d{yyyy-MM-dd}.log").toString())
+                    .addAttribute("encoding", "UTF-8")
                     .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
@@ -83,6 +85,7 @@ public class CowherdLogger
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log").toString())
                     .addAttribute("filePattern",
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access-%d{yyyy-MM-dd}.log").toString())
+                    .addAttribute("encoding", "UTF-8")
                     .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
