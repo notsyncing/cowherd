@@ -10,14 +10,14 @@ def ver = rootProject.ext.ver
 
 dependencies {
     compile project(":cowherd-core")
-    compile 'org.thymeleaf:thymeleaf:3.0.2.RELEASE'
+    compile 'org.thymeleaf:thymeleaf:3.0.3.RELEASE'
     compile group: 'org.thymeleaf.extras', name: 'thymeleaf-extras-java8time', version: '3.0.0.RELEASE'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
-    testCompile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
-    testCompile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
-    testCompile 'io.vertx:vertx-unit:3.3.3'
+    testCompile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.3'
+    testCompile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.3'
+    testCompile 'io.vertx:vertx-unit:3.4.1'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '1.10.19'
     testCompile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
 }
