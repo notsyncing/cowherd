@@ -138,4 +138,9 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
         server!!.destroy()
         app.stop()
     }
+
+    @Command
+    fun backupAppData(name: String, toPath: String) {
+        server!!.backupAppData(name, Paths.get(toPath))
+    }
 }

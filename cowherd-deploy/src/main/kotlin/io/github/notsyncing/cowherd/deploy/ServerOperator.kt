@@ -23,12 +23,16 @@ import org.apache.sshd.common.subsystem.sftp.SftpException
 import java.io.Closeable
 import java.io.IOException
 import java.io.StringReader
+import java.lang.System.err
+import java.lang.System.out
 import java.net.ConnectException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.rmi.RemoteException
 import java.security.KeyPair
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.concurrent.thread
 
 class ServerOperator(private val host: String, private val port: Int, private val username: String) {
@@ -227,7 +231,16 @@ class ServerOperator(private val host: String, private val port: Int, private va
         return rsync.waitFor()
     }
 
-    private fun syncApp(appConfig: AppDeployConfig) {
+    private fun syncCopy(from: String, to: Path): Int {
+        val rsync = ProcessBuilder()
+                .command("rsync", "-chavzP", "--stats", "-e", "ssh -p $port", "$username@$host:$from", "$to/")
+                .inheritIO()
+                .start()
+
+        return rsync.waitFor()
+    }
+
+    private fun syncApp(appConfig: AppDeployConfig, skipData: Boolean = false) {
         println("Copying root data...")
 
         var r = syncCopy(appConfig.directories.absRoot, "/data/${appConfig.name}")
@@ -250,10 +263,24 @@ class ServerOperator(private val host: String, private val port: Int, private va
             println("Done")
         }
 
-        if (appConfig.directories.data != null) {
-            println("Copying app data...")
+        if (!skipData) {
+            if (appConfig.directories.data != null) {
+                println("Copying app data...")
 
-            r = syncCopy(appConfig.directories.absData, "/data/${appConfig.name}/data")
+                r = syncCopy(appConfig.directories.absData, "/data/${appConfig.name}/data")
+
+                if (r != 0) {
+                    throw IOException("rsync failed with exit code $r")
+                }
+
+                println("Done")
+            }
+        }
+
+        if (appConfig.directories.configs != null) {
+            println("Copying app configs...")
+
+            r = syncCopy(appConfig.directories.absConfigs, "/data/${appConfig.name}/configs")
 
             if (r != 0) {
                 throw IOException("rsync failed with exit code $r")
@@ -262,10 +289,10 @@ class ServerOperator(private val host: String, private val port: Int, private va
             println("Done")
         }
 
-        if (appConfig.directories.configs != null) {
-            println("Copying app configs...")
+        if (appConfig.directories.backup != null) {
+            println("Copying app backup configs...")
 
-            r = syncCopy(appConfig.directories.absConfigs, "/data/${appConfig.name}/configs")
+            r = syncCopy(appConfig.directories.absBackup, "/data/${appConfig.name}/backup")
 
             if (r != 0) {
                 throw IOException("rsync failed with exit code $r")
@@ -281,6 +308,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
                 .withBuildArg("APP_WEB_ROOT", "/app/web")
                 .withBuildArg("APP_DATA_ROOT", "/app/data")
                 .withBuildArg("APP_CONFIG_ROOT", "/app/configs")
+                .withBuildArg("APP_BACKUP_ROOT", "/app/backup")
                 .exec(object : BuildImageResultCallback() {
                     override fun onNext(item: BuildResponseItem?) {
                         println("Server: docker: $item")
@@ -308,7 +336,8 @@ class ServerOperator(private val host: String, private val port: Int, private va
                 .withBinds(Bind("/data/$appName", Volume("/app")),
                         Bind("/data/$appName/web", Volume("/app/web")),
                         Bind("/data/$appName/data", Volume("/app/data")),
-                        Bind("/data/$appName/configs", Volume("/app/configs")))
+                        Bind("/data/$appName/configs", Volume("/app/configs")),
+                        Bind("/data/$appName/backup", Volume("/app/backup")))
                 .withPublishAllPorts(true)
                 .exec()
                 .id
@@ -358,6 +387,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
         makeServerDirectories("/data/$name/web")
         makeServerDirectories("/data/$name/data")
         makeServerDirectories("/data/$name/configs")
+        makeServerDirectories("/data/$name/backup")
 
         println("Copying data to server...")
 
@@ -526,7 +556,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
     fun updateApp(appConfig: AppDeployConfig): String {
         val currConf = readAppConfig(appConfig.name)
 
-        syncApp(appConfig)
+        syncApp(appConfig, true)
 
         val newImageId = buildAppImage(appConfig.name, appConfig.absDockerFile)
         val newContainerId = buildAppContainer(appConfig.name, newImageId)
@@ -562,5 +592,46 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
     fun remoteExecute(cmd: String): String {
         return session.executeRemoteCommand(cmd)
+    }
+
+    fun backupAppData(name: String, toPath: Path) {
+        val currConf = readAppConfig(name)
+
+        makeServerDirectories("/data/$name/backup/staging")
+
+        val cmdId = docker.execCreateCmd(currConf.dockerContainerId)
+                .withAttachStdout(true)
+                .withAttachStderr(true)
+                .withCmd("/app/backup/backup.sh")
+                .exec()
+                .id
+
+        val currTimeStr = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now())
+
+        docker.execStartCmd(cmdId)
+                .withDetach(false)
+                .exec(ExecStartResultCallback(out, err))
+                .awaitCompletion()
+
+        if (!Files.exists(toPath)) {
+            Files.createDirectories(toPath)
+        }
+
+        val targetDir = toPath.resolve(currTimeStr)
+
+        if (Files.exists(targetDir)) {
+            println("ERROR: Backup target path $toPath already contains a directory named $currTimeStr")
+            return
+        }
+
+        Files.createDirectories(targetDir)
+
+        val r = syncCopy("/data/$name/backup/staging", targetDir)
+
+        if (r == 0) {
+            println("Done at ${targetDir.toAbsolutePath()}")
+        } else {
+            println("Backup failed: $r")
+        }
     }
 }

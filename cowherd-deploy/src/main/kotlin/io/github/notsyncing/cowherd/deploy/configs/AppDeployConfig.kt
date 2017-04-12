@@ -9,11 +9,13 @@ class AppDeployConfig {
         var data: String? = null
         var web: String? = null
         var configs: String? = null
+        var backup: String? = null
 
         val absRoot get() = currDir.resolve(root).toAbsolutePath()
         val absData get() = currDir.resolve(data).toAbsolutePath()
         val absWeb get() = currDir.resolve(web).toAbsolutePath()
         val absConfigs get() = currDir.resolve(configs).toAbsolutePath()
+        val absBackup get() = currDir.resolve(backup).toAbsolutePath()
     }
 
     inner class Web {
