@@ -96,12 +96,12 @@ class ServerOperator(private val host: String, private val port: Int, private va
             }
 
             try {
-                if (!sftp.stat(currPath).isDirectory) {
-                    sftp.mkdir(currPath)
+                if (!keepSftp().stat(currPath).isDirectory) {
+                    keepSftp().mkdir(currPath)
                 }
             } catch (e: SftpException) {
                 if (e.status == SftpConstants.SSH_FX_NO_SUCH_FILE) {
-                    sftp.mkdir(currPath)
+                    keepSftp().mkdir(currPath)
                 } else {
                     throw e
                 }
@@ -111,7 +111,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
     private fun hasServerDirectory(path: String): Boolean {
         try {
-            return sftp.stat(path).isDirectory
+            return keepSftp().stat(path).isDirectory
         } catch (e: SftpException) {
             if (e.status == SftpConstants.SSH_FX_NO_SUCH_FILE) {
                 return false
@@ -142,13 +142,34 @@ class ServerOperator(private val host: String, private val port: Int, private va
         println("Server: environment ready.")
     }
 
+    private fun keepSftp(maxCount: Int = 5): SftpClient {
+        var counter = 0
+
+        while (!sftp.isOpen) {
+            println("SFTP client closed, retrying to connect...")
+
+            sftp = session.createSftpClient()
+            counter++
+
+            if (counter >= maxCount) {
+                println("Failed to connect to SFTP server after $counter retries, give up.")
+                break
+            }
+        }
+
+        return sftp
+    }
+
     fun destroy() {
         println("Stopping...")
 
         stopDockerClient()
         stopDockerForwarding()
 
-        sftp.close()
+        if (sftp.isOpen) {
+            sftp.close()
+        }
+
         session.close()
         ssh.stop()
 
@@ -211,7 +232,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
         }
 
         try {
-            return sftp.lstat("/data/$name/app.json").isRegularFile
+            return keepSftp().lstat("/data/$name/app.json").isRegularFile
         } catch (e: SftpException) {
             if (e.status == SftpConstants.SSH_FX_NO_SUCH_FILE) {
                 return false
@@ -360,14 +381,14 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
     private fun updateAppConfig(name: String, conf: AppConfig) {
         try {
-            sftp.remove("/data/$name/app.json")
+            keepSftp().remove("/data/$name/app.json")
         } catch (e: SftpException) {
             if (e.status != SftpConstants.SSH_FX_NO_SUCH_FILE) {
                 throw e
             }
         }
 
-        sftp.write("/data/$name/app.json").bufferedWriter().use {
+        keepSftp().write("/data/$name/app.json").bufferedWriter().use {
             it.write(JSON.toJSONString(conf))
         }
     }
@@ -408,20 +429,20 @@ class ServerOperator(private val host: String, private val port: Int, private va
     }
 
     private fun readAppConfig(name: String): AppConfig {
-        return JSON.parseObject<AppConfig>(sftp.read("/data/$name/app.json"), AppConfig::class.java)
+        return JSON.parseObject<AppConfig>(keepSftp().read("/data/$name/app.json"), AppConfig::class.java)
     }
 
     private fun updateAppNginxConfig(name: String, conf: AppConfig, ports: List<Pair<Int, Int>>) {
         val nginxConfDir = "/etc/nginx/sites-available"
         val appNginxConfDir = "/data/$name/configs/nginx"
 
-        sftp.openDir(appNginxConfDir).use {
-            sftp.listDir(it)
+        keepSftp().openDir(appNginxConfDir).use {
+            keepSftp().listDir(it)
                     .filter { !it.filename.startsWith(".") }
                     .forEach {
                         var siteConfData: String? = null
 
-                        sftp.read("$appNginxConfDir/${it.filename}").bufferedReader().use {
+                        keepSftp().read("$appNginxConfDir/${it.filename}").bufferedReader().use {
                             siteConfData = it.readText()
                         }
 
@@ -434,7 +455,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
                         val o = NginxSiteConfig()
                         o.backendPort = ports[0].second
 
-                        sftp.write("$nginxConfDir/${it.filename}").bufferedWriter().use {
+                        keepSftp().write("$nginxConfDir/${it.filename}").bufferedWriter().use {
                             siteConf.process(o, it)
                         }
 
@@ -583,8 +604,8 @@ class ServerOperator(private val host: String, private val port: Int, private va
     }
 
     fun getAppList(): List<String> {
-        sftp.openDir("/data").use {
-            return sftp.listDir(it)
+        keepSftp().openDir("/data").use {
+            return keepSftp().listDir(it)
                     .filter { !it.filename.startsWith(".") }
                     .map { it.filename }
         }
@@ -602,16 +623,20 @@ class ServerOperator(private val host: String, private val port: Int, private va
         val cmdId = docker.execCreateCmd(currConf.dockerContainerId)
                 .withAttachStdout(true)
                 .withAttachStderr(true)
-                .withCmd("/app/backup/backup.sh")
+                .withCmd("/bin/bash", "/app/backup/backup.sh")
                 .exec()
                 .id
 
         val currTimeStr = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now())
 
+        println("Executing backup script...")
+
         docker.execStartCmd(cmdId)
                 .withDetach(false)
                 .exec(ExecStartResultCallback(out, err))
                 .awaitCompletion()
+
+        println("Preparing to copy data...")
 
         if (!Files.exists(toPath)) {
             Files.createDirectories(toPath)
@@ -626,7 +651,9 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
         Files.createDirectories(targetDir)
 
-        val r = syncCopy("/data/$name/backup/staging", targetDir)
+        println("Copying data...")
+
+        val r = syncCopy("/data/$name/backup/staging/*", targetDir)
 
         if (r == 0) {
             println("Done at ${targetDir.toAbsolutePath()}")
