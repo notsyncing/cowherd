@@ -139,11 +139,13 @@ public class Cowherd
 
     private void addInternalServices()
     {
-        RouteInfo apiRoute = new RouteInfo();
-        apiRoute.setPath(CowherdConfiguration.getApiServiceRoute());
-        apiRoute.setDomain(CowherdConfiguration.getApiServiceDomain());
+        if (CowherdConfiguration.isEnableInjectedService()) {
+            RouteInfo apiRoute = new RouteInfo();
+            apiRoute.setPath(CowherdConfiguration.getApiServiceRoute());
+            apiRoute.setDomain(CowherdConfiguration.getApiServiceDomain());
 
-        ServiceManager.addServiceClass(CowherdAPIService.class, apiRoute);
+            ServiceManager.addServiceClass(CowherdAPIService.class, apiRoute);
+        }
     }
 
     public FastClasspathScanner createClasspathScanner()

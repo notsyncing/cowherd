@@ -67,6 +67,9 @@ public class CowherdConfiguration
     @ConfigField
     private static int workers = 0;
 
+    @ConfigField
+    private static boolean enableInjectedService = true;
+
     private static JsonObject userConfiguration;
 
     private static JsonObject rawConfiguration;
@@ -353,6 +356,24 @@ public class CowherdConfiguration
     public static void setWorkers(int workers)
     {
         CowherdConfiguration.workers = workers;
+    }
+
+    /**
+     * 是否开启 JavaScript 服务注入脚本
+     * @return JavaScript 服务注入脚本当前是否已开启
+     */
+    public static boolean isEnableInjectedService()
+    {
+        return enableInjectedService;
+    }
+
+    /**
+     * 设置是否开启 JavaScript 服务注入脚本
+     * @param enableInjectedService 是否开启 JavaScript 服务注入脚本
+     */
+    public static void setEnableInjectedService(boolean enableInjectedService)
+    {
+        CowherdConfiguration.enableInjectedService = enableInjectedService;
     }
 
     public static void setUserConfiguration(JsonObject userConfiguration)
