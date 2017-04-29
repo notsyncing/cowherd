@@ -114,8 +114,12 @@ class CowherdApiGatewayService : CowherdService() {
                 if (p.type.jvmErasure.java == UploadFileInfo::class.java) {
                     v = __uploads__?.firstOrNull { it.parameterName == p.name }
                 } else {
-                    val sv = jsonObject[p.name].toString()
-                    v = sv.toType(p.type.jvmErasure)
+                    if (jsonObject.containsKey(p.name)) {
+                        val sv = jsonObject[p.name].toString()
+                        v = sv.toType(p.type.jvmErasure)
+                    } else {
+                        v = null
+                    }
                 }
 
                 targetParams.add(v)
