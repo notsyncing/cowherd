@@ -805,4 +805,16 @@ public class CowherdTest
 
         req.end();
     }
+
+    @Test
+    public void testRequestToExportedOverloadedMethod(TestContext context)
+    {
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/overloadRequest");
+        req.exceptionHandler(context::fail);
+
+        checkIfSuccessAndString(context, async, req, "OK");
+
+        req.end();
+    }
 }
