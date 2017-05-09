@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.routing.RouteManager;
@@ -36,10 +37,16 @@ public class Cowherd
         app.start();
     }
 
-    private void initParts(FastClasspathScanner classpathScanner)
+    private void initParts(ScanResult classScanResult)
     {
-        classpathScanner.matchClassesImplementing(CowherdPart.class, c -> parts.add(c))
-                .scan();
+        classScanResult.getNamesOfClassesImplementing(CowherdPart.class)
+                .forEach(c -> {
+                    try {
+                        parts.add((Class)Class.forName(c));
+                    } catch (ClassNotFoundException e) {
+                        log.w("Failed to load part " + c + ": class not found: " + e.getMessage());
+                    }
+                });
 
         parts.forEach(c -> {
             try {
@@ -71,11 +78,13 @@ public class Cowherd
 
         addInternalServices();
 
-        initParts(classpathScanner);
+        ScanResult classScanResult = classpathScanner.scan();
+
+        initParts(classScanResult);
 
         dependencyInjector.init();
 
-        scanClasses(classpathScanner);
+        scanClasses(classScanResult);
 
         startServer();
     }
@@ -153,11 +162,25 @@ public class Cowherd
                 "-scala", "-com.github.mauricio", "-APP_ROOT");
     }
 
-    private void scanClasses(FastClasspathScanner s)
+    private void scanClasses(ScanResult s)
     {
-        s.matchSubclassesOf(CowherdService.class, ServiceManager::addServiceClass)
-                .matchClassesImplementing(ServiceActionFilter.class, c -> FilterManager.addFilterClass(c))
-                .scan();
+        s.getNamesOfSubclassesOf(CowherdService.class)
+                .forEach(c -> {
+                    try {
+                        ServiceManager.addServiceClass((Class)Class.forName(c));
+                    } catch (ClassNotFoundException e) {
+                        log.w("Failed to load service class " + c + ": class not found: " + e.getMessage());
+                    }
+                });
+
+        s.getNamesOfClassesImplementing(ServiceActionFilter.class)
+                .forEach(c -> {
+                    try {
+                        FilterManager.addFilterClass((Class)Class.forName(c));
+                    } catch (ClassNotFoundException e) {
+                        log.w("Failed to load service action filter class " + c + ": class not found: " + e.getMessage());
+                    }
+                });
     }
 
     private void startServer()
