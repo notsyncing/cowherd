@@ -14,9 +14,6 @@ import java.net.HttpCookie
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
-import kotlin.reflect.KParameter
-import kotlin.reflect.jvm.jvmErasure
 
 class CowherdApiGatewayService : CowherdService() {
     companion object {
@@ -97,24 +94,7 @@ class CowherdApiGatewayService : CowherdService() {
         }
 
         val jsonObject = JSON.parseObject(paramStr)
-        val targetParams = ArrayList<Any?>()
-
-        targetParams.add(service)
-
-        val params = serviceMethodInfo.method.parameters
-
-        if (!params.isEmpty()) {
-            for (p in params) {
-                if (p.kind != KParameter.Kind.VALUE) {
-                    continue
-                }
-
-                val sv = jsonObject[p.name].toString()
-                val v = sv.toType(p.type.jvmErasure)
-
-                targetParams.add(v)
-            }
-        }
+        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject)
 
         var sessionIdentifier: String? = null
 
@@ -127,10 +107,14 @@ class CowherdApiGatewayService : CowherdService() {
             sessionIdentifier = __cookies__.first { (it.name == ACCESS_TOKEN_NAME) || (it.name == ACCESS_TOKEN_NAME_2) }.value
         }
 
-        val o = if (service is ApiExecutor)
-            service.execute(serviceMethodInfo.method, targetParams.subList(1, targetParams.size), sessionIdentifier)
-        else
-            serviceMethodInfo.method.call(*targetParams.toTypedArray())
+        val o: Any?
+
+        if (service is ApiExecutor) {
+            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier)
+        } else {
+            targetParams.add(0, service)
+            o = serviceMethodInfo.method.call(*targetParams.toTypedArray())
+        }
 
         if (o is CompletableFuture<*>) {
             return o as CompletableFuture<Any?>
@@ -157,30 +141,6 @@ class CowherdApiGatewayService : CowherdService() {
         }
 
         return kotlin.Pair(ParameterEncodeType.Unknown, "")
-    }
-
-    private fun String.toType(type: KClass<*>): Any? {
-        if (type == Int::class) {
-            return this.toInt()
-        } else if (type == Long::class) {
-            return this.toLong()
-        } else if (type == String::class) {
-            return this
-        } else if (type == Boolean::class) {
-            return this.toBoolean()
-        } else if (type == Float::class) {
-            return this.toFloat()
-        } else if (type == Double::class) {
-            return this.toDouble()
-        } else if (type == Byte::class) {
-            return this.toByte()
-        } else if (type == Char::class) {
-            return this.toInt()
-        } else if (type == Short::class) {
-            return this.toShort()
-        } else {
-            return JSON.parseObject(this, type.java)
-        }
     }
 
     private fun newSession(): String {
