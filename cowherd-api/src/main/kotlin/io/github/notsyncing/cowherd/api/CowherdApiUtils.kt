@@ -33,7 +33,11 @@ object CowherdApiUtils {
         }
     }
 
-    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject): MutableList<Any?> {
+    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?): MutableList<Any?> {
+        if (o == null) {
+            return mutableListOf()
+        }
+
         val targetParams = ArrayList<Any?>()
         val params = method.parameters
 

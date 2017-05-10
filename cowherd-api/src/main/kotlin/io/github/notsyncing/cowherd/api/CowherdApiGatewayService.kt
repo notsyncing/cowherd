@@ -71,6 +71,16 @@ class CowherdApiGatewayService : CowherdService() {
             return FutureUtils.failed(IllegalArgumentException("Service class $serviceClassName not found, maybe not published or revoked?"))
         }
 
+        if (service is ApiExecutor) {
+            val preferredHttpMethod = service.preferredHttpMethod()
+
+            if (preferredHttpMethod != null) {
+                if (request?.method() != preferredHttpMethod) {
+                    return FutureUtils.failed(IllegalAccessError("Method $service does not like to be called with ${request?.method()}"))
+                }
+            }
+        }
+
         val actionId = "$serviceClassName.$serviceMethodName"
         var serviceMethodInfo = methodCache[actionId]
 
