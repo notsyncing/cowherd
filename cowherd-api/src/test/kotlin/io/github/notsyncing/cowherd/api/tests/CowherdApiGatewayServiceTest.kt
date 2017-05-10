@@ -9,6 +9,7 @@ import io.github.notsyncing.cowherd.api.tests.toys.SimpleConstructedService
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.service.ServiceManager
+import io.vertx.core.http.HttpServerRequest
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
 import org.junit.After
@@ -128,7 +129,7 @@ class CowherdApiGatewayServiceTest {
                 return SimpleConstructedService::class.constructors.first()
             }
 
-            override fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?): CompletableFuture<Any?> {
+            override fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?, request: HttpServerRequest?): CompletableFuture<Any?> {
                 return CompletableFuture.completedFuture((method.call(*args.toTypedArray()) as SimpleConstructedService).execute())
             }
         })

@@ -76,7 +76,7 @@ class CowherdApiGatewayService : CowherdService() {
 
             if (preferredHttpMethod != null) {
                 if (request?.method() != preferredHttpMethod) {
-                    return FutureUtils.failed(IllegalAccessError("Method $service does not like to be called with ${request?.method()}"))
+                    return FutureUtils.failed(IllegalAccessException("Method $service does not like to be called with ${request?.method()}"))
                 }
             }
         }
@@ -120,7 +120,7 @@ class CowherdApiGatewayService : CowherdService() {
         val o: Any?
 
         if (service is ApiExecutor) {
-            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier)
+            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, request)
         } else {
             targetParams.add(0, service)
             o = serviceMethodInfo.method.call(*targetParams.toTypedArray())
