@@ -1,6 +1,5 @@
 package io.github.notsyncing.cowherd.utils;
 
-import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.models.Pair;
 
 import java.io.*;
@@ -9,6 +8,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class StringUtils
 {
@@ -92,6 +92,7 @@ public class StringUtils
     {
         List<Pair<String, String>> l = new ArrayList<>();
         String[] pairs = qs.split("&");
+        Pattern skipPattern = Pattern.compile(".*?[<>!].*?");
 
         try {
             for (String p : pairs) {
@@ -103,6 +104,10 @@ public class StringUtils
 
                 String key = URLDecoder.decode(p.substring(0, i), "utf-8");
                 String value = URLDecoder.decode(p.substring(i + 1), "utf-8");
+
+                if (skipPattern.matcher(key).find()) {
+                    continue;
+                }
 
                 l.add(new Pair<>(key, value));
             }
