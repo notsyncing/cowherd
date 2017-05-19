@@ -1,17 +1,14 @@
 package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.Cowherd;
-import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
-import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
-import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
+import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
-import io.github.notsyncing.cowherd.utils.CookieUtils;
-import io.github.notsyncing.cowherd.utils.StringUtils;
+import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.lang.reflect.Method;
@@ -61,20 +58,7 @@ public abstract class CowherdService
      */
     protected void putCookie(HttpServerRequest request, HttpCookie cookie)
     {
-        String cookieString = CookieUtils.cookieToString(cookie);
-        request.response().headers().add("Set-Cookie", cookieString);
-
-        AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
-
-        if ((ch != null) && ((StringUtils.isEmpty(ch.getOnlyOn()))
-                || ("true".equals(request.getHeader(ch.getOnlyOn()))))
-                && (!StringUtils.isEmpty(ch.getSetCookie()))) {
-            request.response().headers().add(ch.getSetCookie(), cookieString);
-
-            if (request.response().headers().contains("Access-Control-Allow-Origin")) {
-                request.response().headers().add("Access-Control-Expose-Headers", ch.getSetCookie());
-            }
-        }
+        RequestUtils.putCookie(request, cookie);
     }
 
     /**
@@ -84,13 +68,7 @@ public abstract class CowherdService
      */
     protected void putCookies(HttpServerRequest request, HttpCookie... cookies)
     {
-        if (cookies == null) {
-            return;
-        }
-
-        for (HttpCookie c : cookies) {
-            putCookie(request, c);
-        }
+        RequestUtils.putCookies(request, cookies);
     }
 
     /**

@@ -590,4 +590,33 @@ public class RequestUtils
 
         return future;
     }
+
+    public static void putCookie(HttpServerRequest request, HttpCookie cookie)
+    {
+        String cookieString = CookieUtils.cookieToString(cookie);
+        request.response().headers().add("Set-Cookie", cookieString);
+
+        AlternativeCookieHeaderConfig ch = CowherdConfiguration.getAlternativeCookieHeaders();
+
+        if ((ch != null) && ((StringUtils.isEmpty(ch.getOnlyOn()))
+                || ("true".equals(request.getHeader(ch.getOnlyOn()))))
+                && (!StringUtils.isEmpty(ch.getSetCookie()))) {
+            request.response().headers().add(ch.getSetCookie(), cookieString);
+
+            if (request.response().headers().contains("Access-Control-Allow-Origin")) {
+                request.response().headers().add("Access-Control-Expose-Headers", ch.getSetCookie());
+            }
+        }
+    }
+
+    public static void putCookies(HttpServerRequest request, HttpCookie... cookies)
+    {
+        if (cookies == null) {
+            return;
+        }
+
+        for (HttpCookie c : cookies) {
+            putCookie(request, c);
+        }
+    }
 }
