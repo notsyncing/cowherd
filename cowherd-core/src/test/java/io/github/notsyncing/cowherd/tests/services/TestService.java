@@ -15,7 +15,6 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.github.notsyncing.cowherd.validators.annotations.HTMLSanitize;
 import io.github.notsyncing.cowherd.validators.annotations.Length;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import org.apache.commons.io.FileUtils;
 
@@ -210,5 +209,17 @@ public class TestService extends CowherdService
     public ActionResponse redirectRequest()
     {
         return new RedirectResponse("aaa");
+    }
+
+    @Exported
+    @HttpGet
+    public CompletableFuture<String> overloadRequest(String param, HttpCookie token)
+    {
+        return CompletableFuture.completedFuture("OK");
+    }
+
+    public String overloadRequest(String param)
+    {
+        return "NOT";
     }
 }
