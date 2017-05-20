@@ -14,6 +14,7 @@ import java.net.HttpCookie
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.jvm.jvmErasure
 
 class CowherdApiGatewayService : CowherdService() {
     companion object {
@@ -104,7 +105,13 @@ class CowherdApiGatewayService : CowherdService() {
         }
 
         val jsonObject = JSON.parseObject(paramStr)
-        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject)
+        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject) { p ->
+            if (p.type.jvmErasure.java == UploadFileInfo::class.java) {
+                __uploads__?.firstOrNull { it.parameterName == p.name }
+            } else {
+                null
+            }
+        }
 
         var sessionIdentifier: String? = null
 

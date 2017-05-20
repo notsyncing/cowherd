@@ -9,31 +9,33 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.jvm.jvmErasure
 
 object CowherdApiUtils {
-    private fun String.toType(type: KClass<*>): Any? {
+    fun stringToType(str: String, type: KClass<*>): Any? {
         if (type == Int::class) {
-            return this.toInt()
+            return str.toInt()
         } else if (type == Long::class) {
-            return this.toLong()
+            return str.toLong()
         } else if (type == String::class) {
-            return this
+            return str
         } else if (type == Boolean::class) {
-            return this.toBoolean()
+            return str.toBoolean()
         } else if (type == Float::class) {
-            return this.toFloat()
+            return str.toFloat()
         } else if (type == Double::class) {
-            return this.toDouble()
+            return str.toDouble()
         } else if (type == Byte::class) {
-            return this.toByte()
+            return str.toByte()
         } else if (type == Char::class) {
-            return this.toInt()
+            return str.toInt()
         } else if (type == Short::class) {
-            return this.toShort()
+            return str.toShort()
         } else {
-            return JSON.parseObject(this, type.java)
+            return JSON.parseObject(str, type.java)
         }
     }
 
-    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?): MutableList<Any?> {
+    private fun String.toType(type: KClass<*>) = stringToType(this, type)
+
+    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?, specialTypeParameterHandler: (KParameter) -> Any?): MutableList<Any?> {
         if (o == null) {
             return mutableListOf()
         }
@@ -47,8 +49,19 @@ object CowherdApiUtils {
                     continue
                 }
 
-                val sv = o[p.name].toString()
-                val v = sv.toType(p.type.jvmErasure)
+                var v = specialTypeParameterHandler(p)
+
+                if (v != null) {
+                    targetParams.add(v)
+                    continue
+                }
+
+                if (o.containsKey(p.name)) {
+                    val sv = o[p.name].toString()
+                    v = sv.toType(p.type.jvmErasure)
+                } else {
+                    v = null
+                }
 
                 targetParams.add(v)
             }
