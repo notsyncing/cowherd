@@ -1,5 +1,5 @@
 plugins {
-    id "com.jfrog.bintray" version "1.6"
+    id "com.jfrog.bintray" version "1.7.3"
     id "com.github.johnrengelman.shadow" version "1.2.4"
 }
 
@@ -9,8 +9,8 @@ group grp
 version ver
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.12'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.15'
     compile group: 'org.apache.sshd', name: 'sshd-core', version: '1.4.0'
     compile group: 'org.apache.sshd', name: 'sshd-sftp', version: '0.11.0'
     compile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.8'

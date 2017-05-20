@@ -1,5 +1,5 @@
 plugins {
-    id "com.jfrog.bintray" version "1.6"
+    id "com.jfrog.bintray" version "1.7.3"
 }
 
 def ver = rootProject.ext.ver
@@ -8,8 +8,8 @@ group grp
 version ver
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.12'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.15'
     /*compile "com.github.ui4j.ui4j:ui4j-all:2.2.0"
     compile group: 'org.testfx', name: 'openjfx-monocle', version: '8u76-b04'*/
     compile 'com.mashape.unirest:unirest-java:1.4.9'
