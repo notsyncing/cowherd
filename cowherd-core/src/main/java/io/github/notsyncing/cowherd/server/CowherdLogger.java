@@ -73,7 +73,6 @@ public class CowherdLogger
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd.log").toString())
                     .addAttribute("filePattern",
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("cowherd-%d{yyyy-MM-dd}.log").toString())
-                    .addAttribute("encoding", "UTF-8")
                     .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
@@ -85,7 +84,6 @@ public class CowherdLogger
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access.log").toString())
                     .addAttribute("filePattern",
                             CowherdConfiguration.getLogDir().toAbsolutePath().resolve("access-%d{yyyy-MM-dd}.log").toString())
-                    .addAttribute("encoding", "UTF-8")
                     .add(logStyle)
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
