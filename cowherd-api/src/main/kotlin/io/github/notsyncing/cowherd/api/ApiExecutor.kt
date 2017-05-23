@@ -4,12 +4,13 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KCallable
+import kotlin.reflect.KParameter
 
 abstract class ApiExecutor {
     abstract fun getDefaultMethod(): KCallable<*>
 
-    fun preferredHttpMethod(): HttpMethod? = null
+    open fun preferredHttpMethod(): HttpMethod? = null
 
-    abstract fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?,
+    abstract fun execute(method: KCallable<*>, args: MutableMap<KParameter, Any?>, sessionIdentifier: String?,
                          request: HttpServerRequest?): CompletableFuture<Any?>
 }

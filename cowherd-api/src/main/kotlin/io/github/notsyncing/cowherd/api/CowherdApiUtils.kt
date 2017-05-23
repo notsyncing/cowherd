@@ -2,7 +2,6 @@ package io.github.notsyncing.cowherd.api
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
-import java.util.*
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -35,25 +34,28 @@ object CowherdApiUtils {
 
     private fun String.toType(type: KClass<*>) = stringToType(this, type)
 
-    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?,
-                                     specialTypeParameterHandler: ((KParameter) -> Any?)? = null): MutableList<Any?> {
+    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?, self: Any?,
+                                     specialTypeParameterHandler: ((KParameter) -> Any?)? = null): MutableMap<KParameter, Any?> {
         if (o == null) {
-            return mutableListOf()
+            return mutableMapOf()
         }
 
-        val targetParams = ArrayList<Any?>()
+        val targetParams = mutableMapOf<KParameter, Any?>()
         val params = method.parameters
 
         if (!params.isEmpty()) {
             for (p in params) {
-                if (p.kind != KParameter.Kind.VALUE) {
+                if (p.kind == KParameter.Kind.INSTANCE) {
+                    targetParams[p] = self
+                    continue
+                } else if (p.kind != KParameter.Kind.VALUE) {
                     continue
                 }
 
                 var v = specialTypeParameterHandler?.invoke(p)
 
                 if (v != null) {
-                    targetParams.add(v)
+                    targetParams[p] = v
                     continue
                 }
 
@@ -61,10 +63,14 @@ object CowherdApiUtils {
                     val sv = o[p.name].toString()
                     v = sv.toType(p.type.jvmErasure)
                 } else {
+                    if (p.isOptional) {
+                        continue
+                    }
+
                     v = null
                 }
 
-                targetParams.add(v)
+                targetParams[p] = v
             }
         }
 

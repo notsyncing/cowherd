@@ -105,7 +105,8 @@ class CowherdApiGatewayService : CowherdService() {
         }
 
         val jsonObject = JSON.parseObject(paramStr)
-        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject) { p ->
+
+        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject, service) { p ->
             if (p.type.jvmErasure.java == UploadFileInfo::class.java) {
                 __uploads__?.firstOrNull { it.parameterName == p.name }
             } else {
@@ -129,8 +130,7 @@ class CowherdApiGatewayService : CowherdService() {
         if (service is ApiExecutor) {
             o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, request)
         } else {
-            targetParams.add(0, service)
-            o = serviceMethodInfo.method.call(*targetParams.toTypedArray())
+            o = serviceMethodInfo.method.callBy(targetParams)
         }
 
         if (o is CompletableFuture<*>) {
