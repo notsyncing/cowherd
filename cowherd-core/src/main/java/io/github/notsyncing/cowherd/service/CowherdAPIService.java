@@ -61,7 +61,51 @@ public class CowherdAPIService extends CowherdService
             base = "~/";
         }
 
-        String js = "(function () {\n";
+        String js = "(function () {\n" +
+                "var __HTTP__ = {};\n" +
+                "if (window.Weavergirl) {\n" +
+                "   __HTTP__.ajax = function (obj) {\n" +
+                "   function simpleObjectToQueryString(obj)\n" +
+                "    {\n" +
+                "        var l = [];\n" +
+                "        for (var key in obj) {\n" +
+                "            if (!obj.hasOwnProperty(key)) {\n" +
+                "                continue;\n" +
+                "            }\n" +
+                "            if (obj[key] === undefined) {\n" +
+                "                continue;\n" +
+                "            }\n" +
+                "            if (obj[key] instanceof Array) {\n" +
+                "                for (var i = 0; i < obj[key].length; i++) {\n" +
+                "                    l.push(encodeURIComponent(key) + \"=\" + encodeURIComponent(obj[key][i]));\n" +
+                "                }\n" +
+                "            } else {\n" +
+                "                l.push(encodeURIComponent(key) + \"=\" + encodeURIComponent(obj[key]));\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return l.join(\"&\");\n" +
+                "    }\n" +
+                "    function simpleArrayToQueryString(arr)\n" +
+                "    {\n" +
+                "        var l = [];\n" +
+                "        for (var i = 0; i < arr.length; i++) {\n" +
+                "            l.push(encodeURIComponent(arr[i].name) + \"=\" + encodeURIComponent(arr[i].value));\n" +
+                "        }\n" +
+                "        return l.join(\"&\");\n" +
+                "    }" +
+                "       if (obj.method.toLowerCase() !== 'post') {\n" +
+                "           obj.url += '?' + ((obj.data instanceof Array) ? simpleArrayToQueryString(obj.data) : simpleObjectToQueryString(obj.data));\n" +
+                "       } else if (typeof obj.data === \"string\") {\n" +
+                "           obj.data = obj.data;\n" +
+                "       } else if ((window.FormData) && (!(obj.data instanceof FormData))) {\n" +
+                "           obj.data = (obj.data instanceof Array) ? simpleArrayToQueryString(obj.data) : simpleObjectToQueryString(obj.data);\n" +
+                "       }" +
+                "       return Weavergirl.Http.ajax(obj.method, obj.url, obj.data).then(r => r.response);\n" +
+                "   };\n" +
+                "} else {\n" +
+                "   __HTTP__.ajax = MagicForm.ajax;\n" +
+                "}\n";
+
         Set<Class<?>> generatedEnumClasses = new HashSet<>();
 
         for (CowherdServiceInfo info : ServiceManager.getServices()) {
@@ -271,7 +315,7 @@ public class CowherdAPIService extends CowherdService
         }
 
         js += ") {\n";
-        js += "return MagicForm.ajax({\n";
+        js += "return __HTTP__.ajax({\n";
         js += "url: '" + base + "api/gateway',\n";
         js += "method: '" + RouteUtils.getActionHttpMethodString(m) + "',\n";
         js += "data: {\n";
