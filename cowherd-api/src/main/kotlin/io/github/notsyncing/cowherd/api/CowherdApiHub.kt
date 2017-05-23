@@ -27,9 +27,13 @@ object CowherdApiHub {
         hub[serviceClass.name] = executor
     }
 
-    fun revoke(serviceClassName: String) {
-        hub.remove(serviceClassName)
-        instanceWrappers.remove(serviceClassName)
+    fun publish(serviceName: String, executor: ApiExecutor) {
+        hub[serviceName] = executor
+    }
+
+    fun revoke(serviceName: String) {
+        hub.remove(serviceName)
+        instanceWrappers.remove(serviceName)
     }
 
     fun revoke(serviceClass: Class<*>) {

@@ -11,6 +11,7 @@ import io.github.notsyncing.cowherd.service.CowherdService
 import io.github.notsyncing.cowherd.utils.FutureUtils
 import io.vertx.core.http.HttpServerRequest
 import java.net.HttpCookie
+import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -46,7 +47,7 @@ class CowherdApiGatewayService : CowherdService() {
 
         val (pt, paramStr) = getEncodedParameters(__parameters__)
 
-        val serviceClassName = parts[0]
+        val serviceClassName = URLDecoder.decode(parts[0], "utf-8")
 
         if (serviceClassName.compareTo("new_session", true) == 0) {
             val session = newSession()
