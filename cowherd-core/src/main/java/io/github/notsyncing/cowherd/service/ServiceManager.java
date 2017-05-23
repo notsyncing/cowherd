@@ -108,6 +108,10 @@ public class ServiceManager
 
     public static Method getServiceAction(String serviceName, String actionName)
     {
+        if ((serviceName == null) || (actionName == null)) {
+            return null;
+        }
+
         CowherdServiceInfo info = services.entrySet().stream()
                 .filter(e -> e.getKey().endsWith(serviceName.contains(".") ? serviceName : ("." + serviceName)))
                 .map(Map.Entry::getValue)
