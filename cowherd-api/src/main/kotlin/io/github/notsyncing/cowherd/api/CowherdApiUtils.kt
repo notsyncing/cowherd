@@ -35,7 +35,8 @@ object CowherdApiUtils {
 
     private fun String.toType(type: KClass<*>) = stringToType(this, type)
 
-    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?, specialTypeParameterHandler: (KParameter) -> Any?): MutableList<Any?> {
+    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?,
+                                     specialTypeParameterHandler: ((KParameter) -> Any?)? = null): MutableList<Any?> {
         if (o == null) {
             return mutableListOf()
         }
@@ -49,7 +50,7 @@ object CowherdApiUtils {
                     continue
                 }
 
-                var v = specialTypeParameterHandler(p)
+                var v = specialTypeParameterHandler?.invoke(p)
 
                 if (v != null) {
                     targetParams.add(v)
