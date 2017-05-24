@@ -100,7 +100,7 @@ public class CowherdAPIService extends CowherdService
                 "       } else if ((window.FormData) && (!(obj.data instanceof FormData))) {\n" +
                 "           obj.data = (obj.data instanceof Array) ? simpleArrayToQueryString(obj.data) : simpleObjectToQueryString(obj.data);\n" +
                 "       }" +
-                "       return Weavergirl.Http.ajax(obj.method, obj.url, obj.data).then(r => r.response);\n" +
+                "       return Weavergirl.Http.ajax(obj.method, obj.url, obj.data);\n" +
                 "   };\n" +
                 "} else {\n" +
                 "   __HTTP__.ajax = MagicForm.ajax;\n" +
