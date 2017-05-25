@@ -19,6 +19,7 @@ import org.junit.Test
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KCallable
+import kotlin.reflect.KParameter
 
 class CowherdApiGatewayServiceTest {
     private val server = Cowherd()
@@ -129,8 +130,8 @@ class CowherdApiGatewayServiceTest {
                 return SimpleConstructedService::class.constructors.first()
             }
 
-            override fun execute(method: KCallable<*>, args: MutableList<Any?>, sessionIdentifier: String?, request: HttpServerRequest?): CompletableFuture<Any?> {
-                return CompletableFuture.completedFuture((method.call(*args.toTypedArray()) as SimpleConstructedService).execute())
+            override fun execute(method: KCallable<*>, args: MutableMap<KParameter, Any?>, sessionIdentifier: String?, request: HttpServerRequest?): CompletableFuture<Any?> {
+                return CompletableFuture.completedFuture((method.callBy(args) as SimpleConstructedService).execute())
             }
         })
 
