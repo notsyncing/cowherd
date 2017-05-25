@@ -126,7 +126,7 @@ class CowherdApiGatewayService : CowherdService() {
             sessionIdentifier = authHeader.replace("Bearer ", "")
         } else if (__parameters__.any { (it.key == ACCESS_TOKEN_NAME) || (it.key == ACCESS_TOKEN_NAME_2) }) {
             sessionIdentifier = __parameters__.first { (it.key == ACCESS_TOKEN_NAME) || (it.key == ACCESS_TOKEN_NAME_2) }.value
-        } else if (__cookies__?.any { it.name == ACCESS_TOKEN_NAME } == true) {
+        } else if (__cookies__?.any { (it.name == ACCESS_TOKEN_NAME) || (it.name == ACCESS_TOKEN_NAME_2) } == true) {
             sessionIdentifier = __cookies__.first { (it.name == ACCESS_TOKEN_NAME) || (it.name == ACCESS_TOKEN_NAME_2) }.value
         }
 
