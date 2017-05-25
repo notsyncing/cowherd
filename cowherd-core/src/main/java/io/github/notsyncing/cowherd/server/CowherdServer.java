@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.server;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
@@ -190,7 +191,11 @@ public class CowherdServer
 
             writeResponse(req.response(), ret);
         } else {
-            ret = JSON.toJSONString(o.getResult());
+            if (context.getConfig().isEnumReturnsString()) {
+                ret = JSON.toJSONString(o.getResult(), SerializerFeature.WriteEnumUsingName);
+            } else {
+                ret = JSON.toJSONString(o.getResult());
+            }
 
             if (!req.response().headers().contains("Content-Type")) {
                 req.response().putHeader("Content-Type", "application/json");
