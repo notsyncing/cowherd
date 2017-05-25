@@ -7,9 +7,9 @@ import io.github.notsyncing.cowherd.api.CowherdApiGatewayService
 import io.github.notsyncing.cowherd.api.CowherdApiHub
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleConstructedService
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
+import io.github.notsyncing.cowherd.models.ActionContext
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.service.ServiceManager
-import io.vertx.core.http.HttpServerRequest
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
 import org.junit.After
@@ -61,7 +61,7 @@ class CowherdApiGatewayServiceTest {
         future {
             val service = getService()
             val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                    makeParamList(), null, null).await()
+                    ActionContext(), makeParamList(), null, null).await()
 
             Assert.assertEquals("Hello, world!", r)
         }.get()
@@ -77,7 +77,7 @@ class CowherdApiGatewayServiceTest {
 
             try {
                 val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                        makeParamList(), null, null).await()
+                        ActionContext(), makeParamList(), null, null).await()
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
@@ -92,7 +92,7 @@ class CowherdApiGatewayServiceTest {
 
             try {
                 val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::hello.name}", null,
-                        makeParamList(), null, null).await()
+                        ActionContext(), makeParamList(), null, null).await()
                 Assert.assertTrue(false)
             } catch (e: Exception) {
                 Assert.assertTrue(e is IllegalArgumentException)
@@ -117,7 +117,8 @@ class CowherdApiGatewayServiceTest {
         future {
             val service = getService()
             val r = service.gateway("${SimpleService::class.java.name}/${SimpleService::helloTo.name}", null,
-                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null, null).await()
+                    ActionContext(), makeParamList(arrayOf("json"), arrayOf("{\"who\":\"everyone\"}")), null,
+                    null).await()
 
             Assert.assertEquals("Hello, everyone!", r)
         }.get()
@@ -130,7 +131,8 @@ class CowherdApiGatewayServiceTest {
                 return SimpleConstructedService::class.constructors.first()
             }
 
-            override fun execute(method: KCallable<*>, args: MutableMap<KParameter, Any?>, sessionIdentifier: String?, request: HttpServerRequest?): CompletableFuture<Any?> {
+            override fun execute(method: KCallable<*>, args: MutableMap<KParameter, Any?>, sessionIdentifier: String?,
+                                 context: ActionContext): CompletableFuture<Any?> {
                 return CompletableFuture.completedFuture((method.callBy(args) as SimpleConstructedService).execute())
             }
         })
@@ -138,7 +140,7 @@ class CowherdApiGatewayServiceTest {
         future {
             val service = getService()
             val r = service.gateway(SimpleConstructedService::class.java.name, null,
-                    makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null).await()
+                    ActionContext(), makeParamList(arrayOf("json"), arrayOf("{\"who\":\"const\"}")), null, null).await()
 
             Assert.assertEquals("Hello, new const!", r)
         }.get()

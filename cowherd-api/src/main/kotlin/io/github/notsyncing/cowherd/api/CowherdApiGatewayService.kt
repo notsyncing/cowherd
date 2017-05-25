@@ -5,6 +5,7 @@ import io.github.notsyncing.cowherd.annotations.Exported
 import io.github.notsyncing.cowherd.annotations.Parameter
 import io.github.notsyncing.cowherd.annotations.Route
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpAnyMethod
+import io.github.notsyncing.cowherd.models.ActionContext
 import io.github.notsyncing.cowherd.models.Pair
 import io.github.notsyncing.cowherd.models.UploadFileInfo
 import io.github.notsyncing.cowherd.service.CowherdService
@@ -35,6 +36,7 @@ class CowherdApiGatewayService : CowherdService() {
     @Route("", subRoute = true)
     fun gateway(@Parameter("path") path: String,
                 @Parameter("request") request: HttpServerRequest?,
+                @Parameter("context") context: ActionContext,
                 @Parameter("__parameters__") __parameters__: List<Pair<String, String>>,
                 @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
                 @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
@@ -110,6 +112,8 @@ class CowherdApiGatewayService : CowherdService() {
         val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject, service) { p ->
             if (p.type.jvmErasure.java == UploadFileInfo::class.java) {
                 __uploads__?.firstOrNull { it.parameterName == p.name }
+            } else if (p.type.jvmErasure.java == ActionContext::class.java) {
+                context
             } else {
                 null
             }
@@ -129,7 +133,7 @@ class CowherdApiGatewayService : CowherdService() {
         val o: Any?
 
         if (service is ApiExecutor) {
-            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, request)
+            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, context)
         } else {
             o = serviceMethodInfo.method.callBy(targetParams)
         }
