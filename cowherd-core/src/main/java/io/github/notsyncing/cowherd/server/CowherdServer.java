@@ -182,7 +182,12 @@ public class CowherdServer
                 req.response().putHeader("Content-Type", "text/plain");
             }
 
-            ret = String.valueOf(((Enum)o.getResult()).ordinal());
+            if (context.getConfig().isEnumReturnsString()) {
+                ret = o.getResult().toString();
+            } else {
+                ret = String.valueOf(((Enum) o.getResult()).ordinal());
+            }
+
             writeResponse(req.response(), ret);
         } else {
             ret = JSON.toJSONString(o.getResult());

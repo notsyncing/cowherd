@@ -10,9 +10,11 @@ public class ActionContext
     private CowherdServer server;
     private HttpServerRequest request;
     private Method actionMethod;
+    private ActionConfig config;
 
     public ActionContext()
     {
+        config = new ActionConfig();
     }
 
     public ActionContext(HttpServerRequest request)
@@ -48,5 +50,10 @@ public class ActionContext
     public void setActionMethod(Method actionMethod)
     {
         this.actionMethod = actionMethod;
+    }
+
+    public ActionConfig getConfig()
+    {
+        return config;
     }
 }
