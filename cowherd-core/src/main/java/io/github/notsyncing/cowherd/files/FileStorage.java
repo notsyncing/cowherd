@@ -223,6 +223,20 @@ public class FileStorage
         return getStoragePath(tag).relativize(file);
     }
 
+    private void addServerRoute(RouteInfo route)
+    {
+        Method m;
+
+        try {
+            m = CowherdFileStorageService.class.getMethod("getFile", Enum.class, String.class);
+        } catch (NoSuchMethodException e) {
+            log.e("No action for file storage!", e);
+            return;
+        }
+
+        RouteManager.addRoute(route, m);
+    }
+
     /**
      * 注册一条直接访问指定文件存储的路由
      * @param tag 存储类别标识枚举
@@ -235,15 +249,17 @@ public class FileStorage
         info.setType(RouteType.Http);
         info.setOtherParameters(new Object[] { tag });
 
-        Method m;
+        addServerRoute(info);
+    }
 
-        try {
-            m = CowherdFileStorageService.class.getMethod("getFile", Enum.class, String.class);
-        } catch (NoSuchMethodException e) {
-            log.e("No action for file storage!", e);
-            return;
-        }
+    public void registerServerSimpleRoute(Enum tag, String route)
+    {
+        RouteInfo info = new RouteInfo();
+        info.setPath(route);
+        info.setType(RouteType.Http);
+        info.setOtherParameters(new Object[] { tag });
+        info.setFastRoute(true);
 
-        RouteManager.addRoute(info, m);
+        addServerRoute(info);
     }
 }
