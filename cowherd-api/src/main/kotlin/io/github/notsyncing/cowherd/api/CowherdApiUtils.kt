@@ -36,10 +36,6 @@ object CowherdApiUtils {
 
     fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?, self: Any?,
                                      specialTypeParameterHandler: ((KParameter) -> Any?)? = null): MutableMap<KParameter, Any?> {
-        if (o == null) {
-            return mutableMapOf()
-        }
-
         val targetParams = mutableMapOf<KParameter, Any?>()
         val params = method.parameters
 
@@ -59,7 +55,7 @@ object CowherdApiUtils {
                     continue
                 }
 
-                if (o.containsKey(p.name)) {
+                if (o?.containsKey(p.name) != null) {
                     val sv = o[p.name].toString()
                     v = sv.toType(p.type.jvmErasure)
                 } else {
