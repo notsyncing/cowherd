@@ -133,7 +133,7 @@ class CowherdApiGatewayService : CowherdService() {
         val o: Any?
 
         if (service is ApiExecutor) {
-            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, context)
+            o = service.execute(serviceMethodInfo.method, targetParams, sessionIdentifier, context, __uploads__)
         } else {
             o = serviceMethodInfo.method.callBy(targetParams)
         }

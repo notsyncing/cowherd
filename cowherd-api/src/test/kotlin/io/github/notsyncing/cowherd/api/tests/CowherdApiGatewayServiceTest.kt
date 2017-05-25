@@ -9,6 +9,7 @@ import io.github.notsyncing.cowherd.api.tests.toys.SimpleConstructedService
 import io.github.notsyncing.cowherd.api.tests.toys.SimpleService
 import io.github.notsyncing.cowherd.models.ActionContext
 import io.github.notsyncing.cowherd.models.Pair
+import io.github.notsyncing.cowherd.models.UploadFileInfo
 import io.github.notsyncing.cowherd.service.ServiceManager
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
@@ -132,7 +133,7 @@ class CowherdApiGatewayServiceTest {
             }
 
             override fun execute(method: KCallable<*>, args: MutableMap<KParameter, Any?>, sessionIdentifier: String?,
-                                 context: ActionContext): CompletableFuture<Any?> {
+                                 context: ActionContext, uploads: List<UploadFileInfo>?): CompletableFuture<Any?> {
                 return CompletableFuture.completedFuture((method.callBy(args) as SimpleConstructedService).execute())
             }
         })
