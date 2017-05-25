@@ -55,7 +55,7 @@ object CowherdApiUtils {
                     continue
                 }
 
-                if (o?.containsKey(p.name) != null) {
+                if (o?.containsKey(p.name) == true) {
                     val sv = o[p.name].toString()
                     v = sv.toType(p.type.jvmErasure)
                 } else {
