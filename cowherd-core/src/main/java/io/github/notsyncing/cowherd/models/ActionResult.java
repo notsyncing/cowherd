@@ -1,30 +1,29 @@
 package io.github.notsyncing.cowherd.models;
 
-import java.lang.reflect.Method;
-
 public class ActionResult
 {
-    private Method actionMethod;
+    private ActionContext context;
     private Object result;
 
     public ActionResult()
     {
+        context = new ActionContext();
     }
 
-    public ActionResult(Method actionMethod, Object result)
+    public ActionResult(ActionContext context, Object result)
     {
-        this.actionMethod = actionMethod;
+        this.context = context;
         this.result = result;
     }
 
-    public Method getActionMethod()
+    public ActionContext getContext()
     {
-        return actionMethod;
+        return context;
     }
 
-    public void setActionMethod(Method actionMethod)
+    public void setContext(ActionContext context)
     {
-        this.actionMethod = actionMethod;
+        this.context = context;
     }
 
     public Object getResult()

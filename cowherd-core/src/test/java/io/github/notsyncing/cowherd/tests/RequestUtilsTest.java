@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.tests;
 
 import com.alibaba.fastjson.JSONObject;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
@@ -82,7 +83,10 @@ public class RequestUtilsTest
         params.add(new Pair<>("j", "true"));
         params.add(new Pair<>("k", "1"));
 
-        Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod2, null, params, null, null);
+        ActionContext context = new ActionContext();
+        context.setActionMethod(testMethod2);
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         assertEquals("test", results[0]);
         assertEquals(2, results[1]);
         assertArrayEquals(new String[] { "h", "el", "lo" }, ((String[])results[2]));
@@ -116,7 +120,10 @@ public class RequestUtilsTest
         List<Pair<String, String>> params = new ArrayList<>();
         params.add(new Pair<>("__json__", json));
 
-        Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod1, null, params, null, null);
+        ActionContext context = new ActionContext();
+        context.setActionMethod(testMethod1);
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         assertEquals("test", results[0]);
         assertEquals(2, results[1]);
         assertArrayEquals(new String[] { "h", "el", "lo" }, ((List<String>)results[2]).toArray(new String[0]));
@@ -296,7 +303,10 @@ public class RequestUtilsTest
         List<Pair<String, String>> params = new ArrayList<>();
         params.add(new Pair<>("a.d", ""));
 
-        Object[] results = RequestUtils.convertParameterListToMethodParameters(testMethod3, null, params, null, null);
+        ActionContext context = new ActionContext();
+        context.setActionMethod(testMethod3);
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         TestParamClass2 c = (TestParamClass2) results[0];
 
         assertNotNull(c);

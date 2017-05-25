@@ -6,6 +6,7 @@ import io.github.notsyncing.cowherd.annotations.Exported;
 import io.github.notsyncing.cowherd.annotations.ExposeAsEnum;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpAnyMethod;
 import io.github.notsyncing.cowherd.annotations.httpmethods.HttpGet;
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
@@ -31,11 +32,11 @@ public class CowherdAPIService extends CowherdService
 
     @HttpAnyMethod
     @Exported
-    public CompletableFuture gateway(String __service__, String __action__, HttpServerRequest request,
-                                     List<Pair<String, String>> __parameters__, List<HttpCookie> __cookies__,
-                                     List<UploadFileInfo> __uploads__)
+    public CompletableFuture gateway(String __service__, String __action__, ActionContext context,
+                                     HttpServerRequest request, List<Pair<String, String>> __parameters__,
+                                     List<HttpCookie> __cookies__, List<UploadFileInfo> __uploads__)
     {
-        return delegateTo(__service__, __action__, request, __parameters__, __cookies__,  __uploads__);
+        return delegateTo(__service__, __action__, context, request, __parameters__, __cookies__,  __uploads__);
     }
 
     @HttpGet

@@ -31,12 +31,15 @@ public class RequestExecutor
     private static CowherdLogger log = CowherdLogger.getInstance(RequestExecutor.class);
 
     @SuppressWarnings("unchecked")
-    public static CompletableFuture<ActionResult> executeRequestedAction(Method requestedMethod, HttpServerRequest request,
+    public static CompletableFuture<ActionResult> executeRequestedAction(ActionContext context,
                                                                          List<Pair<String, String>> parameters,
                                                                          List<HttpCookie> cookies,
                                                                          List<UploadFileInfo> uploads,
                                                                          Object... otherParams)
     {
+        Method requestedMethod = context.getActionMethod();
+        HttpServerRequest request = context.getRequest();
+
         try {
             if (requestedMethod.isAnnotationPresent(ContentType.class)) {
                 String contentType = requestedMethod.getAnnotation(ContentType.class).value();
@@ -49,8 +52,8 @@ public class RequestExecutor
             Object[] targetParams;
 
             try {
-                targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                        parameters, cookies, uploads, otherParams);
+                targetParams = RequestUtils.convertParameterListToMethodParameters(context, parameters, cookies,
+                        uploads, otherParams);
             } catch (ValidationFailedException e) {
                 return FutureUtils.failed(e);
             }
@@ -60,9 +63,9 @@ public class RequestExecutor
 
             if (result instanceof CompletableFuture) {
                 CompletableFuture f = (CompletableFuture)result;
-                return f.thenApply(r -> new ActionResult(requestedMethod, r));
+                return f.thenApply(r -> new ActionResult(context, r));
             } else {
-                ActionResult r = new ActionResult(requestedMethod, result);
+                ActionResult r = new ActionResult(context, result);
                 return CompletableFuture.completedFuture(r);
             }
         } catch (Exception e) {
@@ -72,19 +75,22 @@ public class RequestExecutor
         }
     }
 
-    public static CompletableFuture<ActionResult> executeRequestedWebSocketAction(Method requestedMethod, HttpServerRequest request,
+    public static CompletableFuture<ActionResult> executeRequestedWebSocketAction(ActionContext context,
                                                                                   List<Pair<String, String>> parameters,
                                                                                   List<HttpCookie> cookies,
                                                                                   Object... otherParams)
     {
+        Method requestedMethod = context.getActionMethod();
+        HttpServerRequest request = context.getRequest();
+
         ServerWebSocket ws = request.upgrade();
 
         try {
             Object[] targetParams;
 
             try {
-                targetParams = RequestUtils.convertParameterListToMethodParameters(requestedMethod, request,
-                        parameters, cookies, null, ws, otherParams);
+                targetParams = RequestUtils.convertParameterListToMethodParameters(context, parameters, cookies,
+                        null, ws, otherParams);
             } catch (ValidationFailedException e) {
                 return FutureUtils.failed(e);
             }
@@ -93,9 +99,9 @@ public class RequestExecutor
             Object result = requestedMethod.invoke(service, targetParams);
 
             if (result instanceof CompletableFuture) {
-                return ((CompletableFuture)result).thenApply(r -> new WebSocketActionResult(requestedMethod, null));
+                return ((CompletableFuture)result).thenApply(r -> new WebSocketActionResult(context, null));
             } else {
-                return CompletableFuture.completedFuture(new WebSocketActionResult(requestedMethod, null));
+                return CompletableFuture.completedFuture(new WebSocketActionResult(context, null));
             }
         } catch (Exception e) {
             return FutureUtils.failed(e);
@@ -208,12 +214,14 @@ public class RequestExecutor
     }
 
     @SuppressWarnings("unchecked")
-    public static CompletableFuture<ActionResult> handleRequestedAction(Method requestedAction,
+    public static CompletableFuture<ActionResult> handleRequestedAction(ActionContext context,
                                                                         List<FilterExecutionInfo> matchedFilters,
                                                                         List<Pair<String, String>> additionalParams,
                                                                         RequestContext req,
                                                                         Object... otherParams)
     {
+        Method requestedAction = context.getActionMethod();
+
         if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.getMethod())) {
             req.getResponse()
                     .setStatusCode(403)
@@ -233,13 +241,13 @@ public class RequestExecutor
             List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req.getRequest());
             final ActionResult[] result = new ActionResult[1];
 
-            FilterContext context = new FilterContext();
-            context.setRequestCookies(cookies);
-            context.setRequest(req.getRequest());
-            context.setRequestUploads(req.getUploads());
-            context.setRequestParameters(req.getParameters());
+            FilterContext filterContext = new FilterContext();
+            filterContext.setRequestCookies(cookies);
+            filterContext.setRequest(req.getRequest());
+            filterContext.setRequestUploads(req.getUploads());
+            filterContext.setRequestParameters(req.getParameters());
 
-            return executeAuthenticators(requestedAction, context)
+            return executeAuthenticators(requestedAction, filterContext)
                     .thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
                         c.setRequest(req.getRequest());
                         c.setRequestParameters(req.getParameters());
@@ -247,8 +255,8 @@ public class RequestExecutor
                         c.setRequestCookies(cookies);
                         return f.before(c);
                     }))
-                    .thenCompose(c -> executeRequestedAction(requestedAction, req.getRequest(), req.getParameters(),
-                            cookies, req.getUploads(), otherParams))
+                    .thenCompose(c -> executeRequestedAction(context, req.getParameters(), cookies, req.getUploads(),
+                            otherParams))
                     .thenCompose(r -> {
                         result[0] = r;
 
@@ -260,12 +268,14 @@ public class RequestExecutor
         });
     }
 
-    public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(Method requestedAction,
+    public static CompletableFuture<ActionResult> handleRequestedWebSocketAction(ActionContext context,
                                                                                  List<FilterExecutionInfo> matchedFilters,
                                                                                  List<Pair<String, String>> additionalParams,
                                                                                  RequestContext req,
                                                                                  Object... otherParams)
     {
+        Method requestedAction = context.getActionMethod();
+
         prepareFilters(matchedFilters);
 
         CompletableFuture<Boolean> filterChain = executeFilters(matchedFilters, ServiceActionFilter::early);
@@ -275,20 +285,20 @@ public class RequestExecutor
 
             List<HttpCookie> cookies = RequestUtils.parseHttpCookies(req.getRequest());
 
-            FilterContext context = new FilterContext();
-            context.setRequestCookies(cookies);
-            context.setRequest(req.getRequest());
-            context.setRequestParameters(req.getParameters());
+            FilterContext filterContext = new FilterContext();
+            filterContext.setRequestCookies(cookies);
+            filterContext.setRequest(req.getRequest());
+            filterContext.setRequestParameters(req.getParameters());
 
-            return executeAuthenticators(requestedAction, context)
+            return executeAuthenticators(requestedAction, filterContext)
                     .thenCompose(ab -> executeFilters(matchedFilters, (f, c) -> {
                         c.setRequest(req.getRequest());
                         c.setRequestParameters(req.getParameters());
                         c.setRequestCookies(cookies);
                         return f.before(c);
                     }))
-                    .thenCompose(c -> executeRequestedWebSocketAction(requestedAction, req.getRequest(),
-                            req.getParameters(), cookies, otherParams));
+                    .thenCompose(c -> executeRequestedWebSocketAction(context, req.getParameters(), cookies,
+                            otherParams));
         });
     }
 }

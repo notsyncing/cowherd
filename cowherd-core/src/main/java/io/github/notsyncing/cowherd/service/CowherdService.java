@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.files.FileStorage;
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
@@ -32,9 +33,9 @@ public abstract class CowherdService
      * @param uploads 要转向的文件上传信息列表
      * @return 指示是否处理完毕的 CompletableFuture 对象
      */
-    protected CompletableFuture delegateTo(String serviceName, String actionName, HttpServerRequest request,
-                                           List<Pair<String, String>> parameters, List<HttpCookie> cookies,
-                                           List<UploadFileInfo> uploads)
+    protected CompletableFuture delegateTo(String serviceName, String actionName, ActionContext context,
+                                           HttpServerRequest request, List<Pair<String, String>> parameters,
+                                           List<HttpCookie> cookies, List<UploadFileInfo> uploads)
     {
         Method m = ServiceManager.getServiceAction(serviceName, actionName);
 
@@ -47,7 +48,9 @@ public abstract class CowherdService
             return CompletableFuture.completedFuture(null);
         }
 
-        return RequestExecutor.executeRequestedAction(m, request, parameters, cookies, uploads)
+        context.setActionMethod(m);
+
+        return RequestExecutor.executeRequestedAction(context, parameters, cookies, uploads)
                 .thenApply(ActionResult::getResult);
     }
 

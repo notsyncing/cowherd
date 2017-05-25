@@ -189,8 +189,10 @@ public class RouteManager
         return filters;
     }
 
-    public static CompletableFuture<ActionResult> handleRequest(HttpServerRequest request)
+    public static CompletableFuture<ActionResult> handleRequest(ActionContext context)
     {
+        HttpServerRequest request = context.getRequest();
+
         log.d("Request: " + request.path());
 
         return RequestUtils.toRequestContext(request).thenCompose(req -> {
@@ -268,11 +270,13 @@ public class RouteManager
                 }
             }
 
+            context.setActionMethod(m);
+
             if (r.getType() == RouteType.Http) {
-                return RequestExecutor.handleRequestedAction(m, findMatchedFilters(uri, m),
+                return RequestExecutor.handleRequestedAction(context, findMatchedFilters(uri, m),
                         p.getRouteParameters(), req, r.getOtherParameters());
             } else if (r.getType() == RouteType.WebSocket) {
-                return RequestExecutor.handleRequestedWebSocketAction(m, findMatchedFilters(uri, m),
+                return RequestExecutor.handleRequestedWebSocketAction(context, findMatchedFilters(uri, m),
                         p.getRouteParameters(), req, r.getOtherParameters());
             }
 

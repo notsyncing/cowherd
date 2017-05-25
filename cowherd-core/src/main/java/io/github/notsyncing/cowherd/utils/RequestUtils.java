@@ -9,6 +9,7 @@ import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
+import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RequestContext;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
@@ -108,12 +109,15 @@ public class RequestUtils
         return param.getName();
     }
 
-    public static Object[] convertParameterListToMethodParameters(Method method, HttpServerRequest req,
+    public static Object[] convertParameterListToMethodParameters(ActionContext context,
                                                                   List<Pair<String, String>> params,
                                                                   List<HttpCookie> cookies,
                                                                   List<UploadFileInfo> uploads,
                                                                   Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException
     {
+        Method method = context.getActionMethod();
+        HttpServerRequest req = context.getRequest();
+
         Parameter[] pl = method.getParameters();
 
         if ((pl == null) || (pl.length <= 0)) {
@@ -200,6 +204,8 @@ public class RequestUtils
                 } else {
                     targetParams[i] = null;
                 }
+            } else if (methodParam.getType() == ActionContext.class) {
+                targetParams[i] = context;
             } else if (methodParam.getType() == HttpServerRequest.class) {
                 targetParams[i] = req;
             } else if (methodParam.getType() == HttpServerResponse.class) {

@@ -88,7 +88,11 @@ public class CowherdServer
 
         long reqTimeStart = System.currentTimeMillis();
 
-        return RouteManager.handleRequest(req).thenAccept(o -> {
+        ActionContext context = new ActionContext();
+        context.setServer(this);
+        context.setRequest(req);
+
+        return RouteManager.handleRequest(context).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
                 logAccess(req, accessLog);
                 return;
@@ -104,7 +108,7 @@ public class CowherdServer
             }
 
             if (!req.response().ended()) {
-                writeObjectToResponse(req, o);
+                writeObjectToResponse(context, o);
             }
 
             long reqTimeEnd = System.currentTimeMillis();
@@ -152,16 +156,13 @@ public class CowherdServer
         logAccess(req, accessLog, 0);
     }
 
-    private void writeObjectToResponse(HttpServerRequest req, ActionResult o)
+    private void writeObjectToResponse(ActionContext context, ActionResult o)
     {
+        HttpServerRequest req = context.getRequest();
+
         String ret;
 
         if (o.getResult() instanceof ActionResponse) {
-            ActionContext context = new ActionContext();
-            context.setActionMethod(o.getActionMethod());
-            context.setServer(this);
-            context.setRequest(req);
-
             try {
                 ((ActionResponse)o.getResult()).writeToResponse(context);
             } catch (IOException e) {
