@@ -552,6 +552,13 @@ public class RequestUtils
                 return;
             }
 
+            if ((upload.filename() == null) || (upload.filename().isEmpty())) {
+                if (upload.size() == 0) {
+                    uf.complete(null);
+                    return;
+                }
+            }
+
             File f;
 
             try {
