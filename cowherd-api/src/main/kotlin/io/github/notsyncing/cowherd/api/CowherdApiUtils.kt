@@ -28,7 +28,7 @@ object CowherdApiUtils {
         } else if (type == Short::class) {
             return str.toShort()
         } else {
-            return JSON.parseObject(str, type.java)
+            return JSON.parseObject("\"$str\"", type.java)
         }
     }
 
