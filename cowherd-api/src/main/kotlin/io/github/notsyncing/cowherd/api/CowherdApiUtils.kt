@@ -28,7 +28,17 @@ object CowherdApiUtils {
         } else if (type == Short::class) {
             return str.toShort()
         } else {
-            return JSON.parseObject("\"$str\"", type.java)
+            val s: String
+
+            if ((str.startsWith("[")) && (str.endsWith("]"))) {
+                s = str
+            } else if ((str.startsWith("{")) && (str.endsWith("}"))) {
+                s = str
+            } else {
+                s = "\"$str\""
+            }
+
+            return JSON.parseObject(s, type.java)
         }
     }
 
