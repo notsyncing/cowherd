@@ -4,6 +4,7 @@ import io.github.notsyncing.cowherd.CowherdPart
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration
 import io.github.notsyncing.cowherd.models.RouteInfo
 import io.github.notsyncing.cowherd.service.ServiceManager
+import io.github.notsyncing.cowherd.utils.ConfigUtils
 import io.vertx.core.json.JsonObject
 import java.io.IOException
 import java.io.InputStream
@@ -34,6 +35,8 @@ class CowherdServerRendererPart : CowherdPart {
 
         if (config == null) {
             config = defConfig
+        } else {
+            config = ConfigUtils.merge(config, defConfig)
         }
 
         this.config = config
