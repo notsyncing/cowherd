@@ -71,6 +71,7 @@ class CowherdServerRendererPart : CowherdPart {
 
         phantomProcess = ProcessBuilder()
                 .command(binPath.toString(), js.toAbsolutePath().toString())
+                .apply { this.environment().put("QT_QPA_PLATFORM", "offscreen") }
                 .inheritIO()
                 .start()
 
