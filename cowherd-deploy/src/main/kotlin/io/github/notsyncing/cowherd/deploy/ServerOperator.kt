@@ -436,6 +436,18 @@ class ServerOperator(private val host: String, private val port: Int, private va
         val nginxConfDir = "/etc/nginx/sites-available"
         val appNginxConfDir = "/data/$name/configs/nginx"
 
+        try {
+            keepSftp().stat(appNginxConfDir)
+        } catch (e: SftpException) {
+            if (e.status == SftpConstants.SSH_FX_NO_SUCH_FILE) {
+                println("App $name has no nginx config.")
+
+                return
+            } else {
+                throw e
+            }
+        }
+
         keepSftp().openDir(appNginxConfDir).use {
             keepSftp().listDir(it)
                     .filter { !it.filename.startsWith(".") }
