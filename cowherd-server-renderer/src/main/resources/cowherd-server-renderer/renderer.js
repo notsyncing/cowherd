@@ -1,27 +1,62 @@
-var page = require("webpage").create();
+var webpage = require("webpage");
 var system = require("system");
 var server = require("webserver");
 
-page.onConsoleMessage = function (msg, ln, sid) {
-    console.log("CONSOLE: " + ln + ": " + msg + " (" + sid + ")");
-};
+function createPage() {
+    var page = webpage.create();
 
-page.onInitialized = function () {
-    page.evaluate(function () {
-        document.addEventListener("DOMContentLoaded", function () {
-            var injectedScript = "window.callPhantom();";
-            var elem = document.createElement("script");
-            elem.appendChild(document.createTextNode(injectedScript));
-            document.body.appendChild(elem);
-        }, false);
-    });
-};
+    page.onConsoleMessage = function (msg, ln, sid) {
+        console.log("CONSOLE: " + ln + ": " + msg + " (" + sid + ")");
+    };
+
+    page.onError = function(msg, trace) {
+        var msgStack = ['ERROR: ' + msg];
+
+        if (trace && trace.length) {
+            msgStack.push('TRACE:');
+            trace.forEach(function(t) {
+                msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function +'")' : ''));
+            });
+        }
+
+        console.error(msgStack.join('\n'));
+    };
+
+    page.onInitialized = function () {
+        page.evaluate(function () {
+            document.addEventListener("DOMContentLoaded", function () {
+                if (document.querySelector(".cowherd-server-renderer-self-call")) {
+                    console.info("Self call flag found, wait for app to call renderer.");
+                    return;
+                }
+
+                var injectedScript = "window.callPhantom();";
+                var elem = document.createElement("script");
+                elem.appendChild(document.createTextNode(injectedScript));
+                document.body.appendChild(elem);
+            }, false);
+        });
+    };
+
+    return page;
+}
 
 function fetchUrl(urlToFetch, callback) {
+    urlToFetch = decodeURIComponent(urlToFetch);
+
     console.info("Fetching url " + urlToFetch);
+
+    var timeoutTimer;
+    var stop = false;
+
+    var page = createPage();
 
     page.onCallback = function (data) {
         console.info("Callback from page!");
+
+        setTimeout(function () {
+            page.close();
+        }, 0);
 
         if (stop) {
             console.warn("Page " + urlToFetch + " fetched successfully after timeout!");
@@ -35,10 +70,13 @@ function fetchUrl(urlToFetch, callback) {
         callback(page.content);
     };
 
-    var stop = false;
-
-    var timeoutTimer = setTimeout(function () {
+    timeoutTimer = setTimeout(function () {
         stop = true;
+
+        setTimeout(function () {
+            page.close();
+        }, 0);
+
         callback(Error("Wait for fetching of URL " + urlToFetch + " time out!"));
     }, 5000);
 
@@ -130,6 +168,10 @@ var service = s.listen(46317, function (req, resp) {
             resp.statusCode = 200;
             resp.setHeader("Content-Type", "text/html");
             resp.write("Alive");
+            resp.close();
+        } else {
+            resp.statusCode = 404;
+            resp.write("404 Not found");
             resp.close();
         }
     } catch (e) {

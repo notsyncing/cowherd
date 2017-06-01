@@ -76,7 +76,7 @@ class CowherdServerRendererPart : CowherdPart {
 
         Connector.port = port
 
-        if (!Connector.ping(3, 2000)) {
+        if (!Connector.ping(3, 5000)) {
             println("Warning: Timeout waiting for renderer!")
         } else {
             println("PhantomJS renderer started.")

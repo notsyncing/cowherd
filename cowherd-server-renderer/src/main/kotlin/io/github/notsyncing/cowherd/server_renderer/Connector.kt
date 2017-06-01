@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.server_renderer
 import com.mashape.unirest.http.Unirest
 import kotlinx.coroutines.experimental.future.future
 import java.io.IOException
+import java.net.URLEncoder
 
 object Connector {
     var port: Int = 46317
@@ -38,7 +39,7 @@ object Connector {
     }
 
     fun get(href: String) = future<String> {
-        val r = Unirest.get("http://localhost:$port/get?url=$href")
+        val r = Unirest.get("http://localhost:$port/get?url=${URLEncoder.encode(href, "utf-8")}")
                 .asString()
 
         if (r.status != 200) {
