@@ -78,7 +78,7 @@ function fetchUrl(urlToFetch, callback) {
         }, 0);
 
         callback(Error("Wait for fetching of URL " + urlToFetch + " time out!"));
-    }, 5000);
+    }, 10000);
 
     page.open(urlToFetch, function (status) {
         console.info("Status changed to " + status);

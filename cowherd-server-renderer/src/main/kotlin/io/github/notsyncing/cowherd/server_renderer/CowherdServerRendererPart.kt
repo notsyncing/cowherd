@@ -3,6 +3,7 @@ package io.github.notsyncing.cowherd.server_renderer
 import io.github.notsyncing.cowherd.CowherdPart
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration
 import io.github.notsyncing.cowherd.models.RouteInfo
+import io.github.notsyncing.cowherd.server.CowherdLogger
 import io.github.notsyncing.cowherd.service.ServiceManager
 import io.github.notsyncing.cowherd.utils.ConfigUtils
 import io.vertx.core.json.JsonObject
@@ -13,13 +14,13 @@ import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.TimeUnit
 
-
-
 class CowherdServerRendererPart : CowherdPart {
     private val defConfig = JsonObject()
     private lateinit var config: JsonObject
     private var phantomProcess: Process? = null
     private var phantomTmp: Path? = null
+
+    private val logger = CowherdLogger.getInstance(this)
 
     init {
         defConfig.put("urlPrefix", "se")
@@ -61,7 +62,7 @@ class CowherdServerRendererPart : CowherdPart {
         val port = conf.getInteger("port")
 
         if (!Files.exists(binPath)) {
-            println("Warning: PhantomJS not found at $binPath, please install it!")
+            logger.w("PhantomJS not found at $binPath, please install it!")
             return
         }
 
@@ -78,9 +79,9 @@ class CowherdServerRendererPart : CowherdPart {
         Connector.port = port
 
         if (!Connector.ping(3, 5000)) {
-            println("Warning: Timeout waiting for renderer!")
+            logger.w("Timeout waiting for renderer!")
         } else {
-            println("PhantomJS renderer started.")
+            logger.i("PhantomJS renderer started.")
         }
     }
 

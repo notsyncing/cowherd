@@ -1,12 +1,17 @@
 package io.github.notsyncing.cowherd.server_renderer
 
 import com.mashape.unirest.http.Unirest
+import io.github.notsyncing.cowherd.server.CowherdLogger
+import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
 import java.io.IOException
 import java.net.URLEncoder
+import java.util.concurrent.CompletableFuture
 
 object Connector {
     var port: Int = 46317
+
+    private val logger = CowherdLogger.getInstance(this)
 
     fun ping(): Boolean {
         val ret = Unirest.get("http://localhost:$port/ping")
@@ -39,14 +44,18 @@ object Connector {
     }
 
     fun get(href: String) = future<String> {
-        val r = Unirest.get("http://localhost:$port/get?url=${URLEncoder.encode(href, "utf-8")}")
-                .asString()
+        logger.i("Cowherd server renderer: get $href")
 
-        if (r.status != 200) {
-            throw IOException("Failed to fetch $href: ${r.statusText} {${r.body}}")
-        }
+        CompletableFuture.supplyAsync {
+            val r = Unirest.get("http://localhost:$port/get?url=${URLEncoder.encode(href, "utf-8")}")
+                    .asString()
 
-        r.body
+            if (r.status != 200) {
+                throw IOException("Failed to fetch $href: ${r.statusText} {${r.body}}")
+            }
+
+            r.body
+        }.await()
     }
 
     fun exit() = future {
