@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult;
+import io.github.notsyncing.cowherd.annotations.NoAutoRegister;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.routing.RouteManager;
@@ -169,7 +170,13 @@ public class Cowherd
         s.getNamesOfSubclassesOf(CowherdService.class)
                 .forEach(c -> {
                     try {
-                        ServiceManager.addServiceClass((Class)Class.forName(c));
+                        Class clazz = Class.forName(c);
+
+                        if (clazz.isAnnotationPresent(NoAutoRegister.class)) {
+                            return;
+                        }
+
+                        ServiceManager.addServiceClass(clazz);
                     } catch (ClassNotFoundException e) {
                         log.w("Failed to load service class " + c + ": class not found: " + e.getMessage());
                     }
