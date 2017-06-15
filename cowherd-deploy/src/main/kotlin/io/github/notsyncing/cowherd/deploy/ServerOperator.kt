@@ -607,9 +607,13 @@ class ServerOperator(private val host: String, private val port: Int, private va
     }
 
     fun updateAppWeb(appConfig: AppDeployConfig): String {
-        val currConf = readAppConfig(appConfig.name)
-
         syncAppWeb(appConfig)
+
+        return ""
+    }
+
+    fun updateAppExceptDocker(appConfig: AppDeployConfig): String {
+        syncApp(appConfig, true)
 
         return ""
     }
