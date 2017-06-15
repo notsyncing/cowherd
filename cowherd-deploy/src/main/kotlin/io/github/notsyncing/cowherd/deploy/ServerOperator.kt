@@ -261,6 +261,20 @@ class ServerOperator(private val host: String, private val port: Int, private va
         return rsync.waitFor()
     }
 
+    private fun syncAppWeb(appConfig: AppDeployConfig) {
+        if (appConfig.directories.web != null) {
+            println("Copying web data...")
+
+            val r = syncCopy(appConfig.directories.absWeb, "/data/${appConfig.name}/web")
+
+            if (r != 0) {
+                throw IOException("rsync failed with exit code $r")
+            }
+
+            println("Done")
+        }
+    }
+
     private fun syncApp(appConfig: AppDeployConfig, skipData: Boolean = false) {
         println("Copying root data...")
 
@@ -272,17 +286,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
         println("Done.")
 
-        if (appConfig.directories.web != null) {
-            println("Copying web data...")
-
-            r = syncCopy(appConfig.directories.absWeb, "/data/${appConfig.name}/web")
-
-            if (r != 0) {
-                throw IOException("rsync failed with exit code $r")
-            }
-
-            println("Done")
-        }
+        syncAppWeb(appConfig)
 
         if (!skipData) {
             if (appConfig.directories.data != null) {
@@ -600,6 +604,14 @@ class ServerOperator(private val host: String, private val port: Int, private va
         updateAppConfig(appConfig.name, currConf)
 
         return newContainerId
+    }
+
+    fun updateAppWeb(appConfig: AppDeployConfig): String {
+        val currConf = readAppConfig(appConfig.name)
+
+        syncAppWeb(appConfig)
+
+        return ""
     }
 
     fun deleteApp(name: String) {

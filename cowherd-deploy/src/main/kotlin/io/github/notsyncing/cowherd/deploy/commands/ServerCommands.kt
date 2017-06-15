@@ -91,6 +91,14 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
     }
 
     @Command
+    fun updateAppWeb(appConfigFileOrDir: String) {
+        val appConf = getAppConfig(appConfigFileOrDir)
+        server!!.updateAppWeb(appConf)
+
+        println("App ${appConf.name} web updated.")
+    }
+
+    @Command
     fun deleteApp(name: String) {
         server!!.deleteApp(name)
 
