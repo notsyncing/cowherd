@@ -7,6 +7,7 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.exceptions.ParameterProcessException;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.ActionContext;
@@ -113,8 +114,7 @@ public class RequestUtils
                                                                   List<Pair<String, String>> params,
                                                                   List<HttpCookie> cookies,
                                                                   List<UploadFileInfo> uploads,
-                                                                  Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException
-    {
+                                                                  Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException, ParameterProcessException {
         Method method = context.getActionMethod();
         HttpServerRequest req = context.getRequest();
 
@@ -138,41 +138,46 @@ public class RequestUtils
         List<Pair<String, String>> complexParamPairs = new ArrayList<>();
 
         for (Pair<String, String> reqParam : params) {
-            if (reqParam.getKey().equals("__json__")) {
-                jsonParams = JSON.parseObject(reqParam.getValue());
-            } else if (reqParam.getKey().equals("__body__")) {
-                bodyParam = reqParam.getValue();
-            }
-
-            if ((reqParam.getKey().contains(".")) || (reqParam.getKey().contains("["))) {
-                complexParamPairs.add(reqParam);
-                continue;
-            }
-
-            if (!methodParamMap.containsKey(reqParam.getKey())) {
-                continue;
-            }
-
-            Parameter methodParam = methodParamMap.get(reqParam.getKey());
-            int methodParamIndex = methodParams.indexOf(methodParam);
-
-            if (methodParam.getType().isEnum()) {
-                int e = Integer.parseInt(reqParam.getValue());
-
-                if (e < 0) {
-                    targetParams[methodParamIndex] = null;
-                } else {
-                    targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[e];
+            try {
+                if (reqParam.getKey().equals("__json__")) {
+                    jsonParams = JSON.parseObject(reqParam.getValue());
+                } else if (reqParam.getKey().equals("__body__")) {
+                    bodyParam = reqParam.getValue();
                 }
-            } else if (methodParam.getType().isArray()) {
-                List<String> values = params.stream()
-                        .filter(p -> p.getKey().equals(reqParam.getKey()))
-                        .map(Pair::getValue)
-                        .collect(Collectors.toList());
 
-                targetParams[methodParamIndex] = TypeUtils.stringListToArrayType(methodParam.getType().getComponentType(), values);
-            } else {
-                targetParams[methodParamIndex] = TypeUtils.stringToType(methodParam.getType(), reqParam.getValue());
+                if ((reqParam.getKey().contains(".")) || (reqParam.getKey().contains("["))) {
+                    complexParamPairs.add(reqParam);
+                    continue;
+                }
+
+                if (!methodParamMap.containsKey(reqParam.getKey())) {
+                    continue;
+                }
+
+                Parameter methodParam = methodParamMap.get(reqParam.getKey());
+                int methodParamIndex = methodParams.indexOf(methodParam);
+
+                if (methodParam.getType().isEnum()) {
+                    int e = Integer.parseInt(reqParam.getValue());
+
+                    if (e < 0) {
+                        targetParams[methodParamIndex] = null;
+                    } else {
+                        targetParams[methodParamIndex] = methodParam.getType().getEnumConstants()[e];
+                    }
+                } else if (methodParam.getType().isArray()) {
+                    List<String> values = params.stream()
+                            .filter(p -> p.getKey().equals(reqParam.getKey()))
+                            .map(Pair::getValue)
+                            .collect(Collectors.toList());
+
+                    targetParams[methodParamIndex] = TypeUtils.stringListToArrayType(methodParam.getType().getComponentType(), values);
+                } else {
+                    targetParams[methodParamIndex] = TypeUtils.stringToType(methodParam.getType(), reqParam.getValue());
+                }
+            } catch (Exception e) {
+                throw new ParameterProcessException("Error occured when processing parameter " + reqParam.getKey() +
+                        " (value " + reqParam.getValue() + ") of method " + method.getName(), e);
             }
         }
 
