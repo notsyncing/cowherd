@@ -2,10 +2,8 @@ package io.github.notsyncing.cowherd.api
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
-import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
-import kotlin.reflect.jvm.jvmErasure
 
 object CowherdApiUtils {
     fun stringToType(str: String, type: KClass<*>): Any? {
@@ -44,39 +42,39 @@ object CowherdApiUtils {
 
     private fun String.toType(type: KClass<*>) = stringToType(this, type)
 
-    fun expandJsonToMethodParameters(method: KCallable<*>, o: JSONObject?, self: Any?,
-                                     specialTypeParameterHandler: ((KParameter) -> Any?)? = null): MutableMap<KParameter, Any?> {
+    fun expandJsonToMethodParameters(info: MethodCallInfo, o: JSONObject?, self: Any?,
+                                     specialTypeParameterHandler: ((MethodParameterInfo) -> Any?)? = null): MutableMap<KParameter, Any?> {
         val targetParams = mutableMapOf<KParameter, Any?>()
-        val params = method.parameters
+        val params = info.methodParameters
 
         if (!params.isEmpty()) {
             for (p in params) {
-                if (p.kind == KParameter.Kind.INSTANCE) {
-                    targetParams[p] = self
+                if (p.parameter.kind == KParameter.Kind.INSTANCE) {
+                    targetParams[p.parameter] = self
                     continue
-                } else if (p.kind != KParameter.Kind.VALUE) {
+                } else if (p.parameter.kind != KParameter.Kind.VALUE) {
                     continue
                 }
 
                 var v = specialTypeParameterHandler?.invoke(p)
 
                 if (v != null) {
-                    targetParams[p] = v
+                    targetParams[p.parameter] = v
                     continue
                 }
 
-                if (o?.containsKey(p.name) == true) {
-                    val sv = o[p.name].toString()
-                    v = sv.toType(p.type.jvmErasure)
+                if (o?.containsKey(p.parameter.name) == true) {
+                    val sv = o[p.parameter.name].toString()
+                    v = sv.toType(p.jvmErasure)
                 } else {
-                    if (p.isOptional) {
+                    if (p.optional) {
                         continue
                     }
 
                     v = null
                 }
 
-                targetParams[p] = v
+                targetParams[p.parameter] = v
             }
         }
 

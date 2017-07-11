@@ -16,7 +16,6 @@ import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.jvm.jvmErasure
 
 class CowherdApiGatewayService : CowherdService() {
     companion object {
@@ -41,15 +40,21 @@ class CowherdApiGatewayService : CowherdService() {
                 @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
                 @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
         val actionPath = stripParameters(path)
-        val parts = actionPath.split("/")
+        var serviceClassNamePartEnd = actionPath.indexOf("/")
 
-        if (parts.isEmpty()) {
+        if (serviceClassNamePartEnd < 0) {
+            serviceClassNamePartEnd = actionPath.length
+        }
+
+        val serviceClassNamePart = actionPath.substring(0, serviceClassNamePartEnd)
+
+        if (serviceClassNamePart.isNullOrEmpty()) {
             return FutureUtils.failed(IllegalArgumentException("This request to API gateway has invalid path: $actionPath"))
         }
 
         val (pt, paramStr) = getEncodedParameters(__parameters__)
 
-        val serviceClassName = URLDecoder.decode(parts[0], "utf-8")
+        val serviceClassName = serviceClassNamePart
 
         if (serviceClassName.compareTo("new_session", true) == 0) {
             val session = newSession()
@@ -67,12 +72,23 @@ class CowherdApiGatewayService : CowherdService() {
             return CompletableFuture.completedFuture(session)
         }
 
-        val serviceMethodName = if (parts.size > 1) parts[1] else DEFAULT_SERVICE_METHOD
+        val serviceMethodNamePartStart = serviceClassNamePartEnd + 1
+        var serviceMethodNamePartEnd = actionPath.indexOf("/", serviceMethodNamePartStart)
+
+        if (serviceMethodNamePartEnd < 0) {
+            serviceMethodNamePartEnd = actionPath.length
+        }
+
+        val serviceMethodName = if ((serviceMethodNamePartEnd > 0) && (serviceMethodNamePartStart < serviceMethodNamePartEnd))
+            path.substring(serviceMethodNamePartStart, serviceMethodNamePartEnd)
+        else
+            DEFAULT_SERVICE_METHOD
 
         val service = CowherdApiHub.getInstance(serviceClassName)
 
         if (service == null) {
-            return FutureUtils.failed(IllegalArgumentException("Service class $serviceClassName not found, maybe not published or revoked?"))
+            val decodedServiceClassName = URLDecoder.decode(serviceClassName, "utf-8")
+            return FutureUtils.failed(IllegalArgumentException("Service class $decodedServiceClassName not found, maybe not published or revoked?"))
         }
 
         if (service is ApiExecutor) {
@@ -85,34 +101,26 @@ class CowherdApiGatewayService : CowherdService() {
             }
         }
 
-        val actionId = "$serviceClassName.$serviceMethodName"
+        val actionId = "${service.javaClass.name}.$serviceMethodName"
         var serviceMethodInfo = methodCache[actionId]
 
         if (serviceMethodInfo == null) {
-            val m = if (serviceMethodName == DEFAULT_SERVICE_METHOD)
-                if (service is ApiExecutor)
-                    service.getDefaultMethod()
-                else
-                    service.javaClass.kotlin.members.firstOrNull { it.annotations.any { it.javaClass == DefaultApiMethod::class.java } }
-            else
-                service.javaClass.kotlin.members.firstOrNull { it.name == serviceMethodName }
+            serviceMethodInfo = makeMethodCallInfo(actionId, serviceMethodName, service)
 
-            if (m == null) {
-                return FutureUtils.failed(IllegalArgumentException("Method $serviceMethodName of service class $serviceClassName not found!"))
+            if (serviceMethodInfo == null) {
+                val decodedServiceClassName = URLDecoder.decode(serviceClassName, "utf-8")
+                throw IllegalArgumentException("Method $serviceMethodName of service class $decodedServiceClassName not found!")
             }
 
-            val info = MethodCallInfo(m)
-
-            serviceMethodInfo = info
-            methodCache[actionId] = info
+            methodCache[actionId] = serviceMethodInfo
         }
 
         val jsonObject = JSON.parseObject(paramStr)
 
-        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo.method, jsonObject, service) { p ->
-            if (p.type.jvmErasure.java == UploadFileInfo::class.java) {
-                __uploads__?.firstOrNull { it.parameterName == p.name }
-            } else if (p.type.jvmErasure.java == ActionContext::class.java) {
+        val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo, jsonObject, service) { p ->
+            if (p.jvmErasure.java == UploadFileInfo::class.java) {
+                __uploads__?.firstOrNull { it.parameterName == p.parameter.name }
+            } else if (p.jvmErasure.java == ActionContext::class.java) {
                 context
             } else {
                 null
@@ -143,6 +151,22 @@ class CowherdApiGatewayService : CowherdService() {
         } else {
             return CompletableFuture.completedFuture(o)
         }
+    }
+
+    private fun makeMethodCallInfo(actionId: String, serviceMethodName: String, service: Any): MethodCallInfo? {
+        val m = if (serviceMethodName == DEFAULT_SERVICE_METHOD)
+            if (service is ApiExecutor)
+                service.getDefaultMethod()
+            else
+                service.javaClass.kotlin.members.firstOrNull { it.annotations.any { it.javaClass == DefaultApiMethod::class.java } }
+        else
+            service.javaClass.kotlin.members.firstOrNull { it.name == serviceMethodName }
+
+        if (m == null) {
+            return null
+        }
+
+        return MethodCallInfo(m)
     }
 
     private fun stripParameters(path: String): String {

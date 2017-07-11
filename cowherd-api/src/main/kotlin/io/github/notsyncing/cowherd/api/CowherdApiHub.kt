@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.api
 
+import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 
 typealias InstanceWrapper = (Class<*>) -> Any
@@ -29,11 +30,16 @@ object CowherdApiHub {
 
     fun publish(serviceName: String, executor: ApiExecutor) {
         hub[serviceName] = executor
+        hub[URLEncoder.encode(serviceName, "utf-8")] = executor
     }
 
     fun revoke(serviceName: String) {
         hub.remove(serviceName)
         instanceWrappers.remove(serviceName)
+
+        val encoded = URLEncoder.encode(serviceName, "utf-8")
+        hub.remove(encoded)
+        instanceWrappers.remove(encoded)
     }
 
     fun revoke(serviceClass: Class<*>) {
@@ -45,7 +51,11 @@ object CowherdApiHub {
     }
 
     fun getClass(serviceClassName: String): Class<Any> {
-        val s = hub[serviceClassName]
+        var s = hub[serviceClassName]
+
+        if (s == null) {
+            s = hub[URLEncoder.encode(serviceClassName, "utf-8")]
+        }
 
         if (s is Class<*>) {
             return s as Class<Any>
@@ -55,7 +65,11 @@ object CowherdApiHub {
     }
 
     fun getInstance(serviceClassName: String): Any? {
-        val s = hub[serviceClassName]
+        var s = hub[serviceClassName]
+
+        if (s == null) {
+            s = hub[URLEncoder.encode(serviceClassName, "utf-8")]
+        }
 
         if (s is Class<*>) {
             if (instanceWrappers.containsKey(s.name)) {
