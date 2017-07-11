@@ -64,7 +64,7 @@ public class ViewResponse<T> implements ActionResponse
     {
         CompletableFuture future = new CompletableFuture();
         TemplateEngine eng = CowherdThymeleafPart.templateEngine;
-        Method action = context.getActionMethod();
+        Method action = context.getActionMethod().getMethod();
         HttpServerResponse resp = context.getRequest().response();
 
         if (!CowherdConfiguration.isEveryHtmlIsTemplate()) {

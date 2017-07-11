@@ -1,6 +1,7 @@
 package io.github.notsyncing.cowherd.files;
 
 import io.github.notsyncing.cowherd.commons.RouteType;
+import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.models.UploadFileInfo;
 import io.github.notsyncing.cowherd.routing.RouteManager;
@@ -234,7 +235,7 @@ public class FileStorage
             return;
         }
 
-        RouteManager.addRoute(route, m);
+        RouteManager.addRoute(route, new ActionMethodInfo(m));
     }
 
     /**

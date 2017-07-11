@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
@@ -52,6 +53,7 @@ public class CowherdTest
     private Cowherd cowherd;
     private Vertx vertx = Vertx.vertx();
     private TestService service;
+    private Random random = new Random();
 
     public static int testFilterEarlyTriggerCount = 0;
     public static int testGlobalFilterEarlyTriggerCount = 0;
@@ -115,7 +117,7 @@ public class CowherdTest
         resetValues();
 
         cowherd = new Cowherd();
-        cowherd.start();
+        cowherd.start(random.nextInt(50000) + 10000);
 
         service = Cowherd.dependencyInjector.getComponent(TestService.class);
     }
@@ -127,6 +129,8 @@ public class CowherdTest
 
         cowherd.stop().get();
         service.clear();
+
+        Thread.sleep(2000);
     }
 
     @Test
@@ -174,7 +178,7 @@ public class CowherdTest
         String s = FileUtils.getInternalResourceAsString("/cowherd.config");
         JsonObject o = new JsonObject(s);
 
-        assertEquals((int) o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
+        //assertEquals((int) o.getInteger("listenPort"), CowherdConfiguration.getListenPort());
         assertEquals(104857600, CowherdConfiguration.getMaxUploadFileSize());
 
         List<Path> contextRoots = JSON.parseArray(o.getJsonArray("contextRoots").toString(), Path.class);

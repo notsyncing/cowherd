@@ -37,7 +37,7 @@ public class RequestExecutor
                                                                          List<UploadFileInfo> uploads,
                                                                          Object... otherParams)
     {
-        Method requestedMethod = context.getActionMethod();
+        Method requestedMethod = context.getActionMethod().getMethod();
         HttpServerRequest request = context.getRequest();
 
         try {
@@ -80,7 +80,7 @@ public class RequestExecutor
                                                                                   List<HttpCookie> cookies,
                                                                                   Object... otherParams)
     {
-        Method requestedMethod = context.getActionMethod();
+        Method requestedMethod = context.getActionMethod().getMethod();
         HttpServerRequest request = context.getRequest();
 
         ServerWebSocket ws = request.upgrade();
@@ -220,7 +220,7 @@ public class RequestExecutor
                                                                         RequestContext req,
                                                                         Object... otherParams)
     {
-        Method requestedAction = context.getActionMethod();
+        Method requestedAction = context.getActionMethod().getMethod();
 
         if (!RequestUtils.checkIfHttpMethodIsAllowedOnAction(requestedAction, req.getMethod())) {
             req.getResponse()
@@ -274,7 +274,7 @@ public class RequestExecutor
                                                                                  RequestContext req,
                                                                                  Object... otherParams)
     {
-        Method requestedAction = context.getActionMethod();
+        Method requestedAction = context.getActionMethod().getMethod();
 
         prepareFilters(matchedFilters);
 

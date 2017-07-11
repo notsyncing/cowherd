@@ -3,13 +3,13 @@ package io.github.notsyncing.cowherd.service;
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.InstantiateType;
 import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
+import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.routing.RouteManager;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -106,7 +106,7 @@ public class ServiceManager
         }
     }
 
-    public static Method getServiceAction(String serviceName, String actionName)
+    public static ActionMethodInfo getServiceAction(String serviceName, String actionName)
     {
         if ((serviceName == null) || (actionName == null)) {
             return null;
@@ -118,13 +118,7 @@ public class ServiceManager
                 .findFirst()
                 .orElse(null);
 
-        for (Method m : info.getServiceClass().getMethods()) {
-            if (m.getName().equals(actionName)) {
-                return m;
-            }
-        }
-
-        return null;
+        return info.getMethodMap().get(actionName);
     }
 
     public static boolean isServiceClassAdded(Class<? extends CowherdService> serviceClass)

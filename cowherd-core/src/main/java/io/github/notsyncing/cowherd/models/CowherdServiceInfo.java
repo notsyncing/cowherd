@@ -1,8 +1,11 @@
 package io.github.notsyncing.cowherd.models;
 
 import io.github.notsyncing.cowherd.annotations.Namespace;
-import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
+import io.github.notsyncing.cowherd.service.CowherdService;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class CowherdServiceInfo
 {
@@ -13,6 +16,7 @@ public class CowherdServiceInfo
     private String namespace;
     private String name;
     private String fullName;
+    private ConcurrentHashMap<String, ActionMethodInfo> methodMap = new ConcurrentHashMap<>();
 
     public Class<? extends CowherdService> getServiceClass()
     {
@@ -29,6 +33,9 @@ public class CowherdServiceInfo
 
         this.name = serviceClass.getSimpleName();
         this.fullName = serviceClass.getName();
+
+        Stream.of(serviceClass.getMethods())
+                .forEach(m -> methodMap.put(m.getName(), new ActionMethodInfo(m)));
     }
 
     public CowherdService getServiceInstance()
@@ -76,5 +83,9 @@ public class CowherdServiceInfo
     public String getFullName()
     {
         return fullName;
+    }
+
+    public ConcurrentHashMap<String, ActionMethodInfo> getMethodMap() {
+        return methodMap;
     }
 }

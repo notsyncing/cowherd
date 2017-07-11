@@ -36,13 +36,13 @@ import java.util.stream.Stream;
 
 public class RouteManager
 {
-    private static Map<RouteInfo, Method> routes = new ConcurrentSkipListMap<>();
+    private static Map<RouteInfo, ActionMethodInfo> routes = new ConcurrentSkipListMap<>();
     //private static Map<RouteInfo, Method> routes = new ConcurrentHashMap<>();
 
     private static CowherdLogger log = CowherdLogger.getInstance(RouteManager.class);
     private static Path classpathContextRoot;
 
-    public static Map<RouteInfo, Method> getRoutes()
+    public static Map<RouteInfo, ActionMethodInfo> getRoutes()
     {
         return routes;
     }
@@ -52,7 +52,7 @@ public class RouteManager
         routes.clear();
     }
 
-    public static void addRoute(RouteInfo route, Method target)
+    public static void addRoute(RouteInfo route, ActionMethodInfo target)
     {
         if (routes.containsKey(route)) {
             log.w("Route " + route + " already mapped to action " + routes.get(route) +
@@ -110,7 +110,7 @@ public class RouteManager
             }
 
             m.setAccessible(true);
-            addRoute(info, m);
+            addRoute(info, new ActionMethodInfo(m));
         }
     }
 
@@ -119,7 +119,7 @@ public class RouteManager
         RouteMatcher fastRouteMatcher = new FastRouteMatcher(uri);
         RouteMatcher regexRouteMatcher = new RegexRouteMatcher(uri);
 
-        for (Map.Entry<RouteInfo, Method> r : routes.entrySet()) {
+        for (Map.Entry<RouteInfo, ActionMethodInfo> r : routes.entrySet()) {
             RouteMatcher matcher;
 
             if (r.getKey().isFastRoute()) {
@@ -224,10 +224,10 @@ public class RouteManager
             }
 
             RouteInfo r = p.getRoute();
-            Method m = p.getActionMethod();
+            ActionMethodInfo m = p.getActionMethod();
             log.d(" ... action " + m);
 
-            if (!m.isAnnotationPresent(DisableCORS.class)) {
+            if (!m.getMethod().isAnnotationPresent(DisableCORS.class)) {
                 if (req.getHeaders().contains("Origin")) {
                     String origin = req.getHeaders().get("Origin");
                     String remoteAddr = request.remoteAddress().host();
@@ -273,10 +273,10 @@ public class RouteManager
             context.setActionMethod(m);
 
             if (r.getType() == RouteType.Http) {
-                return RequestExecutor.handleRequestedAction(context, findMatchedFilters(uri, m),
+                return RequestExecutor.handleRequestedAction(context, findMatchedFilters(uri, m.getMethod()),
                         p.getRouteParameters(), req, r.getOtherParameters());
             } else if (r.getType() == RouteType.WebSocket) {
-                return RequestExecutor.handleRequestedWebSocketAction(context, findMatchedFilters(uri, m),
+                return RequestExecutor.handleRequestedWebSocketAction(context, findMatchedFilters(uri, m.getMethod()),
                         p.getRouteParameters(), req, r.getOtherParameters());
             }
 

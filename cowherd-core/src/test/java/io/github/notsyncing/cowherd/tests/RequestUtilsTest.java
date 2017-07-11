@@ -1,8 +1,10 @@
 package io.github.notsyncing.cowherd.tests;
 
 import com.alibaba.fastjson.JSONObject;
+import io.github.notsyncing.cowherd.exceptions.ParameterProcessException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.ActionContext;
+import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
@@ -68,8 +70,7 @@ public class RequestUtilsTest
     }
 
     @Test
-    public void testConvertParameterListToMethodParameters() throws IllegalAccessException, ValidationFailedException, InstantiationException
-    {
+    public void testConvertParameterListToMethodParameters() throws IllegalAccessException, ValidationFailedException, InstantiationException, ParameterProcessException {
         List<Pair<String, String>> params = new ArrayList<>();
         params.add(new Pair<>("a", "test"));
         params.add(new Pair<>("b", "2"));
@@ -84,7 +85,7 @@ public class RequestUtilsTest
         params.add(new Pair<>("k", "1"));
 
         ActionContext context = new ActionContext();
-        context.setActionMethod(testMethod2);
+        context.setActionMethod(new ActionMethodInfo(testMethod2));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         assertEquals("test", results[0]);
@@ -105,8 +106,7 @@ public class RequestUtilsTest
     }
 
     @Test
-    public void testConvertParameterListToMethodParametersWithJSON() throws IllegalAccessException, ValidationFailedException, InstantiationException
-    {
+    public void testConvertParameterListToMethodParametersWithJSON() throws IllegalAccessException, ValidationFailedException, InstantiationException, ParameterProcessException {
         String json = "{" +
                 "\"a\": \"test\"," +
                 "\"b\": 2," +
@@ -121,7 +121,7 @@ public class RequestUtilsTest
         params.add(new Pair<>("__json__", json));
 
         ActionContext context = new ActionContext();
-        context.setActionMethod(testMethod1);
+        context.setActionMethod(new ActionMethodInfo(testMethod1));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         assertEquals("test", results[0]);
@@ -298,13 +298,12 @@ public class RequestUtilsTest
     }
 
     @Test
-    public void testEmptyStringToLocalDateTimeInJsonObject() throws IllegalAccessException, ValidationFailedException, InstantiationException
-    {
+    public void testEmptyStringToLocalDateTimeInJsonObject() throws IllegalAccessException, ValidationFailedException, InstantiationException, ParameterProcessException {
         List<Pair<String, String>> params = new ArrayList<>();
         params.add(new Pair<>("a.d", ""));
 
         ActionContext context = new ActionContext();
-        context.setActionMethod(testMethod3);
+        context.setActionMethod(new ActionMethodInfo(testMethod3));
 
         Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
         TestParamClass2 c = (TestParamClass2) results[0];

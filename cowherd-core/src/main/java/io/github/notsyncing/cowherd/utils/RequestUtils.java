@@ -10,10 +10,7 @@ import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.exceptions.ParameterProcessException;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
-import io.github.notsyncing.cowherd.models.ActionContext;
-import io.github.notsyncing.cowherd.models.Pair;
-import io.github.notsyncing.cowherd.models.RequestContext;
-import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.utils.deserializers.Jdk8NullableDateCodec;
 import io.github.notsyncing.cowherd.validators.ParameterValidator;
@@ -115,7 +112,7 @@ public class RequestUtils
                                                                   List<HttpCookie> cookies,
                                                                   List<UploadFileInfo> uploads,
                                                                   Object... otherParameters) throws IllegalAccessException, InstantiationException, ValidationFailedException, ParameterProcessException {
-        Method method = context.getActionMethod();
+        Method method = context.getActionMethod().getMethod();
         HttpServerRequest req = context.getRequest();
 
         Parameter[] pl = method.getParameters();
@@ -267,19 +264,21 @@ public class RequestUtils
             }
         }
 
-        validateMethodParameters(method, targetParams);
+        validateMethodParameters(context.getActionMethod(), targetParams);
 
         return targetParams;
     }
 
-    private static void validateMethodParameters(Method method, Object[] targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
+    private static void validateMethodParameters(ActionMethodInfo methodInfo, Object[] targetParams) throws InstantiationException, IllegalAccessException, ValidationFailedException
     {
-        if (method.getParameters() == null) {
+        Method method = methodInfo.getMethod();
+
+        if ((methodInfo.getParameters() == null) || (methodInfo.getParameters().isEmpty())) {
             return;
         }
 
-        for (int i = 0; i < method.getParameters().length; i++) {
-            Parameter p = method.getParameters()[i];
+        for (int i = 0; i < methodInfo.getParameters().size(); i++) {
+            ActionMethodParameterInfo p = methodInfo.getParameters().get(i);
 
             if ((p.getAnnotations() != null) && (p.getAnnotations().length > 0)) {
                 for (Annotation a : p.getAnnotations()) {
@@ -296,17 +295,18 @@ public class RequestUtils
                     ParameterValidator validator = parameterValidators.get(validatorAnno.value());
                     Object value = targetParams[i];
 
-                    if (!validator.validate(p, a, value)) {
-                        throw new ValidationFailedException(p, validator, a, value);
+                    if (!validator.validate(p.getParameter(), a, value)) {
+                        throw new ValidationFailedException(p.getParameter(), validator, a, value);
                     }
 
-                    targetParams[i] = validator.filter(p, a, value);
+                    targetParams[i] = validator.filter(p.getParameter(), a, value);
                 }
             }
 
-            if ((p.getType().isPrimitive()) && (targetParams[i] == null)) {
-                throw new IllegalAccessException("Parameter #" + i + " '" + p.getName() + "' <" + p.getType() +
-                        "> of method " + method.toString() + " is primitive, but received an null value!");
+            if ((p.getParameter().getType().isPrimitive()) && (targetParams[i] == null)) {
+                throw new IllegalAccessException("Parameter #" + i + " '" + p.getParameter().getName() + "' <" +
+                        p.getParameter().getType() + "> of method " + method.toString() +
+                        " is primitive, but received an null value!");
             }
         }
     }
@@ -327,7 +327,7 @@ public class RequestUtils
 
         for (Pair<String, String> p : pairs) {
             if (!p.getKey().contains("[]")) {
-                jsonPaths.add(new Pair<>(p.getKey(), p.getValue()));
+                jsonPaths.add(p);
             } else {
                 int lastArrayIndex = 0;
                 String lastAddedArrayPath = null;

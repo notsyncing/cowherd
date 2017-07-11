@@ -2,17 +2,13 @@ package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.files.FileStorage;
-import io.github.notsyncing.cowherd.models.ActionContext;
-import io.github.notsyncing.cowherd.models.ActionResult;
-import io.github.notsyncing.cowherd.models.Pair;
-import io.github.notsyncing.cowherd.models.UploadFileInfo;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.github.notsyncing.cowherd.server.RequestExecutor;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
 
-import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +33,7 @@ public abstract class CowherdService
                                            HttpServerRequest request, List<Pair<String, String>> parameters,
                                            List<HttpCookie> cookies, List<UploadFileInfo> uploads)
     {
-        Method m = ServiceManager.getServiceAction(serviceName, actionName);
+        ActionMethodInfo m = ServiceManager.getServiceAction(serviceName, actionName);
 
         if (m == null) {
             request.response()

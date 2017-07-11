@@ -63,7 +63,7 @@ public class Cowherd
         });
     }
 
-    public void start(FastClasspathScanner classpathScanner)
+    public void start(FastClasspathScanner classpathScanner, int port)
     {
         if (classpathScanner == null) {
             classpathScanner = createClasspathScanner();
@@ -75,7 +75,7 @@ public class Cowherd
             dependencyInjector = new CowherdDependencyInjector(false);
         }
 
-        configure();
+        configure(port);
 
         addInternalServices();
 
@@ -90,12 +90,20 @@ public class Cowherd
         startServer();
     }
 
-    public void start()
-    {
-        start(null);
+    public void start(FastClasspathScanner scanner) {
+        start(scanner, 0);
     }
 
-    private void configure()
+    public void start()
+    {
+        start(null, 0);
+    }
+
+    public void start(int port) {
+        start(null, port);
+    }
+
+    private void configure(int port)
     {
         CowherdLogger.loggerConfigChanged();
 
@@ -145,6 +153,10 @@ public class Cowherd
         log.i("Cowherd web server is starting...");
 
         dependencyInjector.registerComponent(Vertx.class, vertx);
+
+        if (port > 0) {
+            CowherdConfiguration.setListenPort(port);
+        }
     }
 
     private void addInternalServices()

@@ -1,16 +1,16 @@
 package io.github.notsyncing.cowherd.routing;
 
+import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.Pair;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MatchedRoute
 {
     private RouteInfo route;
-    private Method actionMethod;
+    private ActionMethodInfo actionMethod;
     private List<Pair<String, String>> routeParameters;
 
     public MatchedRoute()
@@ -33,12 +33,12 @@ public class MatchedRoute
         this.route = route;
     }
 
-    public Method getActionMethod()
+    public ActionMethodInfo getActionMethod()
     {
         return actionMethod;
     }
 
-    public void setActionMethod(Method actionMethod)
+    public void setActionMethod(ActionMethodInfo actionMethod)
     {
         this.actionMethod = actionMethod;
     }

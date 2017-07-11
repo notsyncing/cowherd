@@ -3,13 +3,11 @@ package io.github.notsyncing.cowherd.models;
 import io.github.notsyncing.cowherd.server.CowherdServer;
 import io.vertx.core.http.HttpServerRequest;
 
-import java.lang.reflect.Method;
-
 public class ActionContext
 {
     private CowherdServer server;
     private HttpServerRequest request;
-    private Method actionMethod;
+    private ActionMethodInfo actionMethod;
     private ActionConfig config;
 
     public ActionContext()
@@ -42,12 +40,12 @@ public class ActionContext
         this.request = request;
     }
 
-    public Method getActionMethod()
+    public ActionMethodInfo getActionMethod()
     {
         return actionMethod;
     }
 
-    public void setActionMethod(Method actionMethod)
+    public void setActionMethod(ActionMethodInfo actionMethod)
     {
         this.actionMethod = actionMethod;
     }
