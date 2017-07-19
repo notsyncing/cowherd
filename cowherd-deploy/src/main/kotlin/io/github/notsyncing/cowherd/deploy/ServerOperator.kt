@@ -33,11 +33,16 @@ import java.rmi.RemoteException
 import java.security.KeyPair
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.concurrent.thread
 
 class ServerOperator(private val host: String, private val port: Int, private val username: String) {
     companion object {
-        val DOCKER_FORWARD_PORT = 3983
+        private val portRandom = Random()
+
+        var currentDockerForwardPort = getRandomPort()
+
+        private fun getRandomPort() = 49152 + portRandom.nextInt(65535 - 49152)
     }
 
     private val ssh = SshClient.setUpDefaultClient()
@@ -51,7 +56,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
     init {
         dockerConfig = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("tcp://localhost:$DOCKER_FORWARD_PORT")
+                .withDockerHost("tcp://localhost:$currentDockerForwardPort")
                 .withDockerTlsVerify(false)
                 .build()
     }
@@ -181,6 +186,8 @@ class ServerOperator(private val host: String, private val port: Int, private va
             return
         }
 
+        currentDockerForwardPort = getRandomPort()
+
         dockerSocketForwardingThread = thread(isDaemon = true) {
             if (dockerSocketForwarder != null) {
                 println("A docker socket already forwarded!")
@@ -189,7 +196,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
             }
 
             dockerSocketForwarder = ProcessBuilder()
-                    .command("ssh", "-L$DOCKER_FORWARD_PORT:/var/run/docker.sock", "$username@$host", "-p$port")
+                    .command("ssh", "-L$currentDockerForwardPort:/var/run/docker.sock", "$username@$host", "-p$port")
                     .start()
 
             println("Docker socket forwarding started.")
