@@ -51,11 +51,10 @@ class ServerOperator(private val host: String, private val port: Int, private va
     private var dockerSocketForwardingThread: Thread? = null
     private var dockerSocketForwarder: Process? = null
 
-    private val dockerConfig: DockerClientConfig
     private lateinit var docker: DockerClient
 
-    init {
-        dockerConfig = DefaultDockerClientConfig.createDefaultConfigBuilder()
+    private fun makeDockerConfig(): DockerClientConfig {
+        return DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost("tcp://localhost:$currentDockerForwardPort")
                 .withDockerTlsVerify(false)
                 .build()
@@ -199,7 +198,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
                     .command("ssh", "-L$currentDockerForwardPort:/var/run/docker.sock", "$username@$host", "-p$port")
                     .start()
 
-            println("Docker socket forwarding started.")
+            println("Docker socket forwarding started at port $currentDockerForwardPort.")
 
             val r = dockerSocketForwarder!!.waitFor()
             dockerSocketForwarder = null
@@ -225,7 +224,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
     }
 
     fun startDockerClient() {
-        docker = DockerClientBuilder.getInstance(dockerConfig)
+        docker = DockerClientBuilder.getInstance(makeDockerConfig())
                 .build()
     }
 
