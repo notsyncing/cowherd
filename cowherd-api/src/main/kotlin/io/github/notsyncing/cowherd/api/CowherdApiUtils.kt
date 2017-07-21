@@ -2,28 +2,29 @@ package io.github.notsyncing.cowherd.api
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
-import kotlin.reflect.KClass
+import java.lang.reflect.Type
 import kotlin.reflect.KParameter
+import kotlin.reflect.jvm.javaType
 
 object CowherdApiUtils {
-    fun stringToType(str: String, type: KClass<*>): Any? {
-        if (type == Int::class) {
+    fun stringToType(str: String, type: Type): Any? {
+        if (type == Int::class.java) {
             return str.toInt()
-        } else if (type == Long::class) {
+        } else if (type == Long::class.java) {
             return str.toLong()
-        } else if (type == String::class) {
+        } else if (type == String::class.java) {
             return str
-        } else if (type == Boolean::class) {
+        } else if (type == Boolean::class.java) {
             return str.toBoolean()
-        } else if (type == Float::class) {
+        } else if (type == Float::class.java) {
             return str.toFloat()
-        } else if (type == Double::class) {
+        } else if (type == Double::class.java) {
             return str.toDouble()
-        } else if (type == Byte::class) {
+        } else if (type == Byte::class.java) {
             return str.toByte()
-        } else if (type == Char::class) {
+        } else if (type == Char::class.java) {
             return str.toInt()
-        } else if (type == Short::class) {
+        } else if (type == Short::class.java) {
             return str.toShort()
         } else {
             val s: String
@@ -36,11 +37,11 @@ object CowherdApiUtils {
                 s = "\"$str\""
             }
 
-            return JSON.parseObject(s, type.java)
+            return JSON.parseObject(s, type)
         }
     }
 
-    private fun String.toType(type: KClass<*>) = stringToType(this, type)
+    private fun String.toType(type: Type) = stringToType(this, type)
 
     fun expandJsonToMethodParameters(info: MethodCallInfo, o: JSONObject?, self: Any?,
                                      specialTypeParameterHandler: ((MethodParameterInfo) -> Any?)? = null): MutableMap<KParameter, Any?> {
@@ -65,7 +66,7 @@ object CowherdApiUtils {
 
                 if (o?.containsKey(p.parameter.name) == true) {
                     val sv = o[p.parameter.name].toString()
-                    v = sv.toType(p.jvmErasure)
+                    v = sv.toType(p.parameter.type.javaType)
                 } else {
                     if (p.optional) {
                         continue
