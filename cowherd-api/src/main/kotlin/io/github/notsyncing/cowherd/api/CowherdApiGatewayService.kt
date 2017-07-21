@@ -101,7 +101,7 @@ class CowherdApiGatewayService : CowherdService() {
             }
         }
 
-        val actionId = "${service.javaClass.name}.$serviceMethodName"
+        val actionId = "$serviceClassName.$serviceMethodName"
         var serviceMethodInfo = methodCache[actionId]
 
         if (serviceMethodInfo == null) {
@@ -118,9 +118,9 @@ class CowherdApiGatewayService : CowherdService() {
         val jsonObject = JSON.parseObject(paramStr)
 
         val targetParams = CowherdApiUtils.expandJsonToMethodParameters(serviceMethodInfo, jsonObject, service) { p ->
-            if (p.jvmErasure.java == UploadFileInfo::class.java) {
+            if (p.javaType == UploadFileInfo::class.java) {
                 __uploads__?.firstOrNull { it.parameterName == p.parameter.name }
-            } else if (p.jvmErasure.java == ActionContext::class.java) {
+            } else if (p.javaType == ActionContext::class.java) {
                 context
             } else {
                 null
