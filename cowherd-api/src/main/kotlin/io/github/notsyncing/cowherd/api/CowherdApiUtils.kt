@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
 import java.lang.reflect.Type
 import kotlin.reflect.KParameter
-import kotlin.reflect.jvm.javaType
 
 object CowherdApiUtils {
     fun stringToType(str: String, type: Type): Any? {
@@ -66,7 +65,7 @@ object CowherdApiUtils {
 
                 if (o?.containsKey(p.parameter.name) == true) {
                     val sv = o[p.parameter.name].toString()
-                    v = sv.toType(p.parameter.type.javaType)
+                    v = sv.toType(p.javaType)
                 } else {
                     if (p.optional) {
                         continue
