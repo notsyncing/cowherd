@@ -82,6 +82,16 @@ object CowherdApiHub {
         }
     }
 
+    fun has(serviceClassName: String): Boolean {
+        var s = hub.containsKey(serviceClassName)
+
+        if (!s) {
+            s = hub.containsKey(URLEncoder.encode(serviceClassName, "utf-8"))
+        }
+
+        return s
+    }
+
     fun reset() {
         hub.clear()
 
