@@ -17,7 +17,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
-class CowherdApiGatewayService : CowherdService() {
+open class CowherdApiGatewayService : CowherdService() {
     companion object {
         private const val DEFAULT_SERVICE_METHOD = "__default_service_method__"
         private const val ACCESS_TOKEN_NAME = "access_token"
@@ -33,12 +33,12 @@ class CowherdApiGatewayService : CowherdService() {
     @HttpAnyMethod
     @Exported
     @Route("", subRoute = true)
-    fun gateway(@Parameter("path") path: String,
-                @Parameter("request") request: HttpServerRequest?,
-                @Parameter("context") context: ActionContext,
-                @Parameter("__parameters__") __parameters__: List<Pair<String, String>>,
-                @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
-                @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
+    open fun gateway(@Parameter("path") path: String,
+                     @Parameter("request") request: HttpServerRequest?,
+                     @Parameter("context") context: ActionContext,
+                     @Parameter("__parameters__") __parameters__: List<Pair<String, String>>,
+                     @Parameter("__cookies__") __cookies__: List<HttpCookie>?,
+                     @Parameter("__uploads__") __uploads__: List<UploadFileInfo>?): CompletableFuture<Any?> {
         val actionPath = stripParameters(path)
         var serviceClassNamePartEnd = actionPath.indexOf("/")
 
@@ -54,7 +54,7 @@ class CowherdApiGatewayService : CowherdService() {
 
         val (pt, paramStr) = getEncodedParameters(__parameters__)
 
-        val serviceClassName = serviceClassNamePart
+        var serviceClassName = serviceClassNamePart
 
         if (serviceClassName.compareTo("new_session", true) == 0) {
             val session = newSession()
@@ -70,6 +70,12 @@ class CowherdApiGatewayService : CowherdService() {
             }
 
             return CompletableFuture.completedFuture(session)
+        }
+
+        val namespace = __parameters__.firstOrNull { it.key == "namespace" }
+
+        if (namespace != null) {
+            serviceClassName = resolveNamespace(namespace.value, serviceClassName)
         }
 
         val serviceMethodNamePartStart = serviceClassNamePartEnd + 1
@@ -191,5 +197,9 @@ class CowherdApiGatewayService : CowherdService() {
 
     private fun newSession(): String {
         return UUID.randomUUID().toString()
+    }
+
+    protected open fun resolveNamespace(namespace: String, serviceClassName: String): String {
+        return serviceClassName
     }
 }
