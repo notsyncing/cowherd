@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 服务方法返回的视图响应，用于向客户端呈现一个视图，同时向视图传递一个模型对象
@@ -60,18 +59,16 @@ public class ViewResponse<T> implements ActionResponse
     }
 
     @Override
-    public CompletableFuture writeToResponse(ActionContext context) throws IOException
+    public void writeToResponse(ActionContext context) throws IOException
     {
-        CompletableFuture future = new CompletableFuture();
         TemplateEngine eng = CowherdThymeleafPart.templateEngine;
         Method action = context.getActionMethod().getMethod();
         HttpServerResponse resp = context.getRequest().response();
 
         if (!CowherdConfiguration.isEveryHtmlIsTemplate()) {
             if (!action.isAnnotationPresent(Route.class)) {
-                future.completeExceptionally(new InvalidViewResponseException("Action " + action.toString() +
+                throw new RuntimeException(new InvalidViewResponseException("Action " + action.toString() +
                         " has no route annotation with view page!"));
-                return future;
             }
         }
 
@@ -97,7 +94,5 @@ public class ViewResponse<T> implements ActionResponse
         resp.putHeader("Content-Length", String.valueOf(s.getBytes("utf-8").length));
         resp.write(s);
         resp.end();
-
-        return future;
     }
 }

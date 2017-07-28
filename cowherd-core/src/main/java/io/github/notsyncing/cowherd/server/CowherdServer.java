@@ -22,7 +22,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,7 +165,7 @@ public class CowherdServer
         if (o.getResult() instanceof ActionResponse) {
             try {
                 ((ActionResponse)o.getResult()).writeToResponse(context);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.e("An exception was thrown when writing response to client: ", e);
                 req.response().setStatusCode(500);
                 req.response().setStatusMessage(e.getMessage());

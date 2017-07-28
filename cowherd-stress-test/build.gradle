@@ -24,6 +24,7 @@ jmh {
     jmhVersion = '1.15'
     jvmArgsAppend = "-XX:+UnlockCommercialFeatures"
     verbosity = "EXTRA"
-    profilers = ["org.spf4j.stackmonitor.JmhFlightRecorderProfiler"]
+    profilers = ["gc", "hs_gc", "hs_rt", "perf", "org.spf4j.stackmonitor.JmhFlightRecorderProfiler"]
+    //profilers = ["gc", "hs_gc", "hs_rt", "perf"]
     duplicateClassesStrategy = 'warn'
 }
