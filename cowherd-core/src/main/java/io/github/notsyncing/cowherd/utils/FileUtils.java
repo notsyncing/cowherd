@@ -1,16 +1,10 @@
 package io.github.notsyncing.cowherd.utils;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.spi.BufferFactory;
 import io.vertx.core.streams.WriteStream;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 
 public class FileUtils
 {
@@ -19,18 +13,29 @@ public class FileUtils
         return StringUtils.streamToString(FileUtils.class.getResourceAsStream(name));
     }
 
-    public static int pumpInputStreamToWriteStream(InputStream input, WriteStream<Buffer> output) throws IOException
+    public static int pumpInputStreamToWriteStream(InputStream input, long skip, long length, WriteStream<Buffer> output) throws IOException
     {
-        byte[] buf = new byte[10240];
-        int length = 0;
+        byte[] readBuf = new byte[10240];
+        Buffer writeBuf = Buffer.buffer();
+        int realLength = 0;
         int l;
 
-        while ((l = input.read(buf)) != -1) {
-            length += l;
-            output.write(Buffer.buffer().appendBytes(buf, 0, l));
+        if (skip > 0) {
+            input.skip(skip);
         }
 
-        return length;
+        while ((l = input.read(readBuf)) != -1) {
+            realLength += l;
+
+            writeBuf.setBytes(0, readBuf);
+            output.write(writeBuf);
+
+            if (realLength >= length) {
+                break;
+            }
+        }
+
+        return realLength;
     }
 
     public static String guessContentType(String filename)

@@ -637,4 +637,34 @@ public class RequestUtils
             putCookie(request, c);
         }
     }
+
+    public static List<RangeHeaderInfo> parseRangeHeader(String rangeHeader) {
+        int start = rangeHeader.indexOf("bytes ");
+
+        if (start < 0) {
+            start = rangeHeader.indexOf("bytes=");
+
+            if (start < 0) {
+                return Collections.emptyList();
+            }
+        }
+
+        String rangeContent = rangeHeader.substring(start + 6);
+        String[] ranges = rangeContent.split(",");
+
+        return Stream.of(ranges)
+                .map(String::trim)
+                .map(s -> s.split("-"))
+                .map(ss -> {
+                    int startBytes = Integer.parseInt(ss[0]);
+                    int endBytes = -1;
+
+                    if ((ss.length > 1) && (!ss[1].isEmpty())) {
+                        endBytes = Integer.parseInt(ss[1]);
+                    }
+
+                    return new RangeHeaderInfo(startBytes, endBytes);
+                })
+                .collect(Collectors.toList());
+    }
 }
