@@ -38,6 +38,10 @@ public class Cowherd
         app.start();
     }
 
+    public CowherdServer getServer() {
+        return server;
+    }
+
     private void initParts(ScanResult classScanResult)
     {
         classScanResult.getNamesOfClassesImplementing(CowherdPart.class)

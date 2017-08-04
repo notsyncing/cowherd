@@ -15,6 +15,7 @@ import io.github.notsyncing.cowherd.utils.StringUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 
 import static org.junit.Assert.*;
 
@@ -112,14 +114,15 @@ public class CowherdTest
     }
 
     @Before
-    public void before() throws IllegalAccessException, InvocationTargetException, InstantiationException
-    {
+    public void before() throws IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
         resetValues();
 
         cowherd = new Cowherd();
         cowherd.start(random.nextInt(50000) + 10000);
 
         service = Cowherd.dependencyInjector.getComponent(TestService.class);
+
+        Thread.sleep(2000);
     }
 
     @After
@@ -160,16 +163,28 @@ public class CowherdTest
         assertFalse(FilterManager.isGlobalFilter(TestParameterFilter.class));
     }
 
-    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String expected)
+    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String expected,
+                                         BiConsumer<String, HttpClientResponse> onSuccess)
     {
         req.handler(resp -> {
             context.assertEquals(200, resp.statusCode());
 
             resp.bodyHandler(b -> {
-                context.assertEquals(expected, b.toString());
+                String data = b.toString();
+                context.assertEquals(expected, data);
+
+                if (onSuccess != null) {
+                    onSuccess.accept(data, resp);
+                }
+
                 async.complete();
             });
         });
+    }
+
+    private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String expected)
+    {
+        checkIfSuccessAndString(context, async, req, expected, null);
     }
 
     @Test
@@ -818,6 +833,82 @@ public class CowherdTest
         req.exceptionHandler(context::fail);
 
         checkIfSuccessAndString(context, async, req, "OK");
+
+        req.end();
+    }
+
+    @Test
+    public void testGenerateCSRFToken(TestContext context) {
+        Async async = context.async();
+        HttpClientRequest req = get("/TestService/csrfGenerateRequest");
+        req.exceptionHandler(context::fail);
+
+        checkIfSuccessAndString(context, async, req, "CSRF", (data, resp) -> {
+            List<String> cookies = resp.cookies();
+            context.assertFalse(resp.cookies().isEmpty());
+
+            String csrfToken = "";
+
+            for (String s : cookies) {
+                if (s.startsWith("csrf-token=")) {
+                    csrfToken = s.substring("csrf-token=".length());
+                    break;
+                }
+            }
+
+            context.assertTrue(cowherd.getServer().checkCSRFToken(csrfToken));
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testValidateCSRFTokenSuccess(TestContext context) {
+        cowherd.getServer().addCSRFToken("test-token");
+
+        Async async = context.async();
+        HttpClientRequest req = post("/TestService/csrfValidateRequest");
+        req.exceptionHandler(context::fail);
+        req.putHeader("Cookie", "csrf-token=test-token");
+
+        checkIfSuccessAndString(context, async, req, "CSRF", (data, resp) -> {
+            context.assertFalse(cowherd.getServer().checkCSRFToken("test-token"));
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testValidateCSRFTokenFailWrongToken(TestContext context) {
+        cowherd.getServer().addCSRFToken("test-token");
+
+        Async async = context.async();
+        HttpClientRequest req = post("/TestService/csrfValidateRequest");
+        req.exceptionHandler(context::fail);
+        req.putHeader("Cookie", "csrf-token=test-token2");
+
+        req.handler(resp -> {
+            context.assertEquals(403, resp.statusCode());
+            context.assertTrue(cowherd.getServer().checkCSRFToken("test-token"));
+            async.complete();
+        });
+
+        req.end();
+    }
+
+    @Test
+    public void testValidateCSRFTokenFailNoToken(TestContext context) {
+        cowherd.getServer().addCSRFToken("test-token");
+
+        Async async = context.async();
+        HttpClientRequest req = post("/TestService/csrfValidateRequest");
+        req.exceptionHandler(context::fail);
+
+        req.handler(resp -> {
+            context.assertEquals(403, resp.statusCode());
+            context.assertTrue(cowherd.getServer().checkCSRFToken("test-token"));
+            async.complete();
+        });
 
         req.end();
     }

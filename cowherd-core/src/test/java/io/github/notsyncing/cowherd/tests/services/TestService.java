@@ -222,4 +222,18 @@ public class TestService extends CowherdService
     {
         return "NOT";
     }
+
+    @Exported
+    @HttpGet
+    @GenerateCSRFToken
+    public String csrfGenerateRequest() {
+        return "CSRF";
+    }
+
+    @Exported
+    @HttpPost
+    @ValidateCSRFToken
+    public String csrfValidateRequest() {
+        return "CSRF";
+    }
 }

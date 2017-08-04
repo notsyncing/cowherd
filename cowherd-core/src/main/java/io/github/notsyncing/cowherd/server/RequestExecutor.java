@@ -2,6 +2,8 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.ContentType;
+import io.github.notsyncing.cowherd.annotations.GenerateCSRFToken;
+import io.github.notsyncing.cowherd.annotations.ValidateCSRFToken;
 import io.github.notsyncing.cowherd.authentication.ActionAuthenticator;
 import io.github.notsyncing.cowherd.authentication.annotations.ServiceActionAuthenticator;
 import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
@@ -21,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.HttpCookie;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -39,6 +42,29 @@ public class RequestExecutor
     {
         Method requestedMethod = context.getActionMethod().getMethod();
         HttpServerRequest request = context.getRequest();
+
+        if (requestedMethod.isAnnotationPresent(ValidateCSRFToken.class)) {
+            boolean valid = false;
+
+            if (cookies == null) {
+                return FutureUtils.failed(new AuthenticationFailedException("Empty cookies when checking CSRF token!"));
+            }
+
+            for (HttpCookie c : cookies) {
+                if (c.getName().equals("csrf-token")) {
+                    String csrfToken = c.getValue();
+
+                    if (context.getServer().checkAndRemoveCSRFToken(csrfToken)) {
+                        valid = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!valid) {
+                return FutureUtils.failed(new AuthenticationFailedException("No CSRF token in cookies!"));
+            }
+        }
 
         try {
             if (requestedMethod.isAnnotationPresent(ContentType.class)) {
@@ -60,6 +86,14 @@ public class RequestExecutor
 
             CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
             Object result = requestedMethod.invoke(service, targetParams);
+
+            if (requestedMethod.isAnnotationPresent(GenerateCSRFToken.class)) {
+                String csrfToken = UUID.randomUUID().toString();
+                HttpCookie csrfCookie = new HttpCookie("csrf-token", csrfToken);
+                context.getServer().addCSRFToken(csrfToken);
+
+                RequestUtils.putCookie(request, csrfCookie);
+            }
 
             if (result instanceof CompletableFuture) {
                 CompletableFuture f = (CompletableFuture)result;

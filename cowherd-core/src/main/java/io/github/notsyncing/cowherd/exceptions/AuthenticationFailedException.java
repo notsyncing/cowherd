@@ -5,4 +5,11 @@ package io.github.notsyncing.cowherd.exceptions;
  */
 public class AuthenticationFailedException extends RuntimeException
 {
+    public AuthenticationFailedException() {
+        super();
+    }
+
+    public AuthenticationFailedException(String message) {
+        super(message);
+    }
 }

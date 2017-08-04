@@ -10,6 +10,7 @@ import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.ActionContext;
 import io.github.notsyncing.cowherd.models.ActionResult;
+import io.github.notsyncing.cowherd.models.CSRFToken;
 import io.github.notsyncing.cowherd.models.WebSocketActionResult;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.routing.RouteManager;
@@ -21,11 +22,17 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.impl.ConcurrentHashSet;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class CowherdServer
 {
@@ -34,10 +41,22 @@ public class CowherdServer
     private FileStorage fileStorage;
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private CowherdLogger accessLogger = CowherdLogger.getAccessLogger();
+    private ConcurrentHashSet<CSRFToken> csrfTokens = new ConcurrentHashSet<>();
+
+    private ScheduledExecutorService csrfTokenCleaner = Executors.newScheduledThreadPool(1, r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public CowherdServer(Vertx vertx)
     {
         this.vertx = vertx;
+
+        csrfTokenCleaner.scheduleAtFixedRate(() -> {
+            Date now = new Date();
+            csrfTokens.removeIf(t -> t.getExpireTime().before(now));
+        }, 0, 1, TimeUnit.HOURS);
     }
 
     public FileStorage getFileStorage()
@@ -264,6 +283,8 @@ public class CowherdServer
     {
         log.i("Stopping server...");
 
+        csrfTokens.clear();
+
         CompletableFuture f = new CompletableFuture();
         final int[] count = {0};
 
@@ -295,5 +316,19 @@ public class CowherdServer
 
             return f2;
         });
+    }
+
+    public void addCSRFToken(String token) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        csrfTokens.add(new CSRFToken(token, calendar.getTime()));
+    }
+
+    public boolean checkAndRemoveCSRFToken(String token) {
+        return csrfTokens.remove(new CSRFToken(token));
+    }
+
+    public boolean checkCSRFToken(String token) {
+        return csrfTokens.contains(new CSRFToken(token));
     }
 }
