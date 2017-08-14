@@ -225,7 +225,7 @@ public class RouteManager
 
             RouteInfo r = p.getRoute();
             ActionMethodInfo m = p.getActionMethod();
-            log.d(" ... action " + m);
+            log.d(" ... action " + m.getMethod());
 
             if (!m.getMethod().isAnnotationPresent(DisableCORS.class)) {
                 if (req.getHeaders().contains("Origin")) {
