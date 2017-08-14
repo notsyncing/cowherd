@@ -111,6 +111,12 @@ public class CowherdServer
         context.setServer(this);
         context.setRequest(req);
 
+        String finalRemoteAddr = remoteAddr + ":" + req.remoteAddress().port();
+
+        req.response().exceptionHandler(ex -> {
+            log.w("An exception occurred when writing response to " + finalRemoteAddr + ", uri " + req.uri(), ex);
+        });
+
         return RouteManager.handleRequest(context).thenAccept(o -> {
             if (o instanceof WebSocketActionResult) {
                 logAccess(req, accessLog);

@@ -16,7 +16,6 @@ public class FileUtils
     public static int pumpInputStreamToWriteStream(InputStream input, long skip, long length, WriteStream<Buffer> output) throws IOException
     {
         byte[] readBuf = new byte[10240];
-        Buffer writeBuf = Buffer.buffer();
         int realLength = 0;
         int l;
 
@@ -26,9 +25,7 @@ public class FileUtils
 
         while ((l = input.read(readBuf)) != -1) {
             realLength += l;
-
-            writeBuf.setBytes(0, readBuf);
-            output.write(writeBuf);
+            output.write(Buffer.buffer().appendBytes(readBuf, 0, l));
 
             if (realLength >= length) {
                 break;
