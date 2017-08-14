@@ -55,13 +55,13 @@ public class RouteManager
     public static void addRoute(RouteInfo route, ActionMethodInfo target)
     {
         if (routes.containsKey(route)) {
-            log.w("Route " + route + " already mapped to action " + routes.get(route) +
-                    ", will be overwritten to " + target);
+            log.w("Route " + route + " already mapped to action " + routes.get(route).getMethod() +
+                    ", will be overwritten to " + target.getMethod());
         }
 
         routes.put(route, target);
 
-        log.d("Add route " + route + " to action " + target);
+        log.d("Add route " + route + " to action " + target.getMethod());
     }
 
     public static void addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) throws InvalidServiceActionException
@@ -98,6 +98,7 @@ public class RouteManager
                     info.setFastRoute(serviceRouteInfo.isFastRoute());
                 } else {
                     info.setPath(route.value());
+                    info.setFastRoute(route.fastRoute());
                 }
 
                 info.setDomain(route.domain());

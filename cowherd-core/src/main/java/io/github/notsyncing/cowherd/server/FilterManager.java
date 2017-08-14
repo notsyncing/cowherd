@@ -6,10 +6,8 @@ import io.github.notsyncing.cowherd.annotations.Route;
 import io.github.notsyncing.cowherd.models.FilterInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
-import io.github.notsyncing.cowherd.service.ServiceManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,6 +89,7 @@ public class FilterManager
             RouteInfo info = new RouteInfo();
             info.setPath(route.value());
             info.setDomain(route.domain());
+            info.setFastRoute(route.fastRoute());
 
             if (routedFilters.keySet().stream().anyMatch(r -> r.equals(info))) {
                 return;

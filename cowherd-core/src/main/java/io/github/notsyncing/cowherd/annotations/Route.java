@@ -36,4 +36,9 @@ public @interface Route
      * 是否子路径，即在上一级路径之后附加的路径
      */
     boolean subRoute() default false;
+
+    /**
+     * 是否使用简单路由匹配
+     */
+    boolean fastRoute() default false;
 }
