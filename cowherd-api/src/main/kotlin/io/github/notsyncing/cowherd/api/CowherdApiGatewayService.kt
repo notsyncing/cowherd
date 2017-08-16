@@ -28,6 +28,18 @@ open class CowherdApiGatewayService : CowherdService() {
         fun reset() {
             methodCache.clear()
         }
+
+        fun removeCacheOfService(serviceName: String) {
+            val iter = methodCache.iterator()
+
+            while (iter.hasNext()) {
+                val (_, info) = iter.next()
+
+                if (info.serviceClassName == serviceName) {
+                    iter.remove()
+                }
+            }
+        }
     }
 
     @HttpAnyMethod
@@ -111,7 +123,7 @@ open class CowherdApiGatewayService : CowherdService() {
         var serviceMethodInfo = methodCache[actionId]
 
         if (serviceMethodInfo == null) {
-            serviceMethodInfo = makeMethodCallInfo(actionId, serviceMethodName, service)
+            serviceMethodInfo = makeMethodCallInfo(actionId, serviceClassName, serviceMethodName, service)
 
             if (serviceMethodInfo == null) {
                 val decodedServiceClassName = URLDecoder.decode(serviceClassName, "utf-8")
@@ -159,7 +171,7 @@ open class CowherdApiGatewayService : CowherdService() {
         }
     }
 
-    private fun makeMethodCallInfo(actionId: String, serviceMethodName: String, service: Any): MethodCallInfo? {
+    private fun makeMethodCallInfo(actionId: String, serviceClassName: String, serviceMethodName: String, service: Any): MethodCallInfo? {
         val m = if (serviceMethodName == DEFAULT_SERVICE_METHOD)
             if (service is ApiExecutor)
                 service.getDefaultMethod()
@@ -172,7 +184,7 @@ open class CowherdApiGatewayService : CowherdService() {
             return null
         }
 
-        return MethodCallInfo(m)
+        return MethodCallInfo(m, serviceClassName)
     }
 
     private fun stripParameters(path: String): String {

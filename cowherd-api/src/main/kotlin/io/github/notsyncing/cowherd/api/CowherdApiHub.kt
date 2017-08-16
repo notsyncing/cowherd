@@ -36,10 +36,12 @@ object CowherdApiHub {
     fun revoke(serviceName: String) {
         hub.remove(serviceName)
         instanceWrappers.remove(serviceName)
+        CowherdApiGatewayService.removeCacheOfService(serviceName)
 
         val encoded = URLEncoder.encode(serviceName, "utf-8")
         hub.remove(encoded)
         instanceWrappers.remove(encoded)
+        CowherdApiGatewayService.removeCacheOfService(encoded)
     }
 
     fun revoke(serviceClass: Class<*>) {
