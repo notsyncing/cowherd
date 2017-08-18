@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * 文件存储对象
@@ -262,5 +263,9 @@ public class FileStorage
         info.setFastRoute(true);
 
         addServerRoute(info);
+    }
+
+    public void removeStoragePathIf(Predicate<Enum> predicate) {
+        storagePaths.entrySet().removeIf(e -> !predicate.test(e.getKey()));
     }
 }
