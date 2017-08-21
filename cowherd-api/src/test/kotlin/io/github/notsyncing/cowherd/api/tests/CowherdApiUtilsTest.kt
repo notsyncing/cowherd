@@ -15,7 +15,7 @@ class CowherdApiUtilsTest {
     @Test
     fun testStringToType_DateTimeString() {
         val expected = LocalDateTime.parse("2017-05-30T01:02:03")
-        val actual = CowherdApiUtils.stringToType("2017-05-30 01:02:03", LocalDateTime::class.java)
+        val actual = CowherdApiUtils.anyToType("2017-05-30 01:02:03", LocalDateTime::class.java)
 
         assertEquals(expected, actual)
     }
@@ -23,7 +23,7 @@ class CowherdApiUtilsTest {
     @Test
     fun testStringToType_JSONArray() {
         val expected = intArrayOf(1, 2, 3)
-        val actual = CowherdApiUtils.stringToType("[1,2,3]", IntArray::class.java) as IntArray
+        val actual = CowherdApiUtils.anyToType("[1,2,3]", IntArray::class.java) as IntArray
 
         assertArrayEquals(expected, actual)
     }
@@ -31,7 +31,7 @@ class CowherdApiUtilsTest {
     @Test
     fun testStringToType_JSONArray2() {
         val expected = arrayOf(1, 2, 3)
-        val actual = CowherdApiUtils.stringToType("[1,2,3]", Array<Int>::class.java) as Array<Int>
+        val actual = CowherdApiUtils.anyToType("[1,2,3]", Array<Int>::class.java) as Array<Int>
 
         assertArrayEquals(expected, actual)
     }
@@ -46,7 +46,7 @@ class CowherdApiUtilsTest {
 
         val l = this::t.parameters[0].type.javaType
 
-        val actual = CowherdApiUtils.stringToType("[{\"a\":1,\"b\":\"Test1\"},{\"a\":2,\"b\":\"Test2\"},{\"a\":3,\"b\":\"Test3\"}]", l) as ArrayList<SimpleClass>
+        val actual = CowherdApiUtils.anyToType("[{\"a\":1,\"b\":\"Test1\"},{\"a\":2,\"b\":\"Test2\"},{\"a\":3,\"b\":\"Test3\"}]", l) as ArrayList<SimpleClass>
 
         assertEquals(3, actual.size)
         assertEquals(expected[0].a, actual[0].a)
@@ -64,7 +64,7 @@ class CowherdApiUtilsTest {
             b = "Test"
         }
 
-        val actual = CowherdApiUtils.stringToType("{\"a\":2,\"b\":\"Test\"}", SimpleClass::class.java) as SimpleClass
+        val actual = CowherdApiUtils.anyToType("{\"a\":2,\"b\":\"Test\"}", SimpleClass::class.java) as SimpleClass
 
         assertEquals(expected.a, actual.a)
         assertEquals(expected.b, actual.b)
@@ -80,7 +80,7 @@ class CowherdApiUtilsTest {
             }
         }
 
-        val actual = CowherdApiUtils.stringToType("{\"c\":1,\"o\":{\"a\":2,\"b\":\"Test\"}}", DeepClass::class.java) as DeepClass
+        val actual = CowherdApiUtils.anyToType("{\"c\":1,\"o\":{\"a\":2,\"b\":\"Test\"}}", DeepClass::class.java) as DeepClass
 
         assertEquals(expected.c, actual.c)
         assertEquals(expected.o!!.a, actual.o!!.a)
@@ -91,7 +91,7 @@ class CowherdApiUtilsTest {
 
     @Test
     fun testExpandJsonToMethodParameters_primitiveArray() {
-        val methodCallInfo = MethodCallInfo(this::f)
+        val methodCallInfo = MethodCallInfo(this::f, "")
         val obj = "{\"arr\":[1,2,3]}"
         val r = CowherdApiUtils.expandJsonToMethodParameters(methodCallInfo, JSON.parseObject(obj), null)
 
@@ -101,7 +101,7 @@ class CowherdApiUtilsTest {
 
 //    @Test
 //    fun testExpandJsonToMethodParameters_boxedArray() {
-//        val methodCallInfo = MethodCallInfo(this::f)
+//        val methodCallInfo = MethodCallInfo(this::f, "")
 //        val obj = "{\"arr\":[1,2,3]}"
 //        val r = CowherdApiUtils.expandJsonToMethodParameters(methodCallInfo, JSON.parseObject(obj), null)
 //
