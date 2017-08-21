@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RouteManager
 {
@@ -237,7 +236,7 @@ public class RouteManager
                     if ((!remoteAddr.equals("127.0.0.1")) && (!remoteAddr.equals("localhost"))
                             && (!remoteAddr.equals("0:0:0:0:0:0:0:1"))
                             && (!origin.equals("file://"))) {
-                        if (!Stream.of(CowherdConfiguration.getAllowOrigins()).anyMatch(origin::equals)) {
+                        if (!CowherdConfiguration.getAllowOrigins().contains(origin)) {
                             origin = "NOT_ALLOWED";
                             allow = false;
                         }

@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 包含全局配置信息
@@ -59,7 +61,7 @@ public class CowherdConfiguration
     private static boolean everyHtmlIsTemplate = false;
 
     @ConfigField
-    private static String[] allowOrigins;
+    private static Set<String> allowOrigins;
 
     @ConfigField
     private static AlternativeCookieHeaderConfig alternativeCookieHeaders;
@@ -312,7 +314,7 @@ public class CowherdConfiguration
      * 获取允许 CORS 的域名列表
      * @return 允许 CORS 的域名列表
      */
-    public static String[] getAllowOrigins()
+    public static Set<String> getAllowOrigins()
     {
         return allowOrigins;
     }
@@ -321,9 +323,17 @@ public class CowherdConfiguration
      * 设置允许 CORS 的域名列表
      * @param allowOrigins 允许 CORS 的域名列表
      */
-    public static void setAllowOrigins(String[] allowOrigins)
+    public static void setAllowOrigins(Set<String> allowOrigins)
     {
         CowherdConfiguration.allowOrigins = allowOrigins;
+    }
+
+    /**
+     * 动态添加允许 CORS 的域名
+     * @param origin 允许 CORS 的域名
+     */
+    public static void addAllowOrigin(String origin) {
+        allowOrigins.add(origin);
     }
 
     /**
@@ -436,6 +446,12 @@ public class CowherdConfiguration
                     for (int i = 0; i < l.size(); i++) {
                         Array.set(v, i, l.get(i));
                     }
+                } else if (f.getType().equals(Set.class)) {
+                    List l = JSON.parseArray(config.getJsonArray(name).toString(), f.getType().getComponentType());
+                    Set set = ConcurrentHashMap.newKeySet();
+
+                    set.addAll(l);
+                    v = set;
                 } else {
                     v = config.getValue(name);
                 }
