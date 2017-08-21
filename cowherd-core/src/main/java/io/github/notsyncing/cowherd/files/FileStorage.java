@@ -266,6 +266,6 @@ public class FileStorage
     }
 
     public void removeStoragePathIf(Predicate<Enum> predicate) {
-        storagePaths.entrySet().removeIf(e -> !predicate.test(e.getKey()));
+        storagePaths.entrySet().removeIf(e -> predicate.test(e.getKey()));
     }
 }
