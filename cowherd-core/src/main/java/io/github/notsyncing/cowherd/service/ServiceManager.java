@@ -82,6 +82,11 @@ public class ServiceManager
         addServiceClass(serviceClass, null);
     }
 
+    public static void removeServiceClass(Class<? extends CowherdService> serviceClass) {
+        services.remove(serviceClass.getName());
+        serviceInstances.remove(serviceClass.getName());
+    }
+
     public static CowherdService getServiceInstance(Class<? extends CowherdService> serviceClass) throws IllegalAccessException, InstantiationException, InvocationTargetException
     {
         CowherdServiceInfo info = services.get(serviceClass.getName());
