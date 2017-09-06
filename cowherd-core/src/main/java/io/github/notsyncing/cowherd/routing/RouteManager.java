@@ -31,6 +31,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class RouteManager
@@ -49,6 +51,10 @@ public class RouteManager
     public static void reset()
     {
         routes.clear();
+    }
+
+    public static void removeRouteIf(BiPredicate<RouteInfo, ActionMethodInfo> predicate) {
+        routes.entrySet().removeIf(entry -> predicate.test(entry.getKey(), entry.getValue()));
     }
 
     public static void addRoute(RouteInfo route, ActionMethodInfo target)
