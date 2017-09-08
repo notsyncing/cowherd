@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.files;
 
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
@@ -16,6 +17,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -89,21 +91,40 @@ public class FileStorage
      * @param noRemoveOld 为 true 则不删除源文件
      * @return 指示存放是否完成的 CompletableFuture 对象，并包含文件相对于该分类存储目录的相对路径
      */
-    public CompletableFuture<Path> storeFile(Path file, Enum tag, String newFileName, boolean noRemoveOld)
-    {
+    public CompletableFuture<Path> storeFile(Path file, Enum tag, String newFileName, boolean noRemoveOld) {
         CompletableFuture<Path> f = new CompletableFuture<>();
 
+        String fileName = newFileName == null ? file.getFileName().toString() : newFileName;
         Path store = storagePaths.get(tag);
-        Path to = store.resolve(newFileName == null ? file.getFileName().toString() : newFileName);
+        Path to;
+
+        if (CowherdConfiguration.isStoreFilesByDate()) {
+            LocalDate date = LocalDate.now();
+            to = store.resolve(String.valueOf(date.getYear())).resolve(String.valueOf(date.getMonthValue()))
+                    .resolve(String.valueOf(date.getDayOfMonth()));
+
+            try {
+                Files.createDirectories(to);
+            } catch (Exception e) {
+                f.completeExceptionally(e);
+                return f;
+            }
+
+            to = to.resolve(fileName);
+        } else {
+            to = store.resolve(fileName);
+        }
+
+        final Path finalTo = to;
 
         fs.copy(file.toString(), to.toString(), r -> {
             if (r.succeeded()) {
                 if (noRemoveOld) {
-                    f.complete(store.relativize(to));
+                    f.complete(store.relativize(finalTo));
                 } else {
                     fs.delete(file.toString(), r2 -> {
                         if (r2.succeeded()) {
-                            f.complete(to);
+                            f.complete(finalTo);
                         } else {
                             f.completeExceptionally(r2.cause());
                         }

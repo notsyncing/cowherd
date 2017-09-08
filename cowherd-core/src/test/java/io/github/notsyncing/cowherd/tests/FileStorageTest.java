@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.tests;
 
+import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.tests.services.TestStorageEnum;
 import io.vertx.core.Vertx;
@@ -15,6 +16,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -29,6 +32,8 @@ public class FileStorageTest
     @Before
     public void setUp() throws IOException
     {
+        CowherdConfiguration.setStoreFilesByDate(false);
+
         fs = new FileStorage(vertx);
 
         tempDir = Files.createTempDirectory("cowherd-test");
@@ -67,6 +72,50 @@ public class FileStorageTest
                 .thenAccept(p -> {
                     context.assertEquals(tempFile.getFileName(), p);
                     context.assertTrue(Files.exists(dir.resolve(tempFile.getFileName())));
+                    context.assertTrue(Files.exists(tempFile));
+                    async.complete();
+
+                    try {
+                        Files.delete(tempFile);
+                    } catch (IOException e) {
+                        context.fail(e);
+                    }
+                })
+                .exceptionally(ex -> {
+                    async.complete();
+                    context.fail(ex);
+
+                    try {
+                        Files.delete(tempFile);
+                    } catch (IOException e) {
+                        context.fail(e);
+                    }
+
+                    return null;
+                });
+    }
+
+    @Test
+    public void testStoreFileWithStoreByDate(TestContext context) throws IOException
+    {
+        CowherdConfiguration.setStoreFilesByDate(true);
+
+        Path tempFile = Files.createTempFile("cowherd-test-fs", ".txt");
+        Async async = context.async();
+
+        Path dir = tempDir.resolve("test_storage");
+        fs.registerStoragePath(TestStorageEnum.TestStorage, dir);
+
+        assertTrue(Files.notExists(dir.resolve(tempFile.getFileName())));
+
+        fs.storeFile(tempFile, TestStorageEnum.TestStorage, null, true)
+                .thenAccept(p -> {
+                    LocalDate d = LocalDate.now();
+                    Path tempFileFullPath = Paths.get(String.valueOf(d.getYear()), String.valueOf(d.getMonthValue()),
+                            String.valueOf(d.getDayOfMonth()), tempFile.getFileName().toString());
+
+                    context.assertEquals(tempFileFullPath, p);
+                    context.assertTrue(Files.exists(dir.resolve(tempFileFullPath)));
                     context.assertTrue(Files.exists(tempFile));
                     async.complete();
 

@@ -39,6 +39,9 @@ public class CowherdConfiguration
     private static Path uploadCacheDir;
 
     @ConfigField
+    private static boolean storeFilesByDate = true;
+
+    @ConfigField
     private static String apiServiceRoute = "/api/";
 
     @ConfigField
@@ -183,6 +186,22 @@ public class CowherdConfiguration
     public static void setUploadCacheDir(Path uploadCacheDir)
     {
         CowherdConfiguration.uploadCacheDir = uploadCacheDir;
+    }
+
+    /**
+     * 是否按照日期创建文件夹来组织上传文件
+     * @return
+     */
+    public static boolean isStoreFilesByDate() {
+        return storeFilesByDate;
+    }
+
+    /**
+     * 设置是否按照日期创建文件夹来组织上传文件
+     * @param storeFilesByDate
+     */
+    public static void setStoreFilesByDate(boolean storeFilesByDate) {
+        CowherdConfiguration.storeFilesByDate = storeFilesByDate;
     }
 
     /**
