@@ -1,6 +1,13 @@
 package io.github.notsyncing.cowherd.models;
 
+import io.github.notsyncing.cowherd.Cowherd;
+import io.github.notsyncing.cowherd.files.FileStorage;
+import io.github.notsyncing.cowherd.utils.FutureUtils;
+
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 上传文件信息类
@@ -51,5 +58,42 @@ public class UploadFileInfo
     public void setParameterName(String parameterName)
     {
         this.parameterName = parameterName;
+    }
+
+    private FileStorage getFileStorage() throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        return Cowherd.dependencyInjector.getComponent(FileStorage.class);
+    }
+
+    public CompletableFuture<Path> store(Enum tag, String newFileName, boolean noRemoveOld) {
+        try {
+            FileStorage fs = getFileStorage();
+
+            return fs.storeFile(this, tag, newFileName, noRemoveOld)
+                    .thenApply(p -> fs.relativize(tag, p));
+        } catch (Exception e) {
+            return FutureUtils.failed(e);
+        }
+    }
+
+    public CompletableFuture<Path> store(Enum tag) {
+        try {
+            FileStorage fs = getFileStorage();
+
+            return fs.storeFile(this, tag)
+                    .thenApply(p -> fs.relativize(tag, p));
+        } catch (Exception e) {
+            return FutureUtils.failed(e);
+        }
+    }
+
+    public CompletableFuture<Path> storeWithRandomName(Enum tag) {
+        try {
+            FileStorage fs = getFileStorage();
+
+            return fs.storeFile(this, tag)
+                    .thenApply(p -> fs.relativize(tag, p));
+        } catch (Exception e) {
+            return FutureUtils.failed(e);
+        }
     }
 }
