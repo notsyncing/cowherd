@@ -10,6 +10,7 @@ import com.github.dockerjava.core.command.AttachContainerResultCallback
 import com.github.dockerjava.core.command.BuildImageResultCallback
 import com.github.dockerjava.core.command.ExecStartResultCallback
 import com.github.fommil.ssh.SshRsaCrypto
+import com.sun.org.apache.xpath.internal.operations.Bool
 import freemarker.template.Configuration
 import freemarker.template.Template
 import io.github.notsyncing.cowherd.deploy.configs.AppConfig
@@ -281,7 +282,7 @@ class ServerOperator(private val host: String, private val port: Int, private va
         }
     }
 
-    private fun syncApp(appConfig: AppDeployConfig, skipData: Boolean = false) {
+    private fun syncApp(appConfig: AppDeployConfig, skipData: Boolean = false, skipWeb: Boolean = false) {
         println("Copying root data...")
 
         var r = syncCopy(appConfig.directories.absRoot, "/data/${appConfig.name}")
@@ -292,7 +293,9 @@ class ServerOperator(private val host: String, private val port: Int, private va
 
         println("Done.")
 
-        syncAppWeb(appConfig)
+        if (!skipWeb) {
+            syncAppWeb(appConfig)
+        }
 
         if (!skipData) {
             if (appConfig.directories.data != null) {
@@ -619,7 +622,13 @@ class ServerOperator(private val host: String, private val port: Int, private va
     }
 
     fun updateAppExceptDocker(appConfig: AppDeployConfig): String {
-        syncApp(appConfig, true)
+        syncApp(appConfig, skipData = true)
+
+        return ""
+    }
+
+    fun updateAppRoot(appConfig: AppDeployConfig): String {
+        syncApp(appConfig, skipData = true, skipWeb = true)
 
         return ""
     }

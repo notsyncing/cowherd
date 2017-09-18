@@ -106,6 +106,13 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
         println("App ${appConf.name} updated except docker.")
     }
 
+    fun updateAppRoot(appConfigFileOrDir: String) {
+        val appConf = getAppConfig(appConfigFileOrDir)
+        server!!.updateAppRoot(appConf)
+
+        println("App ${appConf.name} root updated.")
+    }
+
     @Command
     fun deleteApp(name: String) {
         server!!.deleteApp(name)
