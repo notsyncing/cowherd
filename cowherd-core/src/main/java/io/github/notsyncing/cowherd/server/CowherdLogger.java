@@ -2,6 +2,7 @@ package io.github.notsyncing.cowherd.server;
 
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
@@ -11,12 +12,15 @@ import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.SimpleFormatter;
+import java.util.stream.Stream;
 
 public class CowherdLogger
 {
     private static LoggerContext context = LoggerContext.getContext();
     private static Map<String, Logger> loggers = new ConcurrentHashMap<>();
-    private static Logger log;
 
     private String tag;
 
@@ -27,16 +31,18 @@ public class CowherdLogger
 
     public static CowherdLogger getInstance(Object o)
     {
-        CowherdLogger.registerTag(o.getClass().getSimpleName());
-
-        return new CowherdLogger(o.getClass().getSimpleName());
+        return getInstance(o.getClass().getSimpleName());
     }
 
     public static CowherdLogger getInstance(Class c)
     {
-        CowherdLogger.registerTag(c.getSimpleName());
+        return getInstance(c.getSimpleName());
+    }
 
-        return new CowherdLogger(c.getSimpleName());
+    public static CowherdLogger getInstance(String name) {
+        CowherdLogger.registerTag(name);
+
+        return new CowherdLogger(name);
     }
 
     public static CowherdLogger getAccessLogger()
@@ -44,9 +50,49 @@ public class CowherdLogger
         return new CowherdLogger("AccessLogger");
     }
 
+    private static java.util.logging.Level log4jLevelToJULLevel(Level level) {
+        if (level == Level.ALL) {
+            return java.util.logging.Level.ALL;
+        } else if (level == Level.DEBUG) {
+            return java.util.logging.Level.FINE;
+        } else if (level == Level.TRACE) {
+            return java.util.logging.Level.FINEST;
+        } else if ((level == Level.ERROR) || (level == Level.FATAL)) {
+            return java.util.logging.Level.SEVERE;
+        } else if (level == Level.WARN) {
+            return java.util.logging.Level.WARNING;
+        } else if (level == Level.INFO) {
+            return java.util.logging.Level.INFO;
+        } else if (level == Level.OFF) {
+            return java.util.logging.Level.OFF;
+        }
+
+        return java.util.logging.Level.ALL;
+    }
+
+    static Level julLevelToLog4jLevel(java.util.logging.Level level) {
+        if (level == java.util.logging.Level.ALL) {
+            return Level.ALL;
+        } else if (level == java.util.logging.Level.FINE) {
+            return Level.DEBUG;
+        } else if (level == java.util.logging.Level.FINEST) {
+            return Level.TRACE;
+        } else if (level == java.util.logging.Level.SEVERE) {
+            return Level.ERROR;
+        } else if (level == java.util.logging.Level.WARNING) {
+            return Level.WARN;
+        } else if (level == java.util.logging.Level.INFO) {
+            return Level.INFO;
+        } else if (level == java.util.logging.Level.OFF) {
+            return Level.OFF;
+        }
+
+        return Level.ALL;
+    }
+
     public static void loggerConfigChanged()
     {
-        Level level = CowherdConfiguration.isVerbose() ? Level.DEBUG : Level.INFO;
+        Level level = CowherdConfiguration.isVerbose() ? Level.TRACE : Level.INFO;
 
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("RollingBuilder");
@@ -106,7 +152,16 @@ public class CowherdLogger
 
         loggers.put("AccessLogger", context.getLogger("AccessLogger"));
 
-        log = context.getLogger(CowherdLogger.class.getSimpleName());
+        java.util.logging.Logger julRootLogger = java.util.logging.Logger.getLogger(LogManager.ROOT_LOGGER_NAME);
+        julRootLogger.setLevel(log4jLevelToJULLevel(level));
+
+        for (Handler h : julRootLogger.getHandlers()) {
+            julRootLogger.removeHandler(h);
+        }
+
+        julRootLogger.addHandler(new JULBridgeHandler());
+
+        Logger log = context.getLogger(CowherdLogger.class.getSimpleName());
         log.info("Log configuration reloaded.");
     }
 
