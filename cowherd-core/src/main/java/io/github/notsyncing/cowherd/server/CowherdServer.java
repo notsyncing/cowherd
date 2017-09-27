@@ -25,6 +25,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ConcurrentHashSet;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -232,21 +233,23 @@ public class CowherdServer
     /**
      * 启动服务器
      */
-    public void start()
-    {
+    public void start() throws IllegalAccessException, InstantiationException, InvocationTargetException {
         initServer();
     }
 
-    private void initServer()
-    {
+    private void initServer() throws IllegalAccessException, InvocationTargetException, InstantiationException {
         if (vertx == null) {
             vertx = Vertx.vertx();
 
             Cowherd.dependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
-        fileStorage = new FileStorage(vertx);
-        Cowherd.dependencyInjector.registerComponent(fileStorage);
+        if (!Cowherd.dependencyInjector.hasComponent(FileStorage.class)) {
+            fileStorage = new FileStorage();
+            Cowherd.dependencyInjector.registerComponent(fileStorage);
+        } else {
+            fileStorage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
+        }
 
         try {
             ServiceManager.instantiateSingletonServices();

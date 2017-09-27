@@ -4,6 +4,7 @@ import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult;
 import io.github.notsyncing.cowherd.annotations.NoAutoRegister;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.files.FileStorage;
 import io.github.notsyncing.cowherd.models.RouteInfo;
 import io.github.notsyncing.cowherd.routing.RouteManager;
 import io.github.notsyncing.cowherd.server.CowherdLogger;
@@ -16,6 +17,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -67,6 +69,10 @@ public class Cowherd
         });
     }
 
+    public void registerFileStorage(FileStorage storage) {
+        dependencyInjector.registerComponent(FileStorage.class, storage);
+    }
+
     public void start(FastClasspathScanner classpathScanner, int port)
     {
         if (classpathScanner == null) {
@@ -75,8 +81,11 @@ public class Cowherd
 
         CowherdDependencyInjector.setScanner(classpathScanner);
 
+        boolean selfDepInjector = false;
+
         if (dependencyInjector == null) {
             dependencyInjector = new CowherdDependencyInjector(false);
+            selfDepInjector = true;
         }
 
         configure(port);
@@ -87,11 +96,18 @@ public class Cowherd
 
         initParts(classScanResult);
 
-        dependencyInjector.init();
+        if (selfDepInjector) {
+            dependencyInjector.init();
+        }
 
         scanClasses(classScanResult);
 
-        startServer();
+        try {
+            startServer();
+        } catch (Exception e) {
+            log.e("Failed to start server", e);
+            System.exit(-1);
+        }
     }
 
     public void start(FastClasspathScanner scanner) {
@@ -208,8 +224,7 @@ public class Cowherd
                 });
     }
 
-    private void startServer()
-    {
+    private void startServer() throws IllegalAccessException, InvocationTargetException, InstantiationException {
         server = new CowherdServer(vertx);
 
         dependencyInjector.registerComponent(server);

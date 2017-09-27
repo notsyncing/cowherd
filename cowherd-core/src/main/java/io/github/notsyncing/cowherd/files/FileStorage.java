@@ -1,5 +1,6 @@
 package io.github.notsyncing.cowherd.files;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.models.ActionMethodInfo;
@@ -34,9 +35,14 @@ public class FileStorage
     private FileSystem fs;
     private CowherdLogger log = CowherdLogger.getInstance(this);
 
-    public FileStorage(Vertx vertx)
+    public FileStorage()
     {
-        fs = vertx.fileSystem();
+        try {
+            Vertx vertx = Cowherd.dependencyInjector.getComponent(Vertx.class);
+            fs = vertx.fileSystem();
+        } catch (Exception e) {
+            log.e("Failed to create file storage", e);
+        }
     }
 
     /**

@@ -754,15 +754,16 @@ public class CowherdTest
     {
         String route = "^/test/images/(?<path>.*?)$";
         FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
-        storage.registerStoragePath(TestStorageEnum.TestStorage, Files.createTempDirectory("test" + Math.random()));
+        Path storePath = Files.createTempDirectory("test-");
+        storage.registerStoragePath(TestStorageEnum.TestStorage, storePath);
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
-        Path tempFile = Files.createTempFile("test", null);
+        Path tempFile = Files.createTempFile(storePath, "test", null);
         Files.write(tempFile, "hello".getBytes("utf-8"));
         Path newFile = storage.storeFile(tempFile, TestStorageEnum.TestStorage, null, false).get();
 
         Async async = context.async();
-        HttpClientRequest req = get("/test/images/" + newFile.getFileName());
+        HttpClientRequest req = get("/test/images/" + newFile.toString());
         req.exceptionHandler(context::fail);
 
         req.handler(resp -> {
@@ -782,15 +783,16 @@ public class CowherdTest
     {
         String route = "^/test/images/(?<path>.*?)$";
         FileStorage storage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
-        storage.registerStoragePath(TestStorageEnum.TestStorage, Files.createTempDirectory("test" + Math.random()));
+        Path storePath = Files.createTempDirectory("test-");
+        storage.registerStoragePath(TestStorageEnum.TestStorage, storePath);
         storage.registerServerRoute(TestStorageEnum.TestStorage, route);
 
-        Path tempFile = Files.createTempFile("test", null);
+        Path tempFile = Files.createTempFile(storePath, "test", null);
         Files.write(tempFile, "hello".getBytes("utf-8"));
         Path newFile = storage.storeFile(tempFile, TestStorageEnum.TestStorage, null, false).get();
 
         Async async = context.async();
-        HttpClientRequest req = get("//test/images/" + newFile.getFileName());
+        HttpClientRequest req = get("//test/images/" + newFile.toString());
         req.exceptionHandler(context::fail);
 
         req.handler(resp -> {

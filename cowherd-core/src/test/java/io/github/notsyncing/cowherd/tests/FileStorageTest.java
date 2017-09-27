@@ -1,7 +1,9 @@
 package io.github.notsyncing.cowherd.tests;
 
+import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.files.FileStorage;
+import io.github.notsyncing.cowherd.service.CowherdDependencyInjector;
 import io.github.notsyncing.cowherd.tests.services.TestStorageEnum;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -26,15 +28,20 @@ import static org.junit.Assert.assertTrue;
 public class FileStorageTest
 {
     private Path tempDir;
-    private Vertx vertx = Vertx.vertx();
+    private Vertx vertx;
     private FileStorage fs;
 
     @Before
     public void setUp() throws IOException
     {
+        vertx = Vertx.vertx();
+
         CowherdConfiguration.setStoreFilesByDate(false);
 
-        fs = new FileStorage(vertx);
+        Cowherd.dependencyInjector = new CowherdDependencyInjector();
+        Cowherd.dependencyInjector.registerComponent(Vertx.class, vertx);
+
+        fs = new FileStorage();
 
         tempDir = Files.createTempDirectory("cowherd-test");
     }
@@ -43,6 +50,8 @@ public class FileStorageTest
     public void tearDown() throws IOException
     {
         FileUtils.deleteDirectory(tempDir.toFile());
+
+        vertx.close();
     }
 
     @Test
