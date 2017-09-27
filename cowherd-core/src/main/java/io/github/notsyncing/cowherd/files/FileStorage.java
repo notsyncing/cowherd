@@ -37,6 +37,10 @@ public class FileStorage
 
     public FileStorage()
     {
+        init();
+    }
+
+    protected void init() {
         try {
             Vertx vertx = Cowherd.dependencyInjector.getComponent(Vertx.class);
             fs = vertx.fileSystem();
