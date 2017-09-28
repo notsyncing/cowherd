@@ -69,7 +69,7 @@ public class Cowherd
         });
     }
 
-    public void registerFileStorage(FileStorage storage) {
+    public static void registerFileStorage(FileStorage storage) {
         dependencyInjector.registerComponent(FileStorage.class, storage);
     }
 
