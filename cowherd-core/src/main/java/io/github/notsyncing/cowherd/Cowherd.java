@@ -40,6 +40,12 @@ public class Cowherd
         app.start();
     }
 
+    public Cowherd() {
+        if (dependencyInjector != null) {
+            dependencyInjector.registerComponent(Vertx.class, vertx);
+        }
+    }
+
     public CowherdServer getServer() {
         return server;
     }
@@ -98,6 +104,10 @@ public class Cowherd
 
         if (selfDepInjector) {
             dependencyInjector.init();
+        }
+
+        if (!dependencyInjector.hasComponent(Vertx.class)) {
+            dependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
         scanClasses(classScanResult);
@@ -171,8 +181,6 @@ public class Cowherd
         }
 
         log.i("Cowherd web server is starting...");
-
-        dependencyInjector.registerComponent(Vertx.class, vertx);
 
         if (port > 0) {
             CowherdConfiguration.setListenPort(port);
