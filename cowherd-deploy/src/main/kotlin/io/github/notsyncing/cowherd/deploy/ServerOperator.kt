@@ -10,7 +10,6 @@ import com.github.dockerjava.core.command.AttachContainerResultCallback
 import com.github.dockerjava.core.command.BuildImageResultCallback
 import com.github.dockerjava.core.command.ExecStartResultCallback
 import com.github.fommil.ssh.SshRsaCrypto
-import com.sun.org.apache.xpath.internal.operations.Bool
 import freemarker.template.Configuration
 import freemarker.template.Template
 import io.github.notsyncing.cowherd.deploy.configs.AppConfig
@@ -26,7 +25,6 @@ import java.io.IOException
 import java.io.StringReader
 import java.lang.System.err
 import java.lang.System.out
-import java.net.ConnectException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -126,18 +124,33 @@ class ServerOperator(private val host: String, private val port: Int, private va
         }
     }
 
-    fun initializeEnvironment() {
+    fun initializeEnvironment(password: String? = null) {
         println("Initializing server environment...")
 
         ssh.start()
+
+        println("Connecting to server $host:$port with username $username ...")
+
         session = ssh.connect(username, host, port).apply { this.await() }.session
-        session.addPublicKeyIdentity(loadLocalSshKey())
+
+
+        if (password != null) {
+            session.addPasswordIdentity(password)
+
+            println("Authenticating with password...")
+        } else {
+            session.addPublicKeyIdentity(loadLocalSshKey())
+
+            println("Authenticating with local ssh key...")
+        }
 
         val result = session.auth().apply { this.await() }
 
         if (!result.isSuccess) {
             throw Exception("Auth failed with local ssh key to server $host port $port username $username", result.exception)
         }
+
+        println("Authenticated with server.")
 
         if (!checkForDockerInstallation()) {
             installDocker()

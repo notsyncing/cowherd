@@ -11,15 +11,14 @@ import java.nio.file.Paths
 class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
     private var server: ServerOperator? = null
 
-    @Command
-    fun connect(host: String, port: String, username: String) {
+    private fun connect(host: String, port: String, username: String, password: String?) {
         if (server != null) {
             server!!.destroy()
         }
 
         try {
             server = ServerOperator(host, port.toInt(), username)
-            server!!.initializeEnvironment()
+            server!!.initializeEnvironment(password)
             server!!.startDockerForwarding()
             server!!.startDockerClient()
 
@@ -37,6 +36,16 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
                 server = null
             }
         }
+    }
+
+    @Command
+    fun connect(host: String, port: String, username: String) {
+        connect(host, port, username, null)
+    }
+
+    @Command
+    fun connectWithPassword(host: String, port: String, username: String, password: String) {
+        connect(host, port, username, password)
     }
 
     @Command
