@@ -90,7 +90,7 @@ public class UploadFileInfo
         try {
             FileStorage fs = getFileStorage();
 
-            return fs.storeFile(this, tag)
+            return fs.storeFileWithRandomName(this, tag)
                     .thenApply(p -> fs.relativize(tag, p));
         } catch (Exception e) {
             return FutureUtils.failed(e);
