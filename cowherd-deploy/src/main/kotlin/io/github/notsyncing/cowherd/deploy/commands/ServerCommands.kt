@@ -159,8 +159,16 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
 
     @Command
     fun exit() {
-        server!!.destroy()
-        app.stop()
+        try {
+            if (server != null) {
+                server!!.destroy()
+            }
+
+            app.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            System.exit(-1)
+        }
     }
 
     @Command
