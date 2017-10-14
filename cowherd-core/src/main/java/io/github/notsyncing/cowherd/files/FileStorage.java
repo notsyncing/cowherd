@@ -108,6 +108,11 @@ public class FileStorage
         Path store = storagePaths.get(tag);
         Path to;
 
+        if (store == null) {
+            f.completeExceptionally(new Exception("Storage tag " + tag + " not registered!"));
+            return f;
+        }
+
         if (CowherdConfiguration.isStoreFilesByDate()) {
             LocalDate date = LocalDate.now();
             to = store.resolve(String.valueOf(date.getYear())).resolve(String.valueOf(date.getMonthValue()))
