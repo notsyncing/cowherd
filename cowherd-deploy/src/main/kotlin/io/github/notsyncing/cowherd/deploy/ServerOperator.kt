@@ -133,8 +133,10 @@ class ServerOperator(private val host: String, private val port: Int, private va
         session = ssh.connect(username, host, port).apply { this.await() }.session
         session.addPublicKeyIdentity(loadLocalSshKey())
 
-        if (!session.auth().apply { this.await() }.isSuccess) {
-            throw ConnectException("Auth failed with local ssh key to server $host port $port username $username")
+        val result = session.auth().apply { this.await() }
+
+        if (!result.isSuccess) {
+            throw Exception("Auth failed with local ssh key to server $host port $port username $username", result.exception)
         }
 
         if (!checkForDockerInstallation()) {
