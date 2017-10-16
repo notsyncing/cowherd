@@ -1,0 +1,65 @@
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+    id "com.github.johnrengelman.shadow" version "1.2.4"
+}
+
+def ver = rootProject.ext.ver
+
+group grp
+version ver
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.18'
+    compile project(":cowherd-core")
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.1.0-RC.1'
+    testCompile "com.nhaarman:mockito-kotlin:0.6.0"
+    testCompile 'io.vertx:vertx-unit:3.4.2'
+    testCompile 'com.mashape.unirest:unirest-java:1.4.9'
+    testCompile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'io.github.notsyncing.cowherd'
+            artifactId 'cowherd-cluster'
+            version ver
+            from components.java
+
+            artifact sourceJar
+            artifact javadocJar
+        }
+
+        slave(MavenPublication) {
+            groupId 'io.github.notsyncing.cowherd'
+            artifactId 'cowherd-cluster-slave'
+            version ver
+
+            artifact shadowJar
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+
+    pkg {
+        repo = 'maven'
+        name = 'cowherd-cluster'
+        licenses = [ 'GPL-3.0' ]
+        vcsUrl = 'https://github.com/notsyncing/cowherd.git'
+
+        version {
+            name = ver
+            vcsTag = ver
+        }
+    }
+
+    publications = [ 'maven' ]
+}

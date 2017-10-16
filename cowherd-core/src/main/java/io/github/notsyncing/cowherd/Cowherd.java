@@ -198,7 +198,7 @@ public class Cowherd
         }
     }
 
-    public FastClasspathScanner createClasspathScanner()
+    public static FastClasspathScanner createClasspathScanner()
     {
         return new FastClasspathScanner("-io.vertx", "-org.junit", "-io.netty", "-javax", "-javassist",
                 "-jar:gragent.jar", "-jar:jfxrt.jar", "-jar:jfxswt.jar", "-jar:idea_rt.jar", "-jar:junit-rt.jar",
@@ -247,6 +247,9 @@ public class Cowherd
         ServiceManager.clear();
         RouteManager.reset();
 
-        return server.stop();
+        return server.stop()
+                .thenAccept(r -> {
+                    dependencyInjector = null;
+                });
     }
 }

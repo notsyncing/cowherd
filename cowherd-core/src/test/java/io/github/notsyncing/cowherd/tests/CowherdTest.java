@@ -121,8 +121,6 @@ public class CowherdTest
         cowherd.start(random.nextInt(50000) + 10000);
 
         service = Cowherd.dependencyInjector.getComponent(TestService.class);
-
-        Thread.sleep(2000);
     }
 
     @After
@@ -132,8 +130,6 @@ public class CowherdTest
 
         cowherd.stop().get();
         service.clear();
-
-        Thread.sleep(2000);
     }
 
     @Test
@@ -166,10 +162,22 @@ public class CowherdTest
     private void checkIfSuccessAndString(TestContext context, Async async, HttpClientRequest req, String expected,
                                          BiConsumer<String, HttpClientResponse> onSuccess)
     {
+        req.exceptionHandler(it -> {
+            context.fail(it);
+
+            async.complete();
+        });
+
         req.handler(resp -> {
             context.assertEquals(200, resp.statusCode());
 
-            resp.bodyHandler(b -> {
+            resp.exceptionHandler(it -> {
+                context.fail(it);
+
+                async.complete();
+            });
+
+            resp.handler(b -> {
                 String data = b.toString();
                 context.assertEquals(expected, data);
 

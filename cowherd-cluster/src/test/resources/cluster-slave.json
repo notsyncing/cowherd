@@ -1,0 +1,5 @@
+{
+  "masterIp": "127.0.0.1",
+  "masterPort": 8081,
+  "slaveDataPort": 8082
+}

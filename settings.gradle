@@ -5,4 +5,6 @@ include 'cowherd-api'
 include 'cowherd-thymeleaf'
 include 'cowherd-deploy'
 include 'cowherd-server-renderer'
+include 'cowherd-cluster'
+include 'cowherd-cluster-bootstrap'
 

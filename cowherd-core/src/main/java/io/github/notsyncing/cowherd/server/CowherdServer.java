@@ -8,10 +8,7 @@ import io.github.notsyncing.cowherd.exceptions.AuthenticationFailedException;
 import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.files.FileStorage;
-import io.github.notsyncing.cowherd.models.ActionContext;
-import io.github.notsyncing.cowherd.models.ActionResult;
-import io.github.notsyncing.cowherd.models.CSRFToken;
-import io.github.notsyncing.cowherd.models.WebSocketActionResult;
+import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.routing.RouteManager;
 import io.github.notsyncing.cowherd.service.ServiceManager;
@@ -34,6 +31,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class CowherdServer
 {
@@ -43,6 +42,9 @@ public class CowherdServer
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private CowherdLogger accessLogger = CowherdLogger.getAccessLogger();
     private ConcurrentHashSet<CSRFToken> csrfTokens = new ConcurrentHashSet<>();
+
+    private Function<RequestDelegationInfo, CompletableFuture<RequestDelegationInfo>> requestDelegation;
+    private Consumer<RequestDoneInfo> requestDoneListener;
 
     private ScheduledExecutorService csrfTokenCleaner = Executors.newScheduledThreadPool(1, r -> {
         Thread thread = new Thread(r);
@@ -58,6 +60,14 @@ public class CowherdServer
             Date now = new Date();
             csrfTokens.removeIf(t -> t.getExpireTime().before(now));
         }, 0, 1, TimeUnit.HOURS);
+    }
+
+    public void setRequestDelegation(Function<RequestDelegationInfo, CompletableFuture<RequestDelegationInfo>> delegation) {
+        this.requestDelegation = delegation;
+    }
+
+    public void setRequestDoneListener(Consumer<RequestDoneInfo> requestDoneListener) {
+        this.requestDoneListener = requestDoneListener;
     }
 
     public FileStorage getFileStorage()
@@ -107,66 +117,99 @@ public class CowherdServer
                 ") " + req.version() + " " + req.method() + " " + (req.isSSL() ? "SECURE " : "") + req.uri();
 
         long reqTimeStart = System.currentTimeMillis();
+        long[] reqTimeEnd = new long[] { 0L };
 
-        ActionContext context = new ActionContext();
-        context.setServer(this);
-        context.setRequest(req);
+        CompletableFuture<RequestDelegationInfo> future;
 
-        String finalRemoteAddr = remoteAddr + ":" + req.remoteAddress().port();
+        if (requestDelegation != null) {
+            RequestDelegationInfo info = new RequestDelegationInfo();
+            info.setRequest(req);
+            info.setDelegated(false);
 
-        req.response().exceptionHandler(ex -> {
-            log.w("An exception occurred when writing response to " + finalRemoteAddr + ", uri " + req.uri(), ex);
-        });
+            future = requestDelegation.apply(info);
+        } else {
+            future = CompletableFuture.completedFuture(null);
+        }
 
-        return RouteManager.handleRequest(context).thenAccept(o -> {
-            if (o instanceof WebSocketActionResult) {
-                logAccess(req, accessLog);
-                return;
+        final String finalRemoteAddr = remoteAddr;
+        ActionContext[] context = new ActionContext[] { null };
+        RequestDelegationInfo[] rdInfo = new RequestDelegationInfo[] { null };
+
+        return future.thenCompose(delegationInfo -> {
+            context[0] = new ActionContext();
+            context[0].setServer(this);
+            context[0].setRequest(req);
+
+            if ((delegationInfo == null) || (!delegationInfo.isDelegated())) {
+                String addr = finalRemoteAddr + ":" + req.remoteAddress().port();
+
+                req.response().exceptionHandler(ex -> {
+                    log.w("An exception occurred when writing response to " + addr + ", uri " + req.uri(), ex);
+                });
+
+                return RouteManager.handleRequest(context[0]);
+            } else {
+                rdInfo[0] = delegationInfo;
+                return CompletableFuture.completedFuture(null);
             }
-
-            if (o.getResult() == null) {
-                if (!req.response().ended()) {
-                    req.response().end();
+        }).thenAccept(o -> {
+            if (o != null) {
+                if (o instanceof WebSocketActionResult) {
+                    logAccess(req, accessLog);
+                    return;
                 }
 
-                logAccess(req, accessLog);
-                return;
+                if (o.getResult() == null) {
+                    if (!req.response().ended()) {
+                        req.response().end();
+                    }
+
+                    logAccess(req, accessLog);
+                    return;
+                }
+
+                if (!req.response().ended()) {
+                    writeObjectToResponse(context[0], o);
+                }
             }
 
-            if (!req.response().ended()) {
-                writeObjectToResponse(context, o);
-            }
-
-            long reqTimeEnd = System.currentTimeMillis();
-            logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
+            reqTimeEnd[0] = System.currentTimeMillis();
+            logAccess(req, accessLog, reqTimeEnd[0] - reqTimeStart);
         }).exceptionally(ex -> {
-            long reqTimeEnd = System.currentTimeMillis();
+            reqTimeEnd[0] = System.currentTimeMillis();
 
             if ((ex.getCause() instanceof AuthenticationFailedException) || (ex.getCause() instanceof FilterBreakException)) {
                 req.response().setStatusCode(403);
                 req.response().end();
 
-                logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
+                logAccess(req, accessLog, reqTimeEnd[0] - reqTimeStart);
                 return null;
             } else if (ex.getCause() instanceof ValidationFailedException) {
                 req.response().setStatusCode(400);
                 req.response().end();
 
-                logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
+                logAccess(req, accessLog, reqTimeEnd[0] - reqTimeStart);
                 return null;
             }
 
-            Throwable e = (Throwable)ex;
-            log.e("An exception was thrown when processing an action: ", e);
+            log.e("An exception was thrown when processing an action: ", ex);
 
-            String data = e.getMessage() + "\n" + StringUtils.exceptionStackToString(e);
+            String data = ex.getMessage() + "\n" + StringUtils.exceptionStackToString(ex);
 
             req.response().setStatusCode(500);
-            req.response().setStatusMessage(e.getMessage());
+            req.response().setStatusMessage(ex.getMessage());
 
             writeResponse(req.response(), data);
-            logAccess(req, accessLog, reqTimeEnd - reqTimeStart);
+            logAccess(req, accessLog, reqTimeEnd[0] - reqTimeStart);
             return null;
+        }).thenAccept(r -> {
+            if (requestDoneListener != null) {
+                RequestDoneInfo info = new RequestDoneInfo();
+                info.setDelegationInfo(rdInfo[0]);
+                info.setTime(reqTimeEnd[0] - reqTimeStart);
+
+                requestDoneListener.accept(info);
+            }
         });
     }
 
@@ -174,7 +217,7 @@ public class CowherdServer
     {
         if (!CowherdConfiguration.isMakeAccessLoggerQuiet()) {
             accessLogger.i(accessLog + " " + req.response().getStatusCode() + " " + req.response().bytesWritten()
-                    + (accessProcessTime > 0 ? " " + accessProcessTime + "ms" : ""));
+                    + " " + accessProcessTime + "ms");
         }
     }
 
@@ -268,6 +311,13 @@ public class CowherdServer
             if (count <= 0) {
                 count = 1;
             }
+        }
+
+        String listenPortProperty = System.getProperty("cowherd.listenPort");
+
+        if (listenPortProperty != null) {
+            CowherdConfiguration.setListenPort(Integer.parseInt(listenPortProperty));
+            log.i("Listen port set to " + CowherdConfiguration.getListenPort() + " due to system property.");
         }
 
         log.i("Starting " + count + " http servers...");
