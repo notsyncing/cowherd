@@ -35,6 +35,11 @@ class CowherdClusterMaster : CowherdClusterNode() {
     private var currentSyncingNode: NodeInfo? = null
 
     override fun init() {
+        if (System.getProperty("cowherd.cluster.mode") == "slave") {
+            log.info("I'm a slave node.")
+            return
+        }
+
         val config = CowherdConfiguration.getRawConfiguration().getJsonObject("cluster")
 
         super.init()
