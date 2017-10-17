@@ -193,4 +193,11 @@ object Utils {
     fun writeMessageHeader(socket: NetSocket, header: String, length: Long): NetSocket {
         return socket.write(Buffer.buffer(combineByteArrays(header.toByteArray(), longToBytes(length))))
     }
+
+    fun writeMessage(socket: NetSocket, header: String, data: String): NetSocket {
+        val d = data.toByteArray()
+
+        return writeMessageHeader(socket, header, d.size.toLong())
+                .write(Buffer.buffer(d))
+    }
 }

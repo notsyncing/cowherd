@@ -18,6 +18,7 @@ object ClusterConfigs {
     const val PKH_REQUEST_FILE_LIST = "RQFL"
     const val PKH_FILE_LIST = "FLST"
     const val PKH_SYNCHRONIZE_DONE = "SYND"
+    const val PKH_EXIT = "EXIT"
 
     var nodeRequestTimeSampleCount = 20
 

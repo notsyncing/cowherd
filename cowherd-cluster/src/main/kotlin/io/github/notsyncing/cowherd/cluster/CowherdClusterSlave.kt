@@ -454,6 +454,10 @@ class CowherdClusterSlave : CowherdClusterNode() {
         }
     }
 
+    private fun reportExit() {
+        Utils.writeMessage(upstreamConnection!!, ClusterConfigs.PKH_EXIT, selfNode.identifier)
+    }
+
     private fun startApp() {
         if (process != null) {
             log.severe("App already running: " + process)
@@ -498,7 +502,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
 
             process = null
 
-            // TODO: Send message to master for removing this node
+            reportExit()
         }
 
         log.info("Slave node started app: " + process)

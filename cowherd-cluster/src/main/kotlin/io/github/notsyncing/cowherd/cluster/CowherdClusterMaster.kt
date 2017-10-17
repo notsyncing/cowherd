@@ -206,6 +206,31 @@ class CowherdClusterMaster : CowherdClusterNode() {
                 }
             }
 
+            ClusterConfigs.PKH_EXIT -> {
+                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    done()
+
+                    CompletableFuture.runAsync {
+                        val nodeId = String(it)
+                        val node = nodes.remove(nodeId)
+
+                        if (node == null) {
+                            log.warning("Received exit message, but I don't know a node with id $nodeId")
+                            return@runAsync
+                        }
+
+                        log.info("Received exit message: from node ${node.name} (${node.identifier})")
+
+                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
+                    }.exceptionally {
+                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+                        null
+                    }
+                }.exceptionally {
+                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+                }
+            }
+
             else -> {
                 log.warning("Received cluster message with unknown type $type")
                 socket.close()

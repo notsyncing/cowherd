@@ -228,6 +228,30 @@ class MasterNodeTest {
     }
 
     @Test
+    fun testMasterReceivedExit(context: TestContext) {
+        val node = NodeInfo("test_node", "1:2:3", 5, "127.0.0.2:8093",
+                "127.0.0.2", 8094, 8095)
+
+        master.nodes.put(node.identifier, node)
+
+        TestUtils.connectTo(vertx, context, master.selfNode.cmdPort, {
+            it.write(ClusterConfigs.PKH_EXIT)
+            it.write(Buffer.buffer(Utils.longToBytes(5L)))
+            it.write("1:2:3")
+        }, { it, s, done ->
+            val header = ClusterConfigs.PKH_PONG.toByteArray()
+            Assert.assertArrayEquals(header, it.bytes.copyOfRange(0, header.size))
+
+            val length = Utils.bytesToLong(it.bytes.copyOfRange(header.size, header.size + 8))
+            Assert.assertEquals(0L, length)
+
+            Assert.assertTrue(master.nodes.isEmpty())
+
+            done(null)
+        })
+    }
+
+    @Test
     fun testMasterRedirectRequestToSlave(context: TestContext) {
         val node = NodeInfo("test_node", "1:2:3", 1, "127.0.0.1:8093",
                 "127.0.0.1", 8094, 8095)
