@@ -20,10 +20,12 @@ object ClusterConfigs {
     var localClasspath = Paths.get(".", "cluster_data").toAbsolutePath()
     var forceRedownloadClasspath = false
 
-    private val blacklistJars = mutableSetOf("idea_rt.jar", "junit-rt.jar", "junit5-rt.jar", "charsets.jar",
+    private val defaultBlacklistJars = setOf("idea_rt.jar", "junit-rt.jar", "junit5-rt.jar", "charsets.jar",
             "cldrdata.jar", "dnsns.jar", "icedtea-sound.jar", "jaccess.jar", "java-atk-wrapper.jar",
             "localedata.jar", "nashorn.jar", "sunec.jar", "sunjce_provider.jar", "sunpkcs11.jar", "zipfs.jar",
             "jce.jar", "jsse.jar", "managment-agent.jar", "resources.jar", "rt.jar", "tools.jar")
+
+    private val blacklistJars = defaultBlacklistJars.toMutableSet()
 
     fun addBlacklistJar(jarName: String) {
         blacklistJars.add(jarName)
@@ -42,10 +44,16 @@ object ClusterConfigs {
 
         forceRedownloadClasspath = false
 
+        bootstrapperPath = Paths.get(".", "cowherd-cluster-bootstrapper.jar").toAbsolutePath().normalize()
+        localClasspath = Paths.get(".", "cluster_data").toAbsolutePath()
+
         skipSlaveBootstrapper = false
         ignoreDirectoryInClasspath = false
         disablePing = false
 
         inheritSlaveAppStdStreams = false
+
+        blacklistJars.clear()
+        blacklistJars.addAll(defaultBlacklistJars)
     }
 }
