@@ -62,11 +62,6 @@ class CowherdClusterMaster : CowherdClusterNode() {
     }
 
     override fun handleMessage(socket: NetSocket, type: String, payloadLength: Long, currentBuffer: Buffer, bufferStartPos: Int) {
-        val done = {
-            socket.handler(handleMessageHeader(socket))
-            socket.exceptionHandler(handleCmdConnectionException(socket))
-        }
-
         when (type) {
             ClusterConfigs.PKH_PING -> {
                 Utils.drainBytes(socket)
@@ -79,155 +74,110 @@ class CowherdClusterMaster : CowherdClusterNode() {
             }
 
             ClusterConfigs.PKH_INFO -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val data = String(it)
 
-                    CompletableFuture.runAsync {
-                        val data = String(it)
+                    log.info("Received slave node info: $data")
 
-                        log.info("Received slave node info: $data")
+                    val nodes = JSON.parseArray(data)
 
-                        val nodes = JSON.parseArray(data)
+                    for (i in 0 until nodes.size) {
+                        val n = updateNode(socket, nodes.getJSONObject(i))
 
-                        for (i in 0 until nodes.size) {
-                            val n = updateNode(socket, nodes.getJSONObject(i))
-
-                            queueReportClasspathListToNode(n)
-                        }
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
+                        queueReportClasspathListToNode(n)
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
                 }
             }
 
             ClusterConfigs.PKH_REQUEST_FILE -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val path = String(it)
+                    val p = Paths.get(path)
 
-                    CompletableFuture.runAsync {
-                        val path = String(it)
-                        val p = Paths.get(path)
+                    log.info("Sending file $path to slave node at ${socket.remoteAddress().host()}")
 
-                        log.info("Sending file $path to slave node at ${socket.remoteAddress().host()}")
+                    Utils.writeMessageHeader(socket, ClusterConfigs.PKH_FILE, Files.size(p))
 
-                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_FILE, Files.size(p))
-
-                        socket.sendFile(path) {
-                            if (it.succeeded()) {
-                                log.info("Sent file $path to slave node at ${socket.remoteAddress().host()}")
-                            } else {
-                                log.log(Level.WARNING, "An exception occured when sending file $path to slave node " +
-                                        "at ${socket.remoteAddress().host()}", it.cause())
-                            }
+                    socket.sendFile(path) {
+                        if (it.succeeded()) {
+                            log.info("Sent file $path to slave node at ${socket.remoteAddress().host()}")
+                        } else {
+                            log.log(Level.WARNING, "An exception occured when sending file $path to slave node " +
+                                    "at ${socket.remoteAddress().host()}", it.cause())
                         }
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
                 }
             }
 
             ClusterConfigs.PKH_REQUEST_FILE_LIST -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val path = String(it)
+                    val p = Paths.get(path)
 
-                    CompletableFuture.runAsync {
-                        val path = String(it)
-                        val p = Paths.get(path)
+                    val fileList = Files.list(p)
+                            .map { FileItem(it, "") }
+                            .toList()
 
-                        val fileList = Files.list(p)
-                                .map { FileItem(it, "") }
-                                .toList()
+                    val data = JSON.toJSONString(fileList).toByteArray()
 
-                        val data = JSON.toJSONString(fileList).toByteArray()
+                    Utils.writeMessageHeader(socket, ClusterConfigs.PKH_FILE_LIST, data.size.toLong())
+                            .write(Buffer.buffer(data))
 
-                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_FILE_LIST, data.size.toLong())
-                                .write(Buffer.buffer(data))
-
-                        log.info("Sent file list of path $p to slave node.")
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
-                    }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+                    log.info("Sent file list of path $p to slave node.")
                 }
             }
 
             ClusterConfigs.PKH_SYNCHRONIZE_DONE -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val nodeId = String(it)
+                    val node = nodes[nodeId]
 
-                    CompletableFuture.runAsync {
-                        val nodeId = String(it)
-                        val node = nodes[nodeId]
-
-                        if (node == null) {
-                            log.warning("Received synchronize done message, but I don't know a node with id $nodeId")
-                            return@runAsync
-                        }
-
-                        log.info("Received synchronize done message: from node ${node.name} (${node.identifier})")
-
-                        node.ready = true
-
-                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
-
-                        var nextNode = nodeSyncQueue.poll()
-
-                        if (nextNode == null) {
-                            return@runAsync
-                        }
-
-                        while (nextNode.cmdConnection == socket) {
-                            nextNode = nodeSyncQueue.poll()
-
-                            if (nextNode == null) {
-                                break
-                            }
-                        }
-
-                        if (nextNode == null) {
-                            return@runAsync
-                        }
-
-                        reportClasspathListToNode(nextNode)
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
+                    if (node == null) {
+                        log.warning("Received synchronize done message, but I don't know a node with id $nodeId")
+                        return@readAllAndExecuteAsync
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+
+                    log.info("Received synchronize done message: from node ${node.name} (${node.identifier})")
+
+                    node.ready = true
+
+                    Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
+
+                    var nextNode = nodeSyncQueue.poll()
+
+                    if (nextNode == null) {
+                        return@readAllAndExecuteAsync
+                    }
+
+                    while (nextNode.cmdConnection == socket) {
+                        nextNode = nodeSyncQueue.poll()
+
+                        if (nextNode == null) {
+                            break
+                        }
+                    }
+
+                    if (nextNode == null) {
+                        return@readAllAndExecuteAsync
+                    }
+
+                    reportClasspathListToNode(nextNode)
                 }
             }
 
             ClusterConfigs.PKH_EXIT -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val nodeId = String(it)
+                    val node = nodes.remove(nodeId)
 
-                    CompletableFuture.runAsync {
-                        val nodeId = String(it)
-                        val node = nodes.remove(nodeId)
-
-                        if (node == null) {
-                            log.warning("Received exit message, but I don't know a node with id $nodeId")
-                            return@runAsync
-                        }
-
-                        log.info("Received exit message: from node ${node.name} (${node.identifier})")
-
-                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
+                    if (node == null) {
+                        log.warning("Received exit message, but I don't know a node with id $nodeId")
+                        return@readAllAndExecuteAsync
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+
+                    log.info("Received exit message: from node ${node.name} (${node.identifier})")
+
+                    Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
                 }
             }
 
@@ -256,7 +206,7 @@ class CowherdClusterMaster : CowherdClusterNode() {
 
         cmdConnection.connectHandler { s ->
             s.handler(handleMessageHeader(s))
-            s.exceptionHandler(handleCmdConnectionException(s))
+            s.exceptionHandler(handleMessageConnectionException(s))
 
             s.closeHandler { _ ->
                 var node: NodeInfo? = null
@@ -285,10 +235,6 @@ class CowherdClusterMaster : CowherdClusterNode() {
                 .setSsl(false)
                 .setUseAlpn(false)
                 .setKeepAlive(true))
-    }
-
-    private fun handleCmdConnectionException(socket: NetSocket): (Throwable) -> Unit = {
-        log.log(Level.WARNING, "An exception occured in data connection to ${socket.remoteAddress()}", it)
     }
 
     private fun redirectRequestToNodes(info: RequestDelegationInfo): CompletableFuture<RequestDelegationInfo> {

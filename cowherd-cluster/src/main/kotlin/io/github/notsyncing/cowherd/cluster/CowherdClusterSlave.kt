@@ -110,7 +110,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
     override fun handleMessage(socket: NetSocket, type: String, payloadLength: Long, currentBuffer: Buffer, bufferStartPos: Int) {
         val done = {
             socket.handler(handleMessageHeader(socket))
-            socket.exceptionHandler(handleCmdConnectionException(socket))
+            socket.exceptionHandler(handleMessageConnectionException(socket))
         }
 
         when (type) {
@@ -128,71 +128,53 @@ class CowherdClusterSlave : CowherdClusterNode() {
             }
 
             ClusterConfigs.PKH_CLASSPATH_LIST -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val data = String(it)
+                    val list = JSON.parseObject(data, ClasspathList::class.java)
 
-                    CompletableFuture.runAsync {
-                        val data = String(it)
-                        val list = JSON.parseObject(data, ClasspathList::class.java)
+                    log.info("Received classpath list from upstream: $data")
 
-                        log.info("Received classpath list from upstream: $data")
+                    if (classpathHasChanged(list)) {
+                        stopApp()
 
-                        if (classpathHasChanged(list)) {
-                            stopApp()
+                        noPing = true
 
-                            noPing = true
+                        synchronizeClasspathWithUpstream(socket, list)
+                                .thenAccept {
+                                    log.info("Classpath synchronized with upstream.")
 
-                            synchronizeClasspathWithUpstream(socket, list)
-                                    .thenAccept {
-                                        log.info("Classpath synchronized with upstream.")
-
-                                        if (it) {
-                                            startApp()
-                                        }
-
-                                        noPing = false
+                                    if (it) {
+                                        startApp()
                                     }
-                                    .exceptionally {
-                                        noPing = false
 
-                                        log.log(Level.WARNING, "An exception occured when synchronizing classpath", it)
-                                        null
-                                    }
-                        } else {
-                            log.info("Classpath up-to-date with upstream.")
-                            reportSynchronizeDone(socket)
-                        }
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
+                                    noPing = false
+                                }
+                                .exceptionally {
+                                    noPing = false
+
+                                    log.log(Level.WARNING, "An exception occured when synchronizing classpath", it)
+                                    null
+                                }
+                    } else {
+                        log.info("Classpath up-to-date with upstream.")
+                        reportSynchronizeDone(socket)
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
                 }
             }
 
             ClusterConfigs.PKH_FILE_LIST -> {
-                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
-                    done()
+                readAllAndExecuteAsync(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    val listData = String(it)
+                    val fileList = JSON.parseArray(listData, FileItem::class.java)
 
-                    CompletableFuture.runAsync {
-                        val listData = String(it)
-                        val fileList = JSON.parseArray(listData, FileItem::class.java)
+                    if (currentFileListCallback != null) {
+                        val cb = currentFileListCallback!!
+                        currentFileListCallback = null
 
-                        if (currentFileListCallback != null) {
-                            val cb = currentFileListCallback!!
-                            currentFileListCallback = null
-
-                            cb.invoke(fileList)
-                        } else {
-                            log.warning("Received file list $listData, but no callback specified!")
-                        }
-                    }.exceptionally {
-                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                        null
+                        cb.invoke(fileList)
+                    } else {
+                        log.warning("Received file list $listData, but no callback specified!")
                     }
-                }.exceptionally {
-                    log.log(Level.WARNING, "An exception occured when receiving cmd", it)
                 }
             }
 
@@ -230,10 +212,6 @@ class CowherdClusterSlave : CowherdClusterNode() {
                 socket.close()
             }
         }
-    }
-
-    private fun handleCmdConnectionException(socket: NetSocket): (Throwable) -> Unit = {
-        log.log(Level.WARNING, "An exception occured in data connection to ${socket.remoteAddress()}", it)
     }
 
     fun respondInfoToUpstream() {

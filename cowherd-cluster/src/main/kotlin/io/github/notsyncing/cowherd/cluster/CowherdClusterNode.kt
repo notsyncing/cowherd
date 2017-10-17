@@ -12,6 +12,7 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.nio.ByteBuffer
 import java.nio.file.Files
+import java.util.concurrent.CompletableFuture
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -149,6 +150,31 @@ abstract class CowherdClusterNode {
 
     protected abstract fun handleMessage(socket: NetSocket, type: String, payloadLength: Long, currentBuffer: Buffer,
                                          bufferStartPos: Int)
+
+    protected open fun handleMessageConnectionException(socket: NetSocket) = { it: Throwable ->
+        log.log(Level.WARNING, "An exception occured in data connection to ${socket.remoteAddress()}", it)
+    }
+
+    protected fun readAllAndExecuteAsync(socket: NetSocket, payloadLength: Long, currentBuffer: Buffer,
+                                         bufferStartPos: Int, block: (ByteArray) -> Unit) {
+        val done = {
+            socket.handler(handleMessageHeader(socket))
+            socket.exceptionHandler(handleMessageConnectionException(socket))
+        }
+
+        Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
+            done()
+
+            CompletableFuture.runAsync {
+                block(it)
+            }.exceptionally {
+                log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+                null
+            }
+        }.exceptionally {
+            log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+        }
+    }
 
     open fun destroy() {
         if (selfVertx) {
