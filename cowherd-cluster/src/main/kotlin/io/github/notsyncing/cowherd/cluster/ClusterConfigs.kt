@@ -1,5 +1,10 @@
 package io.github.notsyncing.cowherd.cluster
 
+import io.github.notsyncing.cowherd.models.RouteInfo
+import io.github.notsyncing.cowherd.models.SimpleURI
+import io.github.notsyncing.cowherd.routing.FastRouteMatcher
+import io.github.notsyncing.cowherd.routing.RegexRouteMatcher
+import io.github.notsyncing.cowherd.routing.RouteMatcher
 import java.nio.file.Paths
 
 object ClusterConfigs {
@@ -39,6 +44,54 @@ object ClusterConfigs {
 
     var inheritSlaveAppStdStreams = false
 
+    private val noRedirectPaths = mutableListOf<RouteInfo>()
+
+    fun addNoRedirectPath(routeInfo: RouteInfo) {
+        noRedirectPaths.add(routeInfo)
+    }
+
+    fun addNoRedirectPath(regexPath: Regex) {
+        val info = RouteInfo()
+        info.path = regexPath.pattern
+        info.isFastRoute = false
+
+        noRedirectPaths.add(info)
+    }
+
+    fun addNoRedirectPath(fastPath: String) {
+        val info = RouteInfo()
+        info.path = fastPath
+        info.isFastRoute = true
+
+        noRedirectPaths.add(info)
+    }
+
+    fun shouldRedirectUri(uri: String): Boolean {
+        if (noRedirectPaths.isEmpty()) {
+            return true
+        }
+
+        val simpleUri = SimpleURI(uri)
+        val fastRouteMatcher = FastRouteMatcher(simpleUri)
+        val regexRouteMatcher = RegexRouteMatcher(simpleUri)
+
+        for (route in noRedirectPaths) {
+            val matcher: RouteMatcher
+
+            if (route.isFastRoute) {
+                matcher = fastRouteMatcher
+            } else {
+                matcher = regexRouteMatcher
+            }
+
+            if (matcher.matchOnly(route)) {
+                return false
+            }
+        }
+
+        return true
+    }
+
     fun reset() {
         nodeRequestTimeSampleCount = 20
 
@@ -55,5 +108,7 @@ object ClusterConfigs {
 
         blacklistJars.clear()
         blacklistJars.addAll(defaultBlacklistJars)
+
+        noRedirectPaths.clear()
     }
 }

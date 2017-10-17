@@ -257,6 +257,13 @@ class CowherdClusterMaster : CowherdClusterNode() {
     }
 
     private fun redirectRequestToNodes(info: RequestDelegationInfo): CompletableFuture<RequestDelegationInfo> {
+        if (!ClusterConfigs.shouldRedirectUri(info.request.absoluteURI())) {
+            log.fine("We should not redirect ${info.request.absoluteURI()}.")
+            info.isDelegated = false
+            info.tag = "MASTER"
+            return CompletableFuture.completedFuture(info)
+        }
+
         val minLoadNode = nodes.values
                 .filter { it.ready }
                 .minBy { it.load }
