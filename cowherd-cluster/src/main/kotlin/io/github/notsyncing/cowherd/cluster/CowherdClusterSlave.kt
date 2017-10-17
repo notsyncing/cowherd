@@ -219,10 +219,8 @@ class CowherdClusterSlave : CowherdClusterNode() {
         data.add(selfNode.toJSONObject())
 
         val payload = data.toJSONString()
-        val d = payload.toByteArray()
 
-        Utils.writeMessageHeader(upstreamConnection!!, ClusterConfigs.PKH_INFO, d.size.toLong())
-                .write(Buffer.buffer(d))
+        Utils.writeMessage(upstreamConnection!!, ClusterConfigs.PKH_INFO, payload)
 
         log.info("Reported node info to upstream.")
     }
@@ -239,10 +237,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
                 f.completeExceptionally(it)
         }
 
-        val reqData = remotePath.toByteArray()
-
-        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_REQUEST_FILE, reqData.size.toLong())
-                .write(Buffer.buffer(reqData))
+        Utils.writeMessage(socket, ClusterConfigs.PKH_REQUEST_FILE, remotePath)
 
         return f
     }
@@ -257,10 +252,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
                 f.complete(it)
         }
 
-        val reqData = remotePath.toByteArray()
-
-        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_REQUEST_FILE_LIST, reqData.size.toLong())
-                .write(Buffer.buffer(reqData))
+        Utils.writeMessage(socket, ClusterConfigs.PKH_REQUEST_FILE_LIST, remotePath)
 
         return f
     }
@@ -367,10 +359,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
     }
 
     private fun reportSynchronizeDone(socket: NetSocket) {
-        val data = selfNode.identifier.toByteArray()
-
-        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_SYNCHRONIZE_DONE, data.size.toLong())
-                .write(Buffer.buffer(data))
+        Utils.writeMessage(socket, ClusterConfigs.PKH_SYNCHRONIZE_DONE, selfNode.identifier)
     }
 
     private fun connectToUpstream(host: String, port: Int): CompletableFuture<Unit> {

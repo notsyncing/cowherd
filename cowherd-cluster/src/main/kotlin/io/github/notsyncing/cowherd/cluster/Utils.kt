@@ -1,6 +1,9 @@
 package io.github.notsyncing.cowherd.cluster
 
+import io.vertx.core.Context
 import io.vertx.core.buffer.Buffer
+import io.vertx.core.http.HttpClient
+import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.net.NetSocket
 import java.io.OutputStream
 import java.net.URLClassLoader
@@ -199,5 +202,69 @@ object Utils {
 
         return writeMessageHeader(socket, header, d.size.toLong())
                 .write(Buffer.buffer(d))
+    }
+
+    fun pipeRequestToNode(dataConnectionContext: Context, dataConnection: HttpClient, req: HttpServerRequest,
+                          redirectToHost: String, redirectToPort: Int): CompletableFuture<Long> {
+        val f = CompletableFuture<Long>()
+
+        req.pause()
+
+        dataConnectionContext.runOnContext {
+            val nodeReq = dataConnection.request(req.method(), redirectToPort, redirectToHost, req.uri())
+                    .apply {
+                        for ((k, v) in req.headers()) {
+                            this.putHeader(k, v)
+                        }
+                    }
+
+            val startTime = System.currentTimeMillis()
+
+            nodeReq.handler { nodeResp ->
+                val resp = req.response()
+
+                resp.statusCode = nodeResp.statusCode()
+                resp.statusMessage = nodeResp.statusMessage()
+                resp.isChunked = nodeResp.getHeader("Transfer-Encoding")?.equals("chunked") ?: false
+
+                for ((k, v) in nodeResp.headers()) {
+                    resp.putHeader(k, v)
+                }
+
+                nodeResp.handler { resp.write(it) }
+
+                nodeResp.endHandler {
+                    resp.end()
+
+                    val endTime = System.currentTimeMillis()
+                    val reqTime = endTime - startTime
+
+                    f.complete(reqTime)
+                }
+
+                nodeResp.exceptionHandler {
+                    f.completeExceptionally(Exception("An exception occured when reading response from " +
+                            "$redirectToHost:$redirectToPort", it))
+                }
+            }
+
+            nodeReq.exceptionHandler {
+                f.completeExceptionally(Exception("An exception occured when processing request to " +
+                        "$redirectToHost:$redirectToPort", it))
+            }
+
+            req.handler { nodeReq.write(it) }
+
+            req.endHandler { nodeReq.end() }
+
+            req.exceptionHandler {
+                f.completeExceptionally(Exception("An exception occured when sending request to " +
+                        "$redirectToHost:$redirectToPort", it))
+            }
+
+            req.resume()
+        }
+
+        return f
     }
 }

@@ -118,10 +118,7 @@ class CowherdClusterMaster : CowherdClusterNode() {
                             .map { FileItem(it, "") }
                             .toList()
 
-                    val data = JSON.toJSONString(fileList).toByteArray()
-
-                    Utils.writeMessageHeader(socket, ClusterConfigs.PKH_FILE_LIST, data.size.toLong())
-                            .write(Buffer.buffer(data))
+                    Utils.writeMessage(socket, ClusterConfigs.PKH_FILE_LIST, JSON.toJSONString(fileList))
 
                     log.info("Sent file list of path $p to slave node.")
                 }
@@ -237,6 +234,24 @@ class CowherdClusterMaster : CowherdClusterNode() {
                 .setKeepAlive(true))
     }
 
+    private fun electMinLoadNode(): NodeInfo {
+        val minLoadNode = nodes.values
+                .filter { it.ready }
+                .minBy { it.load }
+
+        if (minLoadNode == null) {
+            log.fine("We have no ready slave nodes to elect.")
+            return selfNode
+        }
+
+        if (minLoadNode.load >= selfNode.load) {
+            log.fine("Master is the most easy node with load ${selfNode.load}")
+            return selfNode
+        }
+
+        return minLoadNode
+    }
+
     private fun redirectRequestToNodes(info: RequestDelegationInfo): CompletableFuture<RequestDelegationInfo> {
         if (!ClusterConfigs.shouldRedirectUri(info.request.absoluteURI())) {
             log.fine("We should not redirect ${info.request.absoluteURI()}.")
@@ -245,107 +260,36 @@ class CowherdClusterMaster : CowherdClusterNode() {
             return CompletableFuture.completedFuture(info)
         }
 
-        val minLoadNode = nodes.values
-                .filter { it.ready }
-                .minBy { it.load }
+        val minLoadNode = electMinLoadNode()
 
-        if (minLoadNode == null) {
-            log.fine("We have no slave nodes to elect.")
+        if (minLoadNode == selfNode) {
+            info.isDelegated = false
             info.tag = "MASTER"
             return CompletableFuture.completedFuture(info)
         }
-
-        if (minLoadNode.load >= selfNode.load) {
-            log.fine("Master is the most easy node with load ${selfNode.load}")
-            info.tag = "MASTER"
-            return CompletableFuture.completedFuture(info)
-        }
-
-        val f = CompletableFuture<RequestDelegationInfo>()
 
         log.fine("Elected node with minimal load ${minLoadNode.load}: ${minLoadNode.name} (${minLoadNode.identifier})")
 
         val req = info.request
         info.isDelegated = true
 
-        req.pause()
-
-        dataConnectionContext.runOnContext {
-            val nodeReq = dataConnection.request(req.method(), minLoadNode.dataPort, minLoadNode.dataAddress, req.uri())
-                    .apply {
-                        for ((k, v) in req.headers()) {
-                            this.putHeader(k, v)
-                        }
-                    }
-
-            val startTime = System.currentTimeMillis()
-
-            nodeReq.handler { nodeResp ->
-                val resp = req.response()
-
-                resp.statusCode = nodeResp.statusCode()
-                resp.statusMessage = nodeResp.statusMessage()
-                resp.isChunked = nodeResp.getHeader("Transfer-Encoding")?.equals("chunked") ?: false
-
-                for ((k, v) in nodeResp.headers()) {
-                    resp.putHeader(k, v)
-                }
-
-                nodeResp.handler { resp.write(it) }
-
-                nodeResp.endHandler {
-                    resp.end()
-
-                    val endTime = System.currentTimeMillis()
-                    val reqTime = endTime - startTime
-
-                    log.info("Redirect ${req.uri()} to node ${minLoadNode.name} (${minLoadNode.identifier}): ${reqTime}ms")
-
+        return Utils.pipeRequestToNode(dataConnectionContext, dataConnection, req, minLoadNode.dataAddress,
+                minLoadNode.dataPort)
+                .thenApply { reqTime ->
                     minLoadNode.appendRequestTime(reqTime)
 
-                    f.complete(info)
+                    info
                 }
-
-                nodeResp.exceptionHandler {
-                    log.log(Level.WARNING, "An exception occured when reading response from node ${minLoadNode.name} " +
-                            "(${minLoadNode.identifier})", it)
-
+                .exceptionally {
                     removeNode(minLoadNode)
 
-                    f.completeExceptionally(it)
+                    val msg = "An exception occured when processing request to node ${minLoadNode.name} " +
+                            "(${minLoadNode.identifier})"
+
+                    log.log(Level.WARNING, msg, it)
+
+                    throw Exception(msg, it)
                 }
-            }
-
-            nodeReq.exceptionHandler {
-                val msg = "An exception occured when processing request to node ${minLoadNode.name} " +
-                        "(${minLoadNode.identifier})"
-
-                log.log(Level.WARNING, msg, it)
-
-                removeNode(minLoadNode)
-
-                f.completeExceptionally(Exception(msg, it))
-            }
-
-            req.handler { nodeReq.write(it) }
-
-            req.endHandler { nodeReq.end() }
-
-            req.exceptionHandler {
-                val msg = "An exception occured when sending request to node ${minLoadNode.name} " +
-                        "(${minLoadNode.identifier})"
-
-                log.log(Level.WARNING, msg, it)
-
-                removeNode(minLoadNode)
-
-                f.completeExceptionally(Exception(msg, it))
-            }
-
-            req.resume()
-        }
-
-        return f
     }
 
     private fun masterRequestDone(info: RequestDoneInfo) {
@@ -392,10 +336,8 @@ class CowherdClusterMaster : CowherdClusterNode() {
             loadClasspathList()
         }
 
-        val data = JSON.toJSONString(localClasspathList).toByteArray()
-
-        Utils.writeMessageHeader(node.cmdConnection!!, ClusterConfigs.PKH_CLASSPATH_LIST, data.size.toLong())
-                .write(Buffer.buffer(data))
+        Utils.writeMessage(node.cmdConnection!!, ClusterConfigs.PKH_CLASSPATH_LIST,
+                JSON.toJSONString(localClasspathList))
 
         log.info("Reported classpath to slave node ${node.name} (${node.address}).")
     }

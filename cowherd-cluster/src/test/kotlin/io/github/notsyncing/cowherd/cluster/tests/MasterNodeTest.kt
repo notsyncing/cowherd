@@ -252,13 +252,14 @@ class MasterNodeTest {
     }
 
     @Test
-    fun testMasterRedirectRequestToSlave(context: TestContext) {
+    fun testMasterRedirectRequestToSlaveSuccess(context: TestContext) {
         val node = NodeInfo("test_node", "1:2:3", 1, "127.0.0.1:8093",
                 "127.0.0.1", 8094, 8095)
         node.ready = true
 
         master.nodes.put(node.name, node)
 
+        // Make sure this request will be redirected to slave node
         master.selfNode.load = 10
 
         val async = context.async()
@@ -282,6 +283,39 @@ class MasterNodeTest {
                         slave.close()
                         async.complete()
                     }
+                }
+                .end()
+    }
+
+    @Test
+    fun testMasterRedirectRequestToSlaveFailed(context: TestContext) {
+        val node = NodeInfo("test_node", "1:2:3", 1, "127.0.0.1:8093",
+                "127.0.0.1", 8094, 8095)
+        node.ready = true
+
+        master.nodes.put(node.name, node)
+
+        // Make sure this request will be redirected to slave node
+        master.selfNode.load = 99999
+
+        val async = context.async()
+
+        vertx.createHttpClient()
+                .get(8080, "127.0.0.1", "/")
+                .exceptionHandler {
+                    context.fail(it)
+
+                    async.complete()
+                }
+                .handler {
+                    it.exceptionHandler {
+                        context.fail(it)
+                    }
+
+                    context.assertEquals(500, it.statusCode())
+                    context.assertTrue(master.nodes.isEmpty())
+
+                    async.complete()
                 }
                 .end()
     }
