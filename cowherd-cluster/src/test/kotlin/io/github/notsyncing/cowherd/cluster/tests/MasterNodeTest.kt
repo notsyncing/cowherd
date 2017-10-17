@@ -207,15 +207,12 @@ class MasterNodeTest {
         val node = NodeInfo("test_node", "1:2:3", 5, "127.0.0.2:8093",
                 "127.0.0.2", 8094, 8095)
 
-        master.nodes.put(node.name, node)
-
-        master.javaClass.getDeclaredField("currentSyncingNode")
-                .apply { this.isAccessible = true }
-                .set(master, node)
+        master.nodes.put(node.identifier, node)
 
         TestUtils.connectTo(vertx, context, master.selfNode.cmdPort, {
             it.write(ClusterConfigs.PKH_SYNCHRONIZE_DONE)
-            it.write(Buffer.buffer(byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0)))
+            it.write(Buffer.buffer(Utils.longToBytes(5L)))
+            it.write("1:2:3")
         }, { it, s, done ->
             val header = ClusterConfigs.PKH_PONG.toByteArray()
             Assert.assertArrayEquals(header, it.bytes.copyOfRange(0, header.size))

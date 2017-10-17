@@ -160,7 +160,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
                                     }
                         } else {
                             log.info("Classpath up-to-date with upstream.")
-                            Utils.writeMessageHeader(socket, ClusterConfigs.PKH_SYNCHRONIZE_DONE, 0L)
+                            reportSynchronizeDone(socket)
                         }
                     }.exceptionally {
                         log.log(Level.WARNING, "An exception occured when receiving cmd", it)
@@ -388,6 +388,13 @@ class CowherdClusterSlave : CowherdClusterNode() {
         anythingChanged
     }
 
+    private fun reportSynchronizeDone(socket: NetSocket) {
+        val data = selfNode.identifier.toByteArray()
+
+        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_SYNCHRONIZE_DONE, data.size.toLong())
+                .write(Buffer.buffer(data))
+    }
+
     private fun connectToUpstream(host: String, port: Int): CompletableFuture<Unit> {
         val f = CompletableFuture<Unit>()
 
@@ -479,7 +486,7 @@ class CowherdClusterSlave : CowherdClusterNode() {
                 }
             }
 
-            Utils.writeMessageHeader(upstreamConnection!!, ClusterConfigs.PKH_SYNCHRONIZE_DONE, 0L)
+            reportSynchronizeDone(upstreamConnection!!)
         }
 
         thread(isDaemon = true) {

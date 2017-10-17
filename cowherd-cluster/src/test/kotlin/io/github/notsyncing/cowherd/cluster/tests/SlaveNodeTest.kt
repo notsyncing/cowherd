@@ -151,9 +151,17 @@ class SlaveNodeTest {
                 Assert.assertArrayEquals(header, it.bytes.copyOfRange(0, header.size))
 
                 val length = Utils.bytesToLong(it.bytes.copyOfRange(header.size, header.size + 8))
-                Assert.assertTrue(length == 0L)
+                Assert.assertTrue(length.toInt() == slave.selfNode.identifier.length)
 
-                async.complete()
+                Utils.readBytes(conn!!, length, it, header.size + 8) {
+                    val d = it.toString(Charsets.UTF_8)
+
+                    Assert.assertEquals(slave.selfNode.identifier, d)
+
+                    async.complete()
+                }.exceptionally {
+                    context.fail(it)
+                }
             } catch (e: Throwable) {
                 context.fail(e)
             }

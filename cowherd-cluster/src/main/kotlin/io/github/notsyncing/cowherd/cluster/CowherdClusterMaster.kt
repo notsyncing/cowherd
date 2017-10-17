@@ -32,7 +32,6 @@ class CowherdClusterMaster : CowherdClusterNode() {
 
     val nodes = ConcurrentHashMap<String, NodeInfo>()
     private val nodeSyncQueue = LinkedBlockingQueue<NodeInfo>()
-    private var currentSyncingNode: NodeInfo? = null
 
     override fun init() {
         if (System.getProperty("cowherd.cluster.mode") == "slave") {
@@ -58,7 +57,6 @@ class CowherdClusterMaster : CowherdClusterNode() {
 
         nodes.clear()
         nodeSyncQueue.clear()
-        currentSyncingNode = null
 
         super.destroy()
     }
@@ -162,42 +160,49 @@ class CowherdClusterMaster : CowherdClusterNode() {
             }
 
             ClusterConfigs.PKH_SYNCHRONIZE_DONE -> {
-                if (currentSyncingNode == null) {
-                    log.warning("Received synchronize done message, but no node is synchronizing now!")
-                    return
-                } else {
-                    log.info("Received synchronize done message: from node ${currentSyncingNode!!.name} " +
-                            "(${currentSyncingNode!!.identifier})")
-                }
+                Utils.readBytes(socket, payloadLength, currentBuffer, bufferStartPos) {
+                    done()
 
-                currentSyncingNode!!.ready = true
-                currentSyncingNode = null
+                    CompletableFuture.runAsync {
+                        val nodeId = String(it)
+                        val node = nodes[nodeId]
 
-                Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
+                        if (node == null) {
+                            log.warning("Received synchronize done message, but I don't know a node with id $nodeId")
+                            return@runAsync
+                        }
 
-                var nextNode = nodeSyncQueue.poll()
+                        log.info("Received synchronize done message: from node ${node.name} (${node.identifier})")
 
-                if (nextNode == null) {
-                    return
-                }
+                        node.ready = true
 
-                while (nextNode.cmdConnection == socket) {
-                    nextNode = nodeSyncQueue.poll()
+                        Utils.writeMessageHeader(socket, ClusterConfigs.PKH_PONG, 0L)
 
-                    if (nextNode == null) {
-                        break
+                        var nextNode = nodeSyncQueue.poll()
+
+                        if (nextNode == null) {
+                            return@runAsync
+                        }
+
+                        while (nextNode.cmdConnection == socket) {
+                            nextNode = nodeSyncQueue.poll()
+
+                            if (nextNode == null) {
+                                break
+                            }
+                        }
+
+                        if (nextNode == null) {
+                            return@runAsync
+                        }
+
+                        reportClasspathListToNode(nextNode)
+                    }.exceptionally {
+                        log.log(Level.WARNING, "An exception occured when receiving cmd", it)
+                        null
                     }
-                }
-
-                if (nextNode == null) {
-                    return
-                }
-
-                CompletableFuture.runAsync {
-                    reportClasspathListToNode(nextNode)
                 }.exceptionally {
                     log.log(Level.WARNING, "An exception occured when receiving cmd", it)
-                    null
                 }
             }
 
@@ -411,13 +416,6 @@ class CowherdClusterMaster : CowherdClusterNode() {
 
     private fun reportClasspathListToNode(node: NodeInfo) {
         node.ready = false
-
-        if ((currentSyncingNode != null) && (currentSyncingNode != node)) {
-            log.warning("Node ${node.name} (${node.identifier}) wants to synchronize, but another node " +
-                    "${currentSyncingNode!!.name} (${currentSyncingNode!!.identifier}) is synchronizing!")
-        }
-
-        currentSyncingNode = node
 
         if (localClasspathList.isEmpty()) {
             loadClasspathList()
