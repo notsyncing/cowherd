@@ -100,6 +100,14 @@ class ServerCommands(private val app: CowherdDeployApp) : CommandBase() {
     }
 
     @Command
+    fun updateAppDocker(appConfigFileOrDir: String) {
+        val appConf = getAppConfig(appConfigFileOrDir)
+        server!!.updateAppDocker(appConf)
+
+        println("App ${appConf.name} docker updated.")
+    }
+
+    @Command
     fun updateAppWeb(appConfigFileOrDir: String) {
         val appConf = getAppConfig(appConfigFileOrDir)
         server!!.updateAppWeb(appConf)

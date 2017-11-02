@@ -630,6 +630,20 @@ class ServerOperator(private val host: String, private val port: Int, private va
         return newContainerId
     }
 
+    fun updateAppDocker(appConfig: AppDeployConfig): String {
+        val currConf = readAppConfig(appConfig.name)
+
+        val newImageId = buildAppImage(appConfig.name, appConfig.absDockerFile)
+        val newContainerId = buildAppContainer(appConfig.name, newImageId)
+
+        currConf.dockerImageId = newImageId
+        currConf.dockerContainerId = newContainerId
+
+        updateAppConfig(appConfig.name, currConf)
+
+        return newContainerId
+    }
+
     fun updateAppWeb(appConfig: AppDeployConfig): String {
         syncAppWeb(appConfig)
 
