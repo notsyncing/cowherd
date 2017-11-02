@@ -89,7 +89,10 @@ public class RequestExecutor
 
             if (requestedMethod.isAnnotationPresent(GenerateCSRFToken.class)) {
                 String csrfToken = UUID.randomUUID().toString();
+
                 HttpCookie csrfCookie = new HttpCookie("csrf-token", csrfToken);
+                csrfCookie.setMaxAge(-1);
+
                 context.getServer().addCSRFToken(csrfToken);
 
                 RequestUtils.putCookie(request, csrfCookie);
