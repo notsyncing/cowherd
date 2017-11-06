@@ -7,6 +7,7 @@ public class ActionContext
 {
     private CowherdServer server;
     private HttpServerRequest request;
+    private RouteInfo route;
     private ActionMethodInfo actionMethod;
     private ActionConfig config;
 
@@ -38,6 +39,14 @@ public class ActionContext
     public void setRequest(HttpServerRequest request)
     {
         this.request = request;
+    }
+
+    public RouteInfo getRoute() {
+        return route;
+    }
+
+    public void setRoute(RouteInfo route) {
+        this.route = route;
     }
 
     public ActionMethodInfo getActionMethod()

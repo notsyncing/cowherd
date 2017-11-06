@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class RouteManager
@@ -55,6 +54,10 @@ public class RouteManager
 
     public static void removeRouteIf(BiPredicate<RouteInfo, ActionMethodInfo> predicate) {
         routes.entrySet().removeIf(entry -> predicate.test(entry.getKey(), entry.getValue()));
+    }
+
+    public static boolean containsRoute(RouteInfo route) {
+        return routes.containsKey(route);
     }
 
     public static void addRoute(RouteInfo route, ActionMethodInfo target)
@@ -232,6 +235,8 @@ public class RouteManager
             RouteInfo r = p.getRoute();
             ActionMethodInfo m = p.getActionMethod();
             log.d(" ... action " + m.getMethod());
+
+            context.setRoute(r);
 
             if (!m.getMethod().isAnnotationPresent(DisableCORS.class)) {
                 if (req.getHeaders().contains("Origin")) {

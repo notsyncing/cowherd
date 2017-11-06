@@ -10,7 +10,7 @@ version ver
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.15'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.18'
     compile group: 'org.apache.sshd', name: 'sshd-core', version: '1.4.0'
     compile group: 'org.apache.sshd', name: 'sshd-sftp', version: '0.11.0'
     compile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.8'

@@ -1,6 +1,5 @@
 package io.github.notsyncing.cowherd.models;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -31,6 +30,10 @@ public class Pair<K, V>
         this.key = key;
     }
 
+    public K component1() {
+        return getKey();
+    }
+
     public V getValue()
     {
         return value;
@@ -39,6 +42,10 @@ public class Pair<K, V>
     public void setValue(V value)
     {
         this.value = value;
+    }
+
+    public V component2() {
+        return getValue();
     }
 
     public static <K, V> boolean listContainsKey(List<Pair<K, V>> list, K key)

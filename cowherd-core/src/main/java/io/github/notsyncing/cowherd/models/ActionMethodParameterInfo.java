@@ -12,11 +12,23 @@ public class ActionMethodParameterInfo {
         this.annotations = parameter.getAnnotations();
     }
 
+    public ActionMethodParameterInfo() {
+
+    }
+
     public Parameter getParameter() {
         return parameter;
     }
 
+    public void setParameter(Parameter parameter) {
+        this.parameter = parameter;
+    }
+
     public Annotation[] getAnnotations() {
         return annotations;
+    }
+
+    public void setAnnotations(Annotation[] annotations) {
+        this.annotations = annotations;
     }
 }

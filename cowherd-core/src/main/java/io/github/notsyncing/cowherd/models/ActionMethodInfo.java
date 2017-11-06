@@ -24,4 +24,8 @@ public class ActionMethodInfo {
     public List<ActionMethodParameterInfo> getParameters() {
         return parameters;
     }
+
+    public void setParameters(List<ActionMethodParameterInfo> parameters) {
+        this.parameters = parameters;
+    }
 }

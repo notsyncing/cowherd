@@ -3,6 +3,8 @@ package io.github.notsyncing.cowherd.models;
 import io.github.notsyncing.cowherd.commons.RouteType;
 import io.github.notsyncing.cowherd.utils.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -17,7 +19,21 @@ public class RouteInfo implements Comparable<RouteInfo>
     private boolean entry;
     private RouteType type = RouteType.Http;
     private String viewPath;
+    private Map<String, Object> tags = new HashMap<>();
     private Object[] otherParameters;
+
+    public RouteInfo() {
+
+    }
+
+    public RouteInfo(String path) {
+        this.path = path;
+    }
+
+    public RouteInfo(String domain, String path) {
+        this.domain = domain;
+        this.path = path;
+    }
 
     public String getDomain()
     {
@@ -114,6 +130,22 @@ public class RouteInfo implements Comparable<RouteInfo>
     public void setViewPath(String viewPath)
     {
         this.viewPath = viewPath;
+    }
+
+    public Map<String, Object> getTags() {
+        return tags;
+    }
+
+    public Object getTag(String key) {
+        return tags.get(key);
+    }
+
+    public void setTag(String key, Object value) {
+        tags.put(key, value);
+    }
+
+    public boolean hasTag(String key) {
+        return tags.containsKey(key);
     }
 
     public Object[] getOtherParameters()
