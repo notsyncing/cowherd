@@ -134,6 +134,8 @@ object ScriptActionInvoker {
                     v = response
                 } else if (typeName == uploadMap::class.qualifiedName) {
                     v = uploadMap
+                } else if (typeName == HttpCookie::class.qualifiedName) {
+                    v = cookies.firstOrNull { it.name == p.name }
                 } else if (o.containsKey(p.name)) {
                     v = o[p.name].toType(type)
                 } else {
