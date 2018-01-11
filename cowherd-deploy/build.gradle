@@ -11,13 +11,13 @@ version ver
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.18'
-    compile group: 'org.apache.sshd', name: 'sshd-core', version: '1.4.0'
+    compile group: 'org.apache.sshd', name: 'sshd-core', version: '1.6.0'
     compile group: 'org.apache.sshd', name: 'sshd-sftp', version: '0.11.0'
-    compile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.8'
-    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.29'
+    compile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.44'
     compile group: 'org.freemarker', name: 'freemarker', version: '2.3.23'
     compile "com.github.fommil:openssh:1.0"
-    compile "org.jline:jline:3.1.2"
+    compile "org.jline:jline:3.5.2"
 
     testCompile 'junit:junit:4.12'
 }
