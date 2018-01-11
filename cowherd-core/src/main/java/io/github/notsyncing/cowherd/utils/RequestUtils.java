@@ -536,6 +536,13 @@ public class RequestUtils
 
         request.params().forEach(e -> context.getParameters().add(new Pair<>(e.getKey(), e.getValue())));
 
+        String upgradeHeader = request.getHeader("Upgrade");
+
+        if ((upgradeHeader != null) && ("websocket".compareToIgnoreCase(upgradeHeader) == 0)) {
+            future.complete(context);
+            return future;
+        }
+
         request.setExpectMultipart(true);
 
         if (checkIfRequestHasBody(request)) {
