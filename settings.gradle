@@ -8,4 +8,5 @@ include 'cowherd-server-renderer'
 include 'cowherd-cluster'
 include 'cowherd-cluster-bootstrap'
 include 'cowherd-flex'
+include 'cowherd-micron'
 

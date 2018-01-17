@@ -9,8 +9,8 @@ import java.util.stream.Stream;
 
 public class CowherdServiceInfo
 {
-    private Class<? extends CowherdService> serviceClass;
-    private CowherdService serviceInstance;
+    private Class<?> serviceClass;
+    private Object serviceInstance;
     private ComponentInstantiateType instantiateType = ComponentInstantiateType.Singleton;
     private RouteInfo customRoute;
     private String namespace;
@@ -18,12 +18,11 @@ public class CowherdServiceInfo
     private String fullName;
     private ConcurrentHashMap<String, ActionMethodInfo> methodMap = new ConcurrentHashMap<>();
 
-    public Class<? extends CowherdService> getServiceClass()
-    {
+    public Class<?> getServiceClass() {
         return serviceClass;
     }
 
-    public void setServiceClass(Class<? extends CowherdService> serviceClass)
+    public void setServiceClass(Class<?> serviceClass)
     {
         this.serviceClass = serviceClass;
 
@@ -38,13 +37,16 @@ public class CowherdServiceInfo
                 .forEach(m -> methodMap.put(m.getName(), new ActionMethodInfo(m)));
     }
 
-    public CowherdService getServiceInstance()
+    public Object getServiceInstance()
     {
         return serviceInstance;
     }
 
-    public void setServiceInstance(CowherdService serviceInstance)
-    {
+    public void setServiceInstance(CowherdService serviceInstance) {
+        setServiceInstance((Object)serviceInstance);
+    }
+
+    public void setServiceInstance(Object serviceInstance) {
         this.serviceInstance = serviceInstance;
 
         setServiceClass(serviceInstance.getClass());

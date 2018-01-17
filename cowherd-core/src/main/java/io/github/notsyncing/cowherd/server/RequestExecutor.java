@@ -11,7 +11,6 @@ import io.github.notsyncing.cowherd.exceptions.FilterBreakException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.service.ComponentInstantiateType;
-import io.github.notsyncing.cowherd.service.CowherdService;
 import io.github.notsyncing.cowherd.service.ServiceManager;
 import io.github.notsyncing.cowherd.utils.FutureUtils;
 import io.github.notsyncing.cowherd.utils.RequestUtils;
@@ -84,7 +83,7 @@ public class RequestExecutor
                 return FutureUtils.failed(e);
             }
 
-            CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
+            Object service = ServiceManager.getServiceInstance(requestedMethod.getDeclaringClass());
             Object result = requestedMethod.invoke(service, targetParams);
 
             if (requestedMethod.isAnnotationPresent(GenerateCSRFToken.class)) {
@@ -132,7 +131,7 @@ public class RequestExecutor
                 return FutureUtils.failed(e);
             }
 
-            CowherdService service = ServiceManager.getServiceInstance((Class<? extends CowherdService>)requestedMethod.getDeclaringClass());
+            Object service = ServiceManager.getServiceInstance(requestedMethod.getDeclaringClass());
             Object result = requestedMethod.invoke(service, targetParams);
 
             if (result instanceof CompletableFuture) {

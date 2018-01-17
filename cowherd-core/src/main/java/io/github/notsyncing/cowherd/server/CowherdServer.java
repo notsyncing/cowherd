@@ -283,15 +283,19 @@ public class CowherdServer
     private void initServer() throws IllegalAccessException, InvocationTargetException, InstantiationException {
         if (vertx == null) {
             vertx = Vertx.vertx();
-
-            Cowherd.dependencyInjector.registerComponent(Vertx.class, vertx);
         }
 
-        if (!Cowherd.dependencyInjector.hasComponent(FileStorage.class)) {
-            fileStorage = new FileStorage();
-            Cowherd.dependencyInjector.registerComponent(fileStorage);
+        if (Cowherd.dependencyInjector != null) {
+            Cowherd.dependencyInjector.registerComponent(Vertx.class, vertx);
+
+            if (!Cowherd.dependencyInjector.hasComponent(FileStorage.class)) {
+                fileStorage = new FileStorage();
+                Cowherd.dependencyInjector.registerComponent(fileStorage);
+            } else {
+                fileStorage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
+            }
         } else {
-            fileStorage = Cowherd.dependencyInjector.getComponent(FileStorage.class);
+            fileStorage = new FileStorage();
         }
 
         try {

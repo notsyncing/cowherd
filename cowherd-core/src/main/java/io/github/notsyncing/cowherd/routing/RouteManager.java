@@ -3,7 +3,6 @@ package io.github.notsyncing.cowherd.routing;
 import io.github.notsyncing.cowherd.annotations.*;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
 import io.github.notsyncing.cowherd.commons.RouteType;
-import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.*;
 import io.github.notsyncing.cowherd.responses.ActionResponse;
 import io.github.notsyncing.cowherd.responses.FileResponse;
@@ -72,9 +71,13 @@ public class RouteManager
         log.d("Add route " + route + " to action " + target.getMethod());
     }
 
-    public static void addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) throws InvalidServiceActionException
+    public static int addRoutesInService(Class<? extends CowherdService> service, CowherdServiceInfo serviceInfo) {
+        return addRoutesInClass(service, serviceInfo);
+    }
+
+    public static int addRoutesInClass(Class<?> clazz, CowherdServiceInfo serviceInfo)
     {
-        Route serviceRoute = service.getAnnotation(Route.class);
+        Route serviceRoute = clazz.getAnnotation(Route.class);
         RouteInfo serviceRouteInfo = serviceInfo.getCustomRoute();
 
         if (serviceRouteInfo == null) {
@@ -84,11 +87,13 @@ public class RouteManager
                 serviceRouteInfo.setDomain(serviceRoute.domain());
                 serviceRouteInfo.setPath(serviceRoute.value());
             } else {
-                serviceRouteInfo.setPath(service.getSimpleName() + "/");
+                serviceRouteInfo.setPath(clazz.getSimpleName() + "/");
             }
         }
 
-        for (Method m : service.getMethods()) {
+        int routeCount = 0;
+
+        for (Method m : clazz.getMethods()) {
             if (!m.isAnnotationPresent(Exported.class)) {
                 continue;
             }
@@ -120,7 +125,11 @@ public class RouteManager
 
             m.setAccessible(true);
             addRoute(info, new ActionMethodInfo(m));
+
+            routeCount++;
         }
+
+        return routeCount;
     }
 
     public static MatchedRoute findMatchedAction(SimpleURI uri)

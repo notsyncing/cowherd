@@ -26,11 +26,17 @@ import java.util.concurrent.CompletableFuture;
 
 public class Cowherd
 {
+    public static class Configs {
+        public boolean skipClasspathScanning = false;
+    }
+
     private Vertx vertx = Vertx.vertx();
     private CowherdServer server;
     private CowherdLogger log = CowherdLogger.getInstance(this);
     private List<Class<? extends CowherdPart>> parts = new ArrayList<>();
     private List<CowherdPart> partInstances = new ArrayList<>();
+
+    private Configs internalConfigs;
 
     public static DependencyInjector dependencyInjector;
 
@@ -41,9 +47,23 @@ public class Cowherd
     }
 
     public Cowherd() {
+        this(null);
+    }
+
+    public Cowherd(Configs internalConfigs) {
+        if (internalConfigs != null) {
+            this.internalConfigs = internalConfigs;
+        } else {
+            this.internalConfigs = new Configs();
+        }
+
         if (dependencyInjector != null) {
             dependencyInjector.registerComponent(Vertx.class, vertx);
         }
+    }
+
+    public Vertx getVertx() {
+        return vertx;
     }
 
     public CowherdServer getServer() {
@@ -81,16 +101,16 @@ public class Cowherd
 
     public void start(FastClasspathScanner classpathScanner, int port)
     {
-        if (classpathScanner == null) {
-            classpathScanner = createClasspathScanner();
-        }
-
-        CowherdDependencyInjector.setScanner(classpathScanner);
-
         boolean selfDepInjector = false;
 
+        if ((classpathScanner == null) && (!internalConfigs.skipClasspathScanning)) {
+            classpathScanner = createClasspathScanner();
+
+            CowherdDependencyInjector.setScanner(classpathScanner);
+        }
+
         if (dependencyInjector == null) {
-            dependencyInjector = new CowherdDependencyInjector(false);
+            dependencyInjector = new CowherdDependencyInjector(internalConfigs.skipClasspathScanning);
             selfDepInjector = true;
         }
 
@@ -98,19 +118,21 @@ public class Cowherd
 
         addInternalServices();
 
-        ScanResult classScanResult = classpathScanner.scan();
+        if (classpathScanner != null) {
+            ScanResult classScanResult = classpathScanner.scan();
 
-        initParts(classScanResult);
+            initParts(classScanResult);
 
-        if (selfDepInjector) {
-            dependencyInjector.init();
+            if (selfDepInjector) {
+                dependencyInjector.init();
+            }
+
+            if (!dependencyInjector.hasComponent(Vertx.class)) {
+                dependencyInjector.registerComponent(Vertx.class, vertx);
+            }
+
+            scanClasses(classScanResult);
         }
-
-        if (!dependencyInjector.hasComponent(Vertx.class)) {
-            dependencyInjector.registerComponent(Vertx.class, vertx);
-        }
-
-        scanClasses(classScanResult);
 
         try {
             startServer();
@@ -235,7 +257,9 @@ public class Cowherd
     private void startServer() throws IllegalAccessException, InvocationTargetException, InstantiationException {
         server = new CowherdServer(vertx);
 
-        dependencyInjector.registerComponent(server);
+        if (dependencyInjector != null) {
+            dependencyInjector.registerComponent(server);
+        }
 
         server.start();
     }

@@ -1,0 +1,52 @@
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+}
+
+def ver = rootProject.ext.ver
+
+group grp
+version ver
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.21'
+    compile project(":cowherd-core")
+    compile "io.github.notsyncing.krafting:krafting-core:0.1.0"
+
+    testCompile 'junit:junit:4.12'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'io.github.notsyncing.cowherd'
+            artifactId 'cowherd-micron'
+            version ver
+            from components.java
+
+            artifact sourceJar
+            artifact javadocJar
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+
+    pkg {
+        repo = 'maven'
+        name = 'cowherd-micron'
+        licenses = [ 'GPL-3.0' ]
+        vcsUrl = 'https://github.com/notsyncing/cowherd.git'
+
+        version {
+            name = ver
+            vcsTag = ver
+        }
+    }
+
+    publications = [ 'maven' ]
+}
+

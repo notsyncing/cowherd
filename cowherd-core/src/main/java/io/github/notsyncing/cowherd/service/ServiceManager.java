@@ -2,7 +2,6 @@ package io.github.notsyncing.cowherd.service;
 
 import io.github.notsyncing.cowherd.Cowherd;
 import io.github.notsyncing.cowherd.annotations.InstantiateType;
-import io.github.notsyncing.cowherd.exceptions.InvalidServiceActionException;
 import io.github.notsyncing.cowherd.models.ActionMethodInfo;
 import io.github.notsyncing.cowherd.models.CowherdServiceInfo;
 import io.github.notsyncing.cowherd.models.RouteInfo;
@@ -17,22 +16,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServiceManager
 {
     private static Map<String, CowherdServiceInfo> services = new ConcurrentHashMap<>();
-    private static Map<String, CowherdService> serviceInstances = new ConcurrentHashMap<>();
+    private static Map<String, Object> serviceInstances = new ConcurrentHashMap<>();
 
     private static CowherdLogger log = CowherdLogger.getInstance(ServiceManager.class);
 
     private static void processServiceAnnotations(CowherdServiceInfo info)
     {
-        Class<? extends CowherdService> serviceClass = info.getServiceClass();
+        Class<?> serviceClass = info.getServiceClass();
 
         if (serviceClass.isAnnotationPresent(InstantiateType.class)) {
             info.setInstantiateType(serviceClass.getAnnotation(InstantiateType.class).value());
         }
     }
 
-    private static void addServiceInfo(String name, CowherdServiceInfo info, RouteInfo customRoute) throws InvalidServiceActionException
+    private static int addServiceInfo(String name, CowherdServiceInfo info, RouteInfo customRoute)
     {
-        Cowherd.dependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType(), false);
+        if (Cowherd.dependencyInjector != null) {
+            Cowherd.dependencyInjector.registerComponent(info.getServiceClass(), info.getInstantiateType(), false);
+        }
 
         processServiceAnnotations(info);
 
@@ -40,10 +41,10 @@ public class ServiceManager
 
         services.put(name, info);
 
-        RouteManager.addRoutesInService(info.getServiceClass(), info);
+        return RouteManager.addRoutesInClass(info.getServiceClass(), info);
     }
 
-    public static void addServiceInstance(CowherdService service, RouteInfo customRoute) throws InvalidServiceActionException
+    public static int addServiceInstance(Object service, RouteInfo customRoute)
     {
         String name = service.getClass().getName();
 
@@ -52,10 +53,12 @@ public class ServiceManager
             info.setServiceClass(service.getClass());
             info.setServiceInstance(service);
 
-            addServiceInfo(name, info, customRoute);
+            return addServiceInfo(name, info, customRoute);
         } else {
             CowherdServiceInfo info = services.get(name);
             info.setServiceInstance(service);
+
+            return 0;
         }
     }
 
@@ -87,19 +90,26 @@ public class ServiceManager
         serviceInstances.remove(serviceClass.getName());
     }
 
-    public static CowherdService getServiceInstance(Class<? extends CowherdService> serviceClass) throws IllegalAccessException, InstantiationException, InvocationTargetException
+    public static Object getServiceInstance(Class<?> serviceClass) throws IllegalAccessException, InstantiationException, InvocationTargetException
     {
         CowherdServiceInfo info = services.get(serviceClass.getName());
 
         if (info == null) {
-            return null;
+            return Cowherd.dependencyInjector.makeObject(serviceClass);
         }
 
         if (info.getInstantiateType() == ComponentInstantiateType.AlwaysNew) {
             return Cowherd.dependencyInjector.makeObject(serviceClass);
         } else if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
             if (!serviceInstances.containsKey(serviceClass.getName())) {
-                CowherdService s = Cowherd.dependencyInjector.makeObject(serviceClass);
+                Object s;
+
+                if (info.getServiceInstance() != null) {
+                    s = info.getServiceInstance();
+                } else {
+                    s = Cowherd.dependencyInjector.makeObject(serviceClass);
+                }
+
                 serviceInstances.put(serviceClass.getName(), s);
                 return s;
             } else {
@@ -140,6 +150,10 @@ public class ServiceManager
     {
         for (CowherdServiceInfo info : services.values()) {
             if (info.getInstantiateType() == ComponentInstantiateType.Singleton) {
+                if (info.getServiceInstance() != null) {
+                    continue;
+                }
+
                 if (getServiceInstance(info.getServiceClass()) == null) {
                     log.e("Failed to instantiate service: " + info.getServiceClass());
                 }

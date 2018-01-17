@@ -14,6 +14,7 @@ import io.vertx.core.file.FileSystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,14 +36,17 @@ public class FileStorage
     private FileSystem fs;
     private CowherdLogger log = CowherdLogger.getInstance(this);
 
-    public FileStorage()
+    public FileStorage(Vertx vertx)
     {
-        init();
+        init(vertx);
     }
 
-    protected void init() {
+    public FileStorage() throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        this(Cowherd.dependencyInjector.getComponent(Vertx.class));
+    }
+
+    protected void init(Vertx vertx) {
         try {
-            Vertx vertx = Cowherd.dependencyInjector.getComponent(Vertx.class);
             fs = vertx.fileSystem();
         } catch (Exception e) {
             log.e("Failed to create file storage", e);
