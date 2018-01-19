@@ -1,6 +1,8 @@
 package io.github.notsyncing.cowherd.tests;
 
 import com.alibaba.fastjson.JSONObject;
+import io.github.notsyncing.cowherd.annotations.Parameter;
+import io.github.notsyncing.cowherd.commons.ParameterParseType;
 import io.github.notsyncing.cowherd.exceptions.ParameterProcessException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
 import io.github.notsyncing.cowherd.models.ActionContext;
@@ -42,6 +44,7 @@ public class RequestUtilsTest
     private Method testMethod1;
     private Method testMethod2;
     private Method testMethod3;
+    private Method testMethod4;
 
     public RequestUtilsTest()
     {
@@ -52,6 +55,8 @@ public class RequestUtilsTest
                 testMethod2 = m;
             } else if (m.getName().equals("testMethod3")) {
                 testMethod3 = m;
+            } else if (m.getName().equals("testMethod4")) {
+                testMethod4 = m;
             }
         }
     }
@@ -67,6 +72,10 @@ public class RequestUtilsTest
 
     private void testMethod3(TestParamClass2 a)
     {
+    }
+
+    private void testMethod4(@Parameter(parseType = ParameterParseType.JSON) List<String> a,
+                             @Parameter(parseType = ParameterParseType.JSON) TestParamClass b) {
     }
 
     @Test
@@ -335,5 +344,29 @@ public class RequestUtilsTest
         HttpCookie c = cookies.get(2);
         assertEquals("c", c.getName());
         assertEquals("3", c.getValue());
+    }
+
+    @Test
+    public void testParseJsonTypeParameter() throws IllegalAccessException, ValidationFailedException, InstantiationException, ParameterProcessException {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("a", "[\"aaa\",\"bbb\",\"ccc\"]"));
+        params.add(new Pair<>("b", "{\"e\":\"test\",\"f\":2}"));
+
+        ActionContext context = new ActionContext();
+        context.setActionMethod(new ActionMethodInfo(testMethod4));
+
+        Object[] results = RequestUtils.convertParameterListToMethodParameters(context, params, null, null);
+        List<String> a = (List<String>) results[0];
+        TestParamClass b = (TestParamClass) results[1];
+
+        assertNotNull(a);
+        assertEquals(3, a.size());
+        assertEquals("aaa", a.get(0));
+        assertEquals("bbb", a.get(1));
+        assertEquals("ccc", a.get(2));
+
+        assertNotNull(b);
+        assertEquals("test", b.e);
+        assertEquals(2, b.f);
     }
 }

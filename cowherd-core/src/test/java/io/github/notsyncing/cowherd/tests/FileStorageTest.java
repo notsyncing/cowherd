@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,8 +33,7 @@ public class FileStorageTest
     private FileStorage fs;
 
     @Before
-    public void setUp() throws IOException
-    {
+    public void setUp() throws IOException, IllegalAccessException, InstantiationException, InvocationTargetException {
         vertx = Vertx.vertx();
 
         CowherdConfiguration.setStoreFilesByDate(false);

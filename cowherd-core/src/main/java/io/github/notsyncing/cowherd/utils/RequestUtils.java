@@ -7,6 +7,7 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import io.github.notsyncing.cowherd.annotations.httpmethods.*;
 import io.github.notsyncing.cowherd.commons.AlternativeCookieHeaderConfig;
 import io.github.notsyncing.cowherd.commons.CowherdConfiguration;
+import io.github.notsyncing.cowherd.commons.ParameterParseType;
 import io.github.notsyncing.cowherd.exceptions.ParameterProcessException;
 import io.github.notsyncing.cowherd.exceptions.UploadOversizeException;
 import io.github.notsyncing.cowherd.exceptions.ValidationFailedException;
@@ -86,7 +87,11 @@ public class RequestUtils
     public static String getParameterName(Method method, Parameter param, int index)
     {
         if (param.isAnnotationPresent(io.github.notsyncing.cowherd.annotations.Parameter.class)) {
-            return param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+            String value = param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+
+            if (!value.isEmpty()) {
+                return value;
+            }
         }
 
         if (!param.isNamePresent()) {
@@ -101,10 +106,22 @@ public class RequestUtils
     public static String getParameterName(Parameter param)
     {
         if (param.isAnnotationPresent(io.github.notsyncing.cowherd.annotations.Parameter.class)) {
-            return param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+            String value = param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).value();
+
+            if (!value.isEmpty()) {
+                return value;
+            }
         }
 
         return param.getName();
+    }
+
+    private static ParameterParseType getParameterParseType(Parameter param) {
+        if (!param.isAnnotationPresent(io.github.notsyncing.cowherd.annotations.Parameter.class)) {
+            return ParameterParseType.Normal;
+        }
+
+        return param.getAnnotation(io.github.notsyncing.cowherd.annotations.Parameter.class).parseType();
     }
 
     public static Object[] convertParameterListToMethodParameters(ActionContext context,
@@ -152,7 +169,13 @@ public class RequestUtils
                 }
 
                 Parameter methodParam = methodParamMap.get(reqParam.getKey());
+                ParameterParseType parseType = getParameterParseType(methodParam);
                 int methodParamIndex = methodParams.indexOf(methodParam);
+
+                if (parseType == ParameterParseType.JSON) {
+                    targetParams[methodParamIndex] = JSON.parseObject(reqParam.getValue(), methodParam.getParameterizedType());
+                    continue;
+                }
 
                 if (methodParam.getType().isEnum()) {
                     int e = Integer.parseInt(reqParam.getValue());
