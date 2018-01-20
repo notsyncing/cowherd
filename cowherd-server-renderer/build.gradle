@@ -8,7 +8,7 @@ group grp
 version ver
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.18'
     /*compile "com.github.ui4j.ui4j:ui4j-all:2.2.0"
     compile group: 'org.testfx', name: 'openjfx-monocle', version: '8u76-b04'*/

@@ -9,7 +9,7 @@ group grp
 version ver
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.18'
     compile group: 'org.apache.sshd', name: 'sshd-core', version: '1.6.0'
     compile group: 'org.apache.sshd', name: 'sshd-sftp', version: '0.11.0'
